@@ -102,6 +102,9 @@ export const updateInfo = {
       description:
         "Fixed a database query memory leak and optimized query performance.",
     },
+    {
+      description: "if a post had a link to a website that returned invalid or malformed headers, Hydra would fail to render the posts.",
+    }
   ] as { description: string }[],
 };
 

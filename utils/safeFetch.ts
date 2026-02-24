@@ -46,31 +46,46 @@ export default function safeFetch(
     }
 
     xhr.onload = () => {
-      const headersString = xhr.getAllResponseHeaders();
-      const headersArray = headersString.trim().split(/[\r\n]+/);
-      const headers = new Headers();
-      headersArray.forEach((line) => {
-        const parts = line.split(": ");
-        const key = parts.shift();
-        const value = parts.join(": ");
-        if (key) {
-          headers.append(key, value);
-        }
-      });
+      try {
+        const headersString = xhr.getAllResponseHeaders();
+        const headersArray = headersString.trim().split(/[\r\n]+/);
+        const headers = new Headers();
+        headersArray.forEach((line) => {
+          const separatorIndex = line.indexOf(":");
+          if (separatorIndex === -1) return;
+          const key = line.substring(0, separatorIndex).trim();
+          const value = line.substring(separatorIndex + 1).trim();
+          if (key) {
+            try {
+              headers.append(key, value);
+            } catch (_) {
+              // Skip headers with names the runtime considers invalid
+            }
+          }
+        });
 
-      const response: SafeFetchResponse = {
-        ok: xhr.status >= 200 && xhr.status < 300,
-        status: xhr.status,
-        statusText: xhr.statusText,
-        headers,
-        url: xhr.responseURL || url,
-        text: () => Promise.resolve(xhr.responseText),
-        json: <T = unknown>() =>
-          Promise.resolve(JSON.parse(xhr.responseText) as T),
-        blob: () => Promise.resolve(new Blob([xhr.response])),
-      };
+        const response: SafeFetchResponse = {
+          ok: xhr.status >= 200 && xhr.status < 300,
+          status: xhr.status,
+          statusText: xhr.statusText,
+          headers,
+          url: xhr.responseURL || url,
+          text: () => Promise.resolve(xhr.responseText),
+          json: <T = unknown>() =>
+            new Promise<T>((res, rej) => {
+              try {
+                res(JSON.parse(xhr.responseText) as T);
+              } catch (e) {
+                rej(e);
+              }
+            }),
+          blob: () => Promise.resolve(new Blob([xhr.response])),
+        };
 
-      resolve(response);
+        resolve(response);
+      } catch (e) {
+        reject(e);
+      }
     };
 
     xhr.onerror = () => {
