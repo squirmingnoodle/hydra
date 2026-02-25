@@ -5,6 +5,8 @@ export const expoDb = SQLite.openDatabaseSync("db.db", {
   enableChangeListener: true,
 });
 
+expoDb.execSync("PRAGMA journal_mode = WAL;");
+
 const db = drizzle(expoDb);
 
 /**
