@@ -31,7 +31,6 @@ import {
 import { ModalContext } from "../../contexts/ModalContext";
 import { ThemeContext } from "../../contexts/SettingsContexts/ThemeContext";
 import { SubredditContext } from "../../contexts/SubredditContext";
-import KeyStore from "../../utils/KeyStore";
 import RedditURL, { PageType } from "../../utils/RedditURL";
 import { useURLNavigation } from "../../utils/navigation";
 import { FlexibleNavigationProp } from "../../utils/navigationTypes";
@@ -41,6 +40,10 @@ import NewMessage from "../Modals/NewMessage";
 import NewPost from "../Modals/NewPost";
 import SelectText from "../Modals/SelectText";
 import { FiltersContext } from "../../contexts/SettingsContexts/FiltersContext";
+import {
+  getAccountScopedBoolean,
+  setAccountScopedValue,
+} from "../../utils/accountScopedSettings";
 
 export type SortTypes =
   | "Best"
@@ -117,11 +120,11 @@ export default function SortAndContext({
     });
     if (
       pageType === PageType.SUBREDDIT &&
-      KeyStore.getBoolean(REMEMBER_POST_SUBREDDIT_SORT_KEY)
+      getAccountScopedBoolean(REMEMBER_POST_SUBREDDIT_SORT_KEY)
     ) {
-      KeyStore.set(makePostSubredditSortKey(subreddit), sort.toLowerCase());
+      setAccountScopedValue(makePostSubredditSortKey(subreddit), sort.toLowerCase());
       if (sort === "top" && time) {
-        KeyStore.set(
+        setAccountScopedValue(
           makePostSubredditSortTopKey(subreddit),
           time.toLowerCase(),
         );
@@ -129,9 +132,12 @@ export default function SortAndContext({
     }
     if (
       pageType === PageType.POST_DETAILS &&
-      KeyStore.getBoolean(REMEMBER_COMMENT_SUBREDDIT_SORT_KEY)
+      getAccountScopedBoolean(REMEMBER_COMMENT_SUBREDDIT_SORT_KEY)
     ) {
-      KeyStore.set(makeCommentSubredditSortKey(subreddit), sort.toLowerCase());
+      setAccountScopedValue(
+        makeCommentSubredditSortKey(subreddit),
+        sort.toLowerCase(),
+      );
     }
   };
 

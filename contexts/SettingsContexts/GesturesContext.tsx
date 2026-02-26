@@ -1,5 +1,8 @@
 import { createContext } from "react";
-import { useMMKVBoolean, useMMKVObject } from "react-native-mmkv";
+import {
+  useAccountScopedMMKVBoolean,
+  useAccountScopedMMKVObject,
+} from "../../utils/accountScopedSettings";
 
 const initialValues = {
   swipeAnywhereToNavigate: false,
@@ -106,17 +109,17 @@ type CommentSwipeOptions = {
 
 export function GesturesProvider({ children }: React.PropsWithChildren) {
   const [storedSwipeAnywhereToNavigate, setSwipeAnywhereToNavigate] =
-    useMMKVBoolean("swipeAnywhereToNavigate");
+    useAccountScopedMMKVBoolean("swipeAnywhereToNavigate");
   const swipeAnywhereToNavigate =
     storedSwipeAnywhereToNavigate ?? initialValues.swipeAnywhereToNavigate;
 
   const [storedPostSwipeOptions, setPostSwipeOptions] =
-    useMMKVObject<PostSwipeOptions>("postSwipeOptions");
+    useAccountScopedMMKVObject<PostSwipeOptions>("postSwipeOptions");
   const postSwipeOptions =
     storedPostSwipeOptions ?? initialValues.postSwipeOptions;
 
   const [storedCommentSwipeOptions, setCommentSwipeOptions] =
-    useMMKVObject<CommentSwipeOptions>("commentSwipeOptions");
+    useAccountScopedMMKVObject<CommentSwipeOptions>("commentSwipeOptions");
   const commentSwipeOptions =
     storedCommentSwipeOptions ?? initialValues.commentSwipeOptions;
 

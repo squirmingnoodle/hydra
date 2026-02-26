@@ -1,27 +1,35 @@
 import { createContext } from "react";
-import { useMMKVBoolean } from "react-native-mmkv";
+import { useAccountScopedMMKVBoolean } from "../../utils/accountScopedSettings";
 
 const initialValues = {
   showUsername: true,
   hideTabsOnScroll: false,
+  liquidGlassEnabled: true,
 };
 
 const initialTabSettingsContext = {
   ...initialValues,
   toggleShowUsername: (_newValue?: boolean) => {},
   toggleHideTabsOnScroll: (_newValue?: boolean) => {},
+  toggleLiquidGlassEnabled: (_newValue?: boolean) => {},
 };
 
 export const TabSettingsContext = createContext(initialTabSettingsContext);
 
 export function TabSettingsProvider({ children }: React.PropsWithChildren) {
-  const [storedShowUsername, setShowUsername] = useMMKVBoolean("showUsername");
+  const [storedShowUsername, setShowUsername] =
+    useAccountScopedMMKVBoolean("showUsername");
   const showUsername = storedShowUsername ?? initialValues.showUsername;
 
   const [storedHideTabsOnScroll, setHideTabsOnScroll] =
-    useMMKVBoolean("hideTabsOnScroll");
+    useAccountScopedMMKVBoolean("hideTabsOnScroll");
   const hideTabsOnScroll =
     storedHideTabsOnScroll ?? initialValues.hideTabsOnScroll;
+
+  const [storedLiquidGlassEnabled, setLiquidGlassEnabled] =
+    useAccountScopedMMKVBoolean("liquidGlassEnabled");
+  const liquidGlassEnabled =
+    storedLiquidGlassEnabled ?? initialValues.liquidGlassEnabled;
 
   return (
     <TabSettingsContext.Provider
@@ -32,6 +40,9 @@ export function TabSettingsProvider({ children }: React.PropsWithChildren) {
         hideTabsOnScroll,
         toggleHideTabsOnScroll: (newValue = !hideTabsOnScroll) =>
           setHideTabsOnScroll(newValue),
+        liquidGlassEnabled,
+        toggleLiquidGlassEnabled: (newValue = !liquidGlassEnabled) =>
+          setLiquidGlassEnabled(newValue),
       }}
     >
       {children}

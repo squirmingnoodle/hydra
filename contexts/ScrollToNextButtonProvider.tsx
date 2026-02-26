@@ -14,10 +14,10 @@ import React, {
 } from "react";
 import { ThemeContext } from "./SettingsContexts/ThemeContext";
 import { AntDesign } from "@expo/vector-icons";
-import { useMMKVString } from "react-native-mmkv";
 import { ScrollToNextButtonContext } from "./ScrollToNextButtonContext";
 import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
 import { TAB_BAR_REMOVED_PADDING_BOTTOM } from "../constants/TabBarPadding";
+import { useAccountScopedMMKVString } from "../utils/accountScopedSettings";
 
 const BUTTON_SIZE = 40;
 const EDGE_PADDING = 20;
@@ -79,7 +79,7 @@ export default function ScrollToNextButtonProvider({
     },
   };
 
-  const [storedButtonPosition, setButtonPosition] = useMMKVString(
+  const [storedButtonPosition, setButtonPosition] = useAccountScopedMMKVString(
     "scrollToNextButtonPosition",
   );
   const buttonPosition = (storedButtonPosition ??

@@ -87,6 +87,7 @@ export default function CompactPostMedia({ post }: CompactPostMediaProps) {
               thumbnail={post.imageThumbnail}
               straightToFullscreen
               exitedFullScreenCallback={() => setMediaOpen(false)}
+              subreddit={post.subreddit}
             />
           )}
         </TouchableOpacity>
@@ -119,7 +120,11 @@ export default function CompactPostMedia({ post }: CompactPostMediaProps) {
               animationType="none"
               visible
               onRequestClose={() => setMediaOpen(false)}
-              onLongPress={() => shareMedia("image", post.images[imageIndex])}
+              onLongPress={() =>
+                shareMedia("image", post.images[imageIndex], {
+                  subreddit: post.subreddit,
+                })
+              }
               onImageIndexChange={(index) => setImageIndex(index)}
               delayLongPress={500}
             />

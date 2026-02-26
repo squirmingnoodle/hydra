@@ -1,4 +1,3 @@
-import KeyStore from "./KeyStore";
 import URL from "./URL";
 import {
   DEFAULT_COMMENT_SORT_KEY,
@@ -12,6 +11,10 @@ import {
   SORT_HOME_PAGE,
 } from "../constants/SettingsKeys";
 import { USER_AGENT } from "../api/UserAgent";
+import {
+  getAccountScopedBoolean,
+  getAccountScopedString,
+} from "./accountScopedSettings";
 
 export enum PageType {
   HOME,
@@ -300,32 +303,32 @@ export default class RedditURL extends URL {
     const [sort, _sortTime] = this.getSort();
     if (sort) return this;
 
-    const shouldApplySortToHomePage = KeyStore.getBoolean(SORT_HOME_PAGE);
+    const shouldApplySortToHomePage = getAccountScopedBoolean(SORT_HOME_PAGE);
 
     if (pageType === PageType.HOME && !shouldApplySortToHomePage) return this;
 
     if ([PageType.SUBREDDIT, PageType.HOME].includes(pageType)) {
       const subreddit = this.getSubreddit();
-      const subredditSpecificSort = KeyStore.getBoolean(
+      const subredditSpecificSort = getAccountScopedBoolean(
         REMEMBER_POST_SUBREDDIT_SORT_KEY,
       )
-        ? KeyStore.getString(makePostSubredditSortKey(subreddit))
+        ? getAccountScopedString(makePostSubredditSortKey(subreddit))
         : null;
       const preferredSort =
         subredditSpecificSort ??
-        KeyStore.getString(DEFAULT_POST_SORT_KEY) ??
+        getAccountScopedString(DEFAULT_POST_SORT_KEY) ??
         "default";
       if (preferredSort !== "default") {
         let time = undefined;
         if (preferredSort === "top") {
-          const subredditSpecificTime = KeyStore.getBoolean(
+          const subredditSpecificTime = getAccountScopedBoolean(
             REMEMBER_POST_SUBREDDIT_SORT_KEY,
           )
-            ? KeyStore.getString(makePostSubredditSortTopKey(subreddit))
+            ? getAccountScopedString(makePostSubredditSortTopKey(subreddit))
             : null;
           time =
             subredditSpecificTime ??
-            KeyStore.getString(DEFAULT_POST_SORT_TOP_KEY) ??
+            getAccountScopedString(DEFAULT_POST_SORT_TOP_KEY) ??
             "all";
         }
         this.changeSort(preferredSort, time);
@@ -334,14 +337,14 @@ export default class RedditURL extends URL {
 
     if (pageType === PageType.POST_DETAILS) {
       const subreddit = this.getSubreddit();
-      const subredditSpecificSort = KeyStore.getBoolean(
+      const subredditSpecificSort = getAccountScopedBoolean(
         REMEMBER_COMMENT_SUBREDDIT_SORT_KEY,
       )
-        ? KeyStore.getString(makeCommentSubredditSortKey(subreddit))
+        ? getAccountScopedString(makeCommentSubredditSortKey(subreddit))
         : null;
       const preferredSort =
         subredditSpecificSort ??
-        KeyStore.getString(DEFAULT_COMMENT_SORT_KEY) ??
+        getAccountScopedString(DEFAULT_COMMENT_SORT_KEY) ??
         "default";
       if (preferredSort !== "default") {
         this.changeSort(preferredSort);

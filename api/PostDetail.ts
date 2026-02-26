@@ -8,7 +8,7 @@ import { UserContent } from "./User";
 import RedditURL from "../utils/RedditURL";
 import Time from "../utils/Time";
 import { modifyStat, Stat } from "../db/functions/Stats";
-import KeyStore from "../utils/KeyStore";
+import { getAccountScopedBoolean } from "../utils/accountScopedSettings";
 
 export type Comment = {
   id: string;
@@ -59,7 +59,7 @@ export function formatComments(
   renderCount = 0,
 
   // This is weird, but it's so we don't have to repeatedly refetch from the keystore every time
-  collapseAutoModerator = KeyStore.getBoolean("collapseAutoModerator") ?? true,
+  collapseAutoModerator = getAccountScopedBoolean("collapseAutoModerator") ?? true,
 ): Comment[] {
   const formattedComments: Comment[] = [];
   for (let i = 0; i < comments.length; i++) {

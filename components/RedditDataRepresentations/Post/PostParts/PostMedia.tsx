@@ -65,6 +65,7 @@ export default function PostMedia({
             videoDownloadURL={post.videoDownloadURL}
             thumbnail={post.imageThumbnail}
             aspectRatio={post.mediaAspectRatio}
+            subreddit={post.subreddit}
           />
         </View>
       )}
@@ -74,6 +75,7 @@ export default function PostMedia({
             images={post.images}
             thumbnail={post.imageThumbnail}
             aspectRatio={post.mediaAspectRatio}
+            subreddit={post.subreddit}
           />
         </View>
       )}
