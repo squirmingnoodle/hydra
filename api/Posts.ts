@@ -259,12 +259,8 @@ export async function getPosts(
   redditURL.changeQueryParam("after", options?.after ?? "");
   redditURL.jsonify();
   const response = await api(redditURL.toString());
-  if (response.interstitial_warning_message) {
-    return handleGatedSubreddit(
-      response.interstitial_warning_message,
-      url,
-      options,
-    );
+  if (response.quarantine_message) {
+    return handleGatedSubreddit(response.quarantine_message, url, options);
   }
   if (response.reason === "banned") {
     throw new BannedSubredditError();
@@ -298,10 +294,9 @@ function handleGatedSubreddit(
         text: "Proceed",
         onPress: async () => {
           await api(
-            `https://old.reddit.com/gated`,
+            `https://old.reddit.com/quarantine`,
             {
               method: "POST",
-              redirect: "manual",
             },
             {
               requireAuth: true,

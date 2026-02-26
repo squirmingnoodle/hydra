@@ -42,7 +42,6 @@ export const updateInfo = {
       description:
         'Videos can now be downloaded from redgif, imgur, and gfycat. Long press a video to open the share menu and select "Save Video".',
     },
-
     {
       title: "Disable Tap to Collapse",
       description:
@@ -103,8 +102,9 @@ export const updateInfo = {
         "Fixed a database query memory leak and optimized query performance.",
     },
     {
-      description: "if a post had a link to a website that returned invalid or malformed headers, Hydra would fail to render the posts.",
-    }
+      description:
+        "If a post had a link to a website that returned invalid or malformed headers, Hydra would fail to render the posts.",
+    },
   ] as { description: string }[],
 };
 

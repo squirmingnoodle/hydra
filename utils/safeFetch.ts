@@ -12,6 +12,7 @@ export type SafeFetchOptions = {
   headers?: Record<string, string>;
   body?: string | FormData | null;
   timeout?: number;
+  cache?: RequestCache;
 };
 
 export type SafeFetchResponse = {
@@ -25,6 +26,14 @@ export type SafeFetchResponse = {
   blob: () => Promise<Blob>;
 };
 
+const CACHE_MODE_HEADERS: Partial<
+  Record<RequestCache, Record<string, string>>
+> = {
+  "no-store": { Pragma: "no-cache", "Cache-Control": "no-cache" },
+  reload: { Pragma: "no-cache", "Cache-Control": "no-cache" },
+  "no-cache": { "Cache-Control": "max-age=0" },
+};
+
 export default function safeFetch(
   url: string,
   options: SafeFetchOptions = {},
@@ -35,15 +44,26 @@ export default function safeFetch(
 
     xhr.open(method, url, true);
 
-    if (options.headers) {
-      Object.entries(options.headers).forEach(([key, value]) => {
-        xhr.setRequestHeader(key, value);
+    const headers = options.headers ?? {};
+    Object.entries(headers).forEach(([key, value]) => {
+      xhr.setRequestHeader(key, value);
+    });
+
+    if (options.cache) {
+      const has = (name: string) =>
+        Object.keys(headers).some(
+          (k) => k.toLowerCase() === name.toLowerCase(),
+        );
+
+      const cacheHeaders = CACHE_MODE_HEADERS[options.cache];
+      if (!cacheHeaders) return;
+
+      Object.entries(cacheHeaders).forEach(([key, value]) => {
+        if (!has(key)) xhr.setRequestHeader(key, value);
       });
     }
 
-    if (options.timeout) {
-      xhr.timeout = options.timeout;
-    }
+    xhr.timeout = options.timeout ?? 10_000;
 
     xhr.onload = () => {
       try {
