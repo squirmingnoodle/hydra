@@ -1,0 +1,37 @@
+name: Sync upstream
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "17 10 * * *"
+
+permissions:
+  contents: write
+
+jobs:
+  sync-main:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout default branch
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.repository.default_branch }}
+
+      - name: Sync with upstream
+        run: |
+          set -euo pipefail
+          BRANCH="${{ github.event.repository.default_branch }}"
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git remote add upstream https://github.com/dmilin1/hydra.git
+          git fetch upstream "$BRANCH"
+
+          git checkout "$BRANCH"
+          if ! git merge --ff-only "upstream/$BRANCH"; then
+            git merge --no-edit "upstream/$BRANCH"
+          fi
+
+          git push origin "$BRANCH"
