@@ -76,6 +76,8 @@ export default function Appearance() {
     toggleShowUsername,
     hideTabsOnScroll,
     toggleHideTabsOnScroll,
+    liquidGlassEnabled,
+    toggleLiquidGlassEnabled,
   } = useContext(TabSettingsContext);
 
   const {
@@ -524,6 +526,24 @@ export default function Appearance() {
             ),
             text: "Hide on infinite scroll",
             onPress: () => toggleHideTabsOnScroll(),
+          },
+          {
+            key: "liquidGlassEnabled",
+            icon: (
+              <Ionicons name="water-outline" size={24} color={theme.text} />
+            ),
+            rightIcon: (
+              <Switch
+                trackColor={{
+                  false: theme.iconSecondary,
+                  true: theme.iconPrimary,
+                }}
+                value={liquidGlassEnabled}
+                onValueChange={() => toggleLiquidGlassEnabled()}
+              />
+            ),
+            text: "Use liquid glass",
+            onPress: () => toggleLiquidGlassEnabled(),
           },
         ]}
       />

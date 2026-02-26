@@ -1,6 +1,5 @@
 import { Feather } from "@expo/vector-icons";
 import React, { useContext } from "react";
-import { useMMKVBoolean, useMMKVString } from "react-native-mmkv";
 
 import List from "../../../components/UI/List";
 import { ThemeContext } from "../../../contexts/SettingsContexts/ThemeContext";
@@ -14,17 +13,21 @@ import {
 } from "../../../utils/openExternalLink";
 import { useSettingsPicker } from "../../../utils/useSettingsPicker";
 import { Switch } from "react-native";
+import {
+  useAccountScopedMMKVBoolean,
+  useAccountScopedMMKVString,
+} from "../../../utils/accountScopedSettings";
 
 export default function ExternalLinks() {
   const { theme } = useContext(ThemeContext);
 
-  const [storedBrowser, setBrowser] = useMMKVString(EXTERNAL_LINK_BROWSER_KEY);
+  const [storedBrowser, setBrowser] =
+    useAccountScopedMMKVString(EXTERNAL_LINK_BROWSER_KEY);
   const selectedBrowser =
     (storedBrowser as BrowserOption) ?? EXTERNAL_LINK_BROWSER_DEFAULT;
 
-  const [storedOpenInReaderMode, setOpenInReaderMode] = useMMKVBoolean(
-    OPEN_IN_READER_MODE_KEY,
-  );
+  const [storedOpenInReaderMode, setOpenInReaderMode] =
+    useAccountScopedMMKVBoolean(OPEN_IN_READER_MODE_KEY);
   const openInReaderMode =
     storedOpenInReaderMode ?? OPEN_IN_READER_MODE_DEFAULT;
 

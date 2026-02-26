@@ -3,7 +3,7 @@ import NetInfo, {
   NetInfoStateType,
 } from "@react-native-community/netinfo";
 import { createContext, useEffect, useState } from "react";
-import { useMMKVObject } from "react-native-mmkv";
+import { useAccountScopedMMKVObject } from "../../utils/accountScopedSettings";
 
 export type DataMode = "normal" | "lowData";
 
@@ -36,7 +36,9 @@ export function DataModeProvider({ children }: React.PropsWithChildren) {
   );
 
   const [storedDataModeSettings, setDataModeSettings] =
-    useMMKVObject<DataModeContextType["dataModeSettings"]>("dataMode");
+    useAccountScopedMMKVObject<DataModeContextType["dataModeSettings"]>(
+      "dataMode",
+    );
 
   const dataModeSettings =
     storedDataModeSettings ?? initialDataModeContext.dataModeSettings;

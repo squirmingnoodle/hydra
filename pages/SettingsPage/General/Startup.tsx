@@ -1,7 +1,6 @@
 import { MaterialIcons } from "@expo/vector-icons";
 import React, { useContext } from "react";
 import { StyleSheet, Text } from "react-native";
-import { useMMKVString } from "react-native-mmkv";
 
 import List from "../../../components/UI/List";
 import SectionTitle from "../../../components/UI/SectionTitle";
@@ -15,18 +14,20 @@ import {
 import { ThemeContext } from "../../../contexts/SettingsContexts/ThemeContext";
 import RedditURL from "../../../utils/RedditURL";
 import { useSettingsPicker } from "../../../utils/useSettingsPicker";
+import { useAccountScopedMMKVString } from "../../../utils/accountScopedSettings";
 
 const INITIAL_TAB_OPTIONS = Object.keys(TabIndices);
 
 export default function General() {
   const { theme } = useContext(ThemeContext);
 
-  const [storedInitialTab, setInitialTab] = useMMKVString(
+  const [storedInitialTab, setInitialTab] = useAccountScopedMMKVString(
     INITIAL_TAB_STORAGE_KEY,
   );
   const initialTab = storedInitialTab ?? "Posts";
 
-  const [startupURL, setStartupURL] = useMMKVString(STARTUP_URL_STORAGE_KEY);
+  const [startupURL, setStartupURL] =
+    useAccountScopedMMKVString(STARTUP_URL_STORAGE_KEY);
   const initialStartupURL = startupURL ?? STARTUP_URL_DEFAULT;
 
   let startupURLIsValid = true;

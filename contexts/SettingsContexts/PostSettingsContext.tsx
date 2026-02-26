@@ -1,6 +1,9 @@
 import { createContext } from "react";
-import { useMMKVBoolean, useMMKVNumber } from "react-native-mmkv";
 import { deviceSupportsSplitView } from "../../utils/useSplitViewSupport";
+import {
+  useAccountScopedMMKVBoolean,
+  useAccountScopedMMKVNumber,
+} from "../../utils/accountScopedSettings";
 
 const initialValues = {
   postCompactMode: deviceSupportsSplitView,
@@ -39,61 +42,61 @@ export const PostSettingsContext = createContext(initialPostSettingsContext);
 
 export function PostSettingsProvider({ children }: React.PropsWithChildren) {
   const [storedPostCompactMode, setPostCompactMode] =
-    useMMKVBoolean("postCompactMode");
+    useAccountScopedMMKVBoolean("postCompactMode");
   const postCompactMode =
     storedPostCompactMode ?? initialValues.postCompactMode;
 
   const [storedSubredditAtTop, setSubredditAtTop] =
-    useMMKVBoolean("subredditAtTop");
+    useAccountScopedMMKVBoolean("subredditAtTop");
   const subredditAtTop = storedSubredditAtTop ?? initialValues.subredditAtTop;
 
   const [storedShowSubredditIcon, setShowSubredditIcon] =
-    useMMKVBoolean("showSubredditIcon");
+    useAccountScopedMMKVBoolean("showSubredditIcon");
   const showSubredditIcon =
     storedShowSubredditIcon ?? initialValues.showSubredditIcon;
 
   const [storedPostTitleLength, setPostTitleLength] =
-    useMMKVNumber("postTitleLength");
+    useAccountScopedMMKVNumber("postTitleLength");
   const postTitleLength =
     storedPostTitleLength ?? initialValues.postTitleLength;
 
   const [storedPostTextLength, setPostTextLength] =
-    useMMKVNumber("postTextLength");
+    useAccountScopedMMKVNumber("postTextLength");
   const postTextLength = storedPostTextLength ?? initialValues.postTextLength;
 
-  const [storedLinkDescriptionLength, setLinkDescriptionLength] = useMMKVNumber(
-    "linkDescriptionLength",
-  );
+  const [storedLinkDescriptionLength, setLinkDescriptionLength] =
+    useAccountScopedMMKVNumber("linkDescriptionLength");
   const linkDescriptionLength =
     storedLinkDescriptionLength ?? initialValues.linkDescriptionLength;
 
   const [storedShowPostFlair, setShowPostFlair] =
-    useMMKVBoolean("showPostFlair");
+    useAccountScopedMMKVBoolean("showPostFlair");
   const showPostFlair = storedShowPostFlair ?? initialValues.showPostFlair;
 
-  const [storedBlurSpoilers, setBlurSpoilers] = useMMKVBoolean("blurSpoilers");
+  const [storedBlurSpoilers, setBlurSpoilers] =
+    useAccountScopedMMKVBoolean("blurSpoilers");
   const blurSpoilers = storedBlurSpoilers ?? initialValues.blurSpoilers;
 
-  const [storedBlurNSFW, setBlurNSFW] = useMMKVBoolean("blurNSFW");
+  const [storedBlurNSFW, setBlurNSFW] =
+    useAccountScopedMMKVBoolean("blurNSFW");
   const blurNSFW = storedBlurNSFW ?? initialValues.blurNSFW;
 
   const [storedShowPostSummary, setShowPostSummary] =
-    useMMKVBoolean("showPostSummary");
+    useAccountScopedMMKVBoolean("showPostSummary");
   const showPostSummary =
     storedShowPostSummary ?? initialValues.showPostSummary;
 
   const [storedAutoPlayVideos, setAutoPlayVideos] =
-    useMMKVBoolean("autoPlayVideos");
+    useAccountScopedMMKVBoolean("autoPlayVideos");
   const autoPlayVideos = storedAutoPlayVideos ?? initialValues.autoPlayVideos;
 
-  const [storedliveTextInteraction, setliveTextInteraction] = useMMKVBoolean(
-    "liveTextInteraction",
-  );
+  const [storedliveTextInteraction, setliveTextInteraction] =
+    useAccountScopedMMKVBoolean("liveTextInteraction");
   const liveTextInteraction =
     storedliveTextInteraction ?? initialValues.liveTextInteraction;
 
   const [storedTapToCollapsePost, setTapToCollapsePost] =
-    useMMKVBoolean("tapToCollapsePost");
+    useAccountScopedMMKVBoolean("tapToCollapsePost");
   const tapToCollapsePost =
     storedTapToCollapsePost ?? initialValues.tapToCollapsePost;
 

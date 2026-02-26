@@ -8,8 +8,14 @@ import {
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { SplashScreen, useNavigation } from "expo-router";
 import React, { useContext, useEffect, useState } from "react";
+import { BlurView } from "expo-blur";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { NavigationContainerRef, StackActions } from "@react-navigation/native";
+import {
+  NavigationContainerRef,
+  StackActions,
+  TabActions,
+} from "@react-navigation/native";
+import { Platform } from "react-native";
 
 import LoadingSplash from "../../components/UI/LoadingSplash";
 import { AccountContext } from "../../contexts/AccountContext";
@@ -25,6 +31,7 @@ import { expoDb } from "../../db";
 import { useDrizzleStudio } from "expo-drizzle-studio-plugin";
 import QuickSubredditSearch from "../../components/Modals/QuickSubredditSearch";
 import { oneTimeAlert } from "../../utils/oneTimeAlert";
+import useContextMenu from "../../utils/useContextMenu";
 
 export type TabParamsList = {
   Posts: undefined;
@@ -47,14 +54,24 @@ export default function Tabs() {
   }
 
   const navigation = useNavigation<NavigationContainerRef<AppNavigationProp>>();
+  const openContextMenu = useContextMenu();
 
   const { theme } = useContext(ThemeContext);
-  const { loginInitialized, currentUser } = useContext(AccountContext);
+  const { loginInitialized, currentUser, accounts, logIn, logOut } =
+    useContext(AccountContext);
   const { inboxCount } = useContext(InboxContext);
-  const { showUsername } = useContext(TabSettingsContext);
+  const { showUsername, liquidGlassEnabled } = useContext(TabSettingsContext);
   const { tabBarTranslateY } = useContext(TabScrollContext);
 
   const [showSubredditSearch, setShowSubredditSearch] = useState(false);
+  const [isSwitchingAccount, setIsSwitchingAccount] = useState(false);
+
+  const showLiquidGlassTabBar = Platform.OS === "ios" && liquidGlassEnabled;
+  const tabBarGlassTint = theme.systemModeStyle === "dark" ? "dark" : "light";
+  const tabBarGlassBackground =
+    theme.systemModeStyle === "dark"
+      ? "rgba(18, 18, 20, 0.72)"
+      : "rgba(250, 250, 252, 0.78)";
 
   useHandleIncomingURLs();
 
@@ -80,7 +97,9 @@ export default function Tabs() {
               position: "absolute",
               paddingHorizontal: 10,
               bottom: -TAB_BAR_REMOVED_PADDING_BOTTOM,
-              backgroundColor: theme.background,
+              backgroundColor: showLiquidGlassTabBar
+                ? tabBarGlassBackground
+                : theme.background,
               borderTopWidth: 0,
               transform: [
                 {
@@ -95,6 +114,21 @@ export default function Tabs() {
                 outputRange: [1, 0],
               }),
             },
+            tabBarBackground: showLiquidGlassTabBar
+              ? () => (
+                  <BlurView
+                    tint={tabBarGlassTint}
+                    intensity={45}
+                    style={{
+                      position: "absolute",
+                      top: 0,
+                      left: 0,
+                      right: 0,
+                      bottom: 0,
+                    }}
+                  />
+                )
+              : undefined,
             // This is broken in the latest version of react-navigation:
             // https://github.com/react-navigation/react-navigation/issues/12755
             // animation: 'fade',
@@ -120,7 +154,53 @@ export default function Tabs() {
             tabLongPress: (e) => {
               if (e.target?.startsWith("Search")) {
                 setShowSubredditSearch(true);
+                return;
               }
+
+              if (!e.target?.startsWith("Account")) return;
+              if (isSwitchingAccount) return;
+
+              const switchableAccounts = accounts.filter(
+                (username) =>
+                  username.toLowerCase() !==
+                  (currentUser?.userName.toLowerCase() ?? ""),
+              );
+              const accountOptions = [...switchableAccounts];
+
+              if (currentUser) {
+                accountOptions.push("Logged Out");
+              }
+              accountOptions.push("Manage Accounts");
+
+              if (!accountOptions.length) return;
+
+              (async () => {
+                const selection = await openContextMenu({
+                  options: accountOptions,
+                });
+                if (!selection) return;
+
+                if (selection === "Manage Accounts") {
+                  navigation.dispatch(TabActions.jumpTo("Account"));
+                  navigation.dispatch(
+                    StackActions.push("Accounts", {
+                      url: "hydra://accounts",
+                    }),
+                  );
+                  return;
+                }
+
+                setIsSwitchingAccount(true);
+                try {
+                  if (selection === "Logged Out") {
+                    await logOut();
+                  } else {
+                    await logIn(selection);
+                  }
+                } finally {
+                  setIsSwitchingAccount(false);
+                }
+              })();
             },
           })}
         >

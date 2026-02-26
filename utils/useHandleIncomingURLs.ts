@@ -3,7 +3,6 @@ import * as Linking from "expo-linking";
 import { useEffect, useRef } from "react";
 import { Alert, AppState } from "react-native";
 
-import KeyStore from "./KeyStore";
 import RedditURL, { PageType } from "./RedditURL";
 import { PageTypeToNavName } from "./navigation";
 import {
@@ -17,6 +16,7 @@ import {
   TabActions,
   useNavigation,
 } from "@react-navigation/native";
+import { getAccountScopedBoolean } from "./accountScopedSettings";
 
 export default function useHandleIncomingURLs() {
   const navigation = useNavigation<NavigationContainerRef<AppNavigationProp>>();
@@ -45,7 +45,7 @@ export default function useHandleIncomingURLs() {
 
   const handleClipboardURL = async () => {
     const canReadClipboard =
-      KeyStore.getBoolean(READ_CLIPBOARD_KEY) ?? READ_CLIPBOARD_DEFAULT;
+      getAccountScopedBoolean(READ_CLIPBOARD_KEY) ?? READ_CLIPBOARD_DEFAULT;
     if (!canReadClipboard) return;
     if (isAsking.current) return;
     isAsking.current = true;

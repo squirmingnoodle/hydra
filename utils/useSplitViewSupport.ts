@@ -1,6 +1,6 @@
 import { Dimensions } from "react-native";
 import { useEffect, useState } from "react";
-import { useMMKVBoolean } from "react-native-mmkv";
+import { useAccountScopedMMKVBoolean } from "./accountScopedSettings";
 
 const MIN_WIDTH = 768;
 export const deviceSupportsSplitView =
@@ -8,7 +8,7 @@ export const deviceSupportsSplitView =
 
 export function useSplitViewSupport() {
   const [storedSplitViewEnabled, setSplitViewEnabled] =
-    useMMKVBoolean("splitViewEnabled");
+    useAccountScopedMMKVBoolean("splitViewEnabled");
   const [windowSupportsSplitView, setWindowSupportsSplitView] = useState(
     Dimensions.get("window").width >= MIN_WIDTH,
   );

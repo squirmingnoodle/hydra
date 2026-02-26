@@ -1,7 +1,10 @@
 import * as WebBrowser from "expo-web-browser";
 import * as Linking from "expo-linking";
-import KeyStore from "./KeyStore";
 import { Alert } from "react-native";
+import {
+  getAccountScopedBoolean,
+  getAccountScopedString,
+} from "./accountScopedSettings";
 
 export type BrowserOption = keyof typeof BROWSER_CONFIGS;
 
@@ -76,7 +79,7 @@ export async function openExternalLink(
   url: string,
   browserParams?: WebBrowser.WebBrowserOpenOptions,
 ) {
-  const browserSetting = (KeyStore.getString(EXTERNAL_LINK_BROWSER_KEY) ??
+  const browserSetting = (getAccountScopedString(EXTERNAL_LINK_BROWSER_KEY) ??
     EXTERNAL_LINK_BROWSER_DEFAULT) as BrowserOption;
 
   const browserConfig = BROWSER_CONFIGS[browserSetting];
@@ -86,7 +89,7 @@ export async function openExternalLink(
       presentationStyle: WebBrowser.WebBrowserPresentationStyle.FULL_SCREEN,
       dismissButtonStyle: "close",
       readerMode:
-        KeyStore.getBoolean(OPEN_IN_READER_MODE_KEY) ??
+        getAccountScopedBoolean(OPEN_IN_READER_MODE_KEY) ??
         OPEN_IN_READER_MODE_DEFAULT,
       ...browserParams,
     });

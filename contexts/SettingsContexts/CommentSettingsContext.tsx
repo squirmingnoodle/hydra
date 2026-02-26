@@ -1,5 +1,5 @@
 import { createContext } from "react";
-import { useMMKVBoolean } from "react-native-mmkv";
+import { useAccountScopedMMKVBoolean } from "../../utils/accountScopedSettings";
 
 const initialValues = {
   voteIndicator: false,
@@ -23,18 +23,19 @@ export const CommentSettingsContext = createContext(
 );
 
 export function CommentSettingsProvider({ children }: React.PropsWithChildren) {
-  const [voteIndicator, setVoteIndicator] = useMMKVBoolean("voteIndicator");
+  const [voteIndicator, setVoteIndicator] =
+    useAccountScopedMMKVBoolean("voteIndicator");
   const [storedCollapseAutoModerator, setCollapseAutoModerator] =
-    useMMKVBoolean("collapseAutoModerator");
+    useAccountScopedMMKVBoolean("collapseAutoModerator");
   const collapseAutoModerator =
     storedCollapseAutoModerator ?? initialValues.collapseAutoModerator;
 
   const [storedCommentFlairs, setCommentFlairs] =
-    useMMKVBoolean("commentFlairs");
+    useAccountScopedMMKVBoolean("commentFlairs");
   const commentFlairs = storedCommentFlairs ?? initialValues.commentFlairs;
 
   const [storedShowCommentSummary, setShowCommentSummary] =
-    useMMKVBoolean("showCommentSummary");
+    useAccountScopedMMKVBoolean("showCommentSummary");
   const showCommentSummary =
     storedShowCommentSummary ?? initialValues.showCommentSummary;
 
@@ -45,9 +46,8 @@ export function CommentSettingsProvider({ children }: React.PropsWithChildren) {
     );
   };
 
-  const [storedTapToCollapseComment, setTapToCollapseComment] = useMMKVBoolean(
-    "tapToCollapseComment",
-  );
+  const [storedTapToCollapseComment, setTapToCollapseComment] =
+    useAccountScopedMMKVBoolean("tapToCollapseComment");
   const tapToCollapseComment =
     storedTapToCollapseComment ?? initialValues.tapToCollapseComment;
 

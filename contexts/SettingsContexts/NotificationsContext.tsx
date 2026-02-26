@@ -1,11 +1,11 @@
 import * as Notifications from "expo-notifications";
 import { createContext, useContext, useEffect } from "react";
-import { useMMKVBoolean } from "react-native-mmkv";
 
 import { registerNotifications } from "../../api/Notifications";
 import RedditCookies from "../../utils/RedditCookies";
 import { AccountContext } from "../AccountContext";
 import { SubscriptionsContext } from "../SubscriptionsContext";
+import { useAccountScopedMMKVBoolean } from "../../utils/accountScopedSettings";
 
 const initialValues = {
   notificationsEnabled: true,
@@ -19,9 +19,8 @@ const initialNotificationsContext = {
 export const NotificationsContext = createContext(initialNotificationsContext);
 
 export function NotificationsProvider({ children }: React.PropsWithChildren) {
-  const [storedNotificationsEnabled, setNotificationsEnabled] = useMMKVBoolean(
-    "notificationsEnabled",
-  );
+  const [storedNotificationsEnabled, setNotificationsEnabled] =
+    useAccountScopedMMKVBoolean("notificationsEnabled");
   const notificationsEnabled =
     storedNotificationsEnabled ?? initialValues.notificationsEnabled;
 

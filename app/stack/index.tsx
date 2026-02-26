@@ -4,7 +4,7 @@ import {
   NativeStackScreenProps,
 } from "@react-navigation/native-stack";
 import React, { Fragment, useContext, useRef } from "react";
-import { View } from "react-native";
+import { Platform, View } from "react-native";
 
 import AccountsScreen from "./AccountsScreen";
 import ErrorScreen from "./ErrorScreen";
@@ -28,6 +28,7 @@ import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
 import SubredditSearchScreen from "./SubredditSearchScreen";
 import { TAB_BAR_REMOVED_PADDING_BOTTOM } from "../../constants/TabBarPadding";
 import GalleryScreen from "./GalleryScreen";
+import { TabSettingsContext } from "../../contexts/SettingsContexts/TabSettingsContext";
 
 export type StackParamsList = {
   Subreddits: undefined;
@@ -118,8 +119,14 @@ export default function Stack() {
   const StackNavigator = createNativeStackNavigator<StackParamsList>();
   const { theme } = useContext(ThemeContext);
   const { swipeAnywhereToNavigate } = useContext(GesturesContext);
+  const { liquidGlassEnabled } = useContext(TabSettingsContext);
 
   const tabBarHeight = useBottomTabBarHeight();
+  const showLiquidGlassHeader = Platform.OS === "ios" && liquidGlassEnabled;
+  const liquidGlassHeaderBackground =
+    theme.systemModeStyle === "dark"
+      ? "rgba(20, 20, 24, 0.84)"
+      : "rgba(248, 248, 252, 0.88)";
 
   const futureRoutes = useRef<
     NavigationRoute<StackParamsList, keyof StackParamsList>[]
@@ -156,7 +163,9 @@ export default function Stack() {
           headerTintColor: theme.iconOrTextButton.toString(),
           navigationBarColor: theme.background.toString(),
           headerStyle: {
-            backgroundColor: theme.background.toString(),
+            backgroundColor: showLiquidGlassHeader
+              ? liquidGlassHeaderBackground
+              : theme.background.toString(),
           },
           headerTitleStyle: {
             color: theme.text.toString(),

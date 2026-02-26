@@ -1,6 +1,5 @@
 import { setStatusBarStyle } from "expo-status-bar";
 import { createContext, useContext, useEffect, useRef, useState } from "react";
-import { useMMKVBoolean, useMMKVString } from "react-native-mmkv";
 
 import Themes, {
   DEFAULT_THEME,
@@ -10,6 +9,10 @@ import Themes, {
 import { SubscriptionsContext } from "../SubscriptionsContext";
 import { getCustomTheme } from "../../db/functions/CustomThemes";
 import { Appearance, useColorScheme } from "react-native";
+import {
+  useAccountScopedMMKVBoolean,
+  useAccountScopedMMKVString,
+} from "../../utils/accountScopedSettings";
 
 const initialThemeContext = {
   systemColorScheme: "light" as "light" | "dark",
@@ -33,15 +36,17 @@ export function ThemeProvider({ children }: React.PropsWithChildren) {
 
   const systemColorScheme = useColorScheme() ?? "light";
 
-  const [storedCurrentTheme, setStoredTheme] = useMMKVString("theme");
-  const [storedDarkTheme, setStoredDarkTheme] = useMMKVString("darkTheme");
+  const [storedCurrentTheme, setStoredTheme] =
+    useAccountScopedMMKVString("theme");
+  const [storedDarkTheme, setStoredDarkTheme] =
+    useAccountScopedMMKVString("darkTheme");
 
   const [customThemeData, setCustomThemeData] = useState(
     initialThemeContext.customThemeData,
   );
 
   const [storedUseDifferentDarkTheme, setUseDifferentDarkTheme] =
-    useMMKVBoolean("useDifferentDarkTheme");
+    useAccountScopedMMKVBoolean("useDifferentDarkTheme");
   const useDifferentDarkTheme =
     storedUseDifferentDarkTheme ?? initialThemeContext.useDifferentDarkTheme;
 
