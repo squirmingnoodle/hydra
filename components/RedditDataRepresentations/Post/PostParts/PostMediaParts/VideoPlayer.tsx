@@ -97,7 +97,7 @@ function VideoPlayer({
 
   const videoRatio = aspectRatio ?? 1;
   const heightIfFullSize = width / videoRatio;
-  const videoHeight = Math.min(height * 0.6, heightIfFullSize);
+  const videoHeight = Math.min(height * 0.85, heightIfFullSize);
 
   const video = useRef<VideoView>(null);
   const progress = useRef(new Animated.Value(0)).current;
