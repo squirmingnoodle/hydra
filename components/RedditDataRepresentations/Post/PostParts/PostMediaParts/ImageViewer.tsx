@@ -38,7 +38,7 @@ export default function ImageViewer({
   const isGif = new URL(images[0]).getRelativePath().endsWith(".gif");
 
   let displayImgs = images.slice(0, 2);
-  if ((loadLowData || isGif) && thumbnail) {
+  if (loadLowData && thumbnail) {
     displayImgs = [thumbnail];
   }
 
