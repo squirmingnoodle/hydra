@@ -26,7 +26,14 @@ import {
 } from "../constants/Downloads";
 import { ModalContext } from "../contexts/ModalContext";
 import { ThemeContext } from "../contexts/SettingsContexts/ThemeContext";
-import { useAccountScopedMMKVString } from "./accountScopedSettings";
+import {
+  getActiveSettingsScope,
+  useAccountScopedMMKVString,
+} from "./accountScopedSettings";
+import {
+  getDownloadSettingsBackup,
+  setDownloadSettingsBackup,
+} from "./downloadSettingsBackup";
 
 type ShareMediaOptions = {
   subreddit?: string;
@@ -69,12 +76,11 @@ function normalizeFileName(fileName: string, type: "image" | "video") {
 export default function useMediaSharing() {
   const { setModal } = useContext(ModalContext);
   const { theme } = useContext(ThemeContext);
-  const [storedLongPressAction] = useAccountScopedMMKVString(
+  const [storedLongPressAction, setStoredLongPressAction] = useAccountScopedMMKVString(
     DOWNLOAD_LONG_PRESS_ACTION_KEY,
   );
-  const [storedDownloadDestination] = useAccountScopedMMKVString(
-    DOWNLOAD_DESTINATION_KEY,
-  );
+  const [storedDownloadDestination, setStoredDownloadDestination] =
+    useAccountScopedMMKVString(DOWNLOAD_DESTINATION_KEY);
   const [storedFilesRootUri, setStoredFilesRootUri] = useAccountScopedMMKVString(
     DOWNLOAD_FILES_ROOT_URI_KEY,
   );
@@ -95,6 +101,62 @@ export default function useMediaSharing() {
   const downloadDestination =
     (storedDownloadDestination as DownloadDestination | undefined) ??
     DOWNLOAD_DESTINATION_DEFAULT;
+  const settingsScope = getActiveSettingsScope();
+
+  const restoreBackupIfNeeded = async () => {
+    let resolvedLongPressAction = storedLongPressAction as
+      | MediaLongPressAction
+      | undefined;
+    let resolvedDownloadDestination = storedDownloadDestination as
+      | DownloadDestination
+      | undefined;
+    let resolvedFilesRootUri = latestFilesRootUriRef.current;
+
+    const shouldLookupBackup =
+      resolvedLongPressAction === undefined ||
+      resolvedDownloadDestination === undefined ||
+      ((resolvedDownloadDestination ?? DOWNLOAD_DESTINATION_DEFAULT) === "files" &&
+        !resolvedFilesRootUri);
+
+    if (shouldLookupBackup) {
+      const backup = await getDownloadSettingsBackup(settingsScope);
+      if (backup) {
+        if (resolvedLongPressAction === undefined && backup.longPressAction) {
+          resolvedLongPressAction = backup.longPressAction;
+          setStoredLongPressAction(backup.longPressAction);
+        }
+        if (
+          resolvedDownloadDestination === undefined &&
+          backup.downloadDestination
+        ) {
+          resolvedDownloadDestination = backup.downloadDestination;
+          setStoredDownloadDestination(backup.downloadDestination);
+        }
+        if (!resolvedFilesRootUri && backup.filesRootUri) {
+          resolvedFilesRootUri = backup.filesRootUri;
+          latestFilesRootUriRef.current = backup.filesRootUri;
+          setStoredFilesRootUri(backup.filesRootUri);
+        }
+      }
+    }
+
+    const finalLongPressAction =
+      resolvedLongPressAction ?? DOWNLOAD_LONG_PRESS_ACTION_DEFAULT;
+    const finalDownloadDestination =
+      resolvedDownloadDestination ?? DOWNLOAD_DESTINATION_DEFAULT;
+
+    void setDownloadSettingsBackup(settingsScope, {
+      longPressAction: finalLongPressAction,
+      downloadDestination: finalDownloadDestination,
+      filesRootUri: resolvedFilesRootUri,
+    });
+
+    return {
+      longPressAction: finalLongPressAction,
+      downloadDestination: finalDownloadDestination,
+      filesRootUri: resolvedFilesRootUri,
+    };
+  };
 
   const pickDirectoryWithFallback = async (
     initialUri?: string,
@@ -103,6 +165,11 @@ export default function useMediaSharing() {
       const pickedDirectory = await Directory.pickDirectoryAsync(uri);
       latestFilesRootUriRef.current = pickedDirectory.uri;
       setStoredFilesRootUri(pickedDirectory.uri);
+      void setDownloadSettingsBackup(settingsScope, {
+        longPressAction,
+        downloadDestination,
+        filesRootUri: pickedDirectory.uri,
+      });
       return pickedDirectory.uri;
     };
 
@@ -206,7 +273,8 @@ export default function useMediaSharing() {
   ) => {
     if (alreadyAsking.current) return;
     alreadyAsking.current = true;
-    const action = options.forceAction ?? longPressAction;
+    const resolvedSettings = await restoreBackupIfNeeded();
+    const action = options.forceAction ?? resolvedSettings.longPressAction;
     let file: File | null = null;
     try {
       setModal(
@@ -255,7 +323,7 @@ export default function useMediaSharing() {
         await Share.share({
           url: file.uri,
         });
-      } else if (downloadDestination === "photos") {
+      } else if (resolvedSettings.downloadDestination === "photos") {
         await saveToPhotos(file);
         setModal(null);
         Alert.alert(
@@ -263,7 +331,14 @@ export default function useMediaSharing() {
           `Saved ${type} to the ${HYDRA_PHOTOS_ALBUM_NAME} album.`,
         );
       } else {
-        const folder = await saveToFiles(file, type, fileName, options.subreddit);
+        const folder = await saveToFiles(
+          file,
+          type,
+          fileName,
+          options.subreddit,
+          true,
+          resolvedSettings.filesRootUri,
+        );
         setModal(null);
         Alert.alert("Saved to Files", `Saved ${type} to ${folder}.`);
       }

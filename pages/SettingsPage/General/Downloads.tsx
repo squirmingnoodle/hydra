@@ -1,6 +1,6 @@
 import { Feather, MaterialIcons } from "@expo/vector-icons";
 import { Directory } from "expo-file-system/next";
-import React, { useContext } from "react";
+import React, { useContext, useEffect } from "react";
 import { Alert, StyleSheet, Text } from "react-native";
 
 import {
@@ -15,7 +15,11 @@ import {
 import List from "../../../components/UI/List";
 import { ThemeContext } from "../../../contexts/SettingsContexts/ThemeContext";
 import { useSettingsPicker } from "../../../utils/useSettingsPicker";
-import { useAccountScopedMMKVString } from "../../../utils/accountScopedSettings";
+import {
+  getActiveSettingsScope,
+  useAccountScopedMMKVString,
+} from "../../../utils/accountScopedSettings";
+import { setDownloadSettingsBackup } from "../../../utils/downloadSettingsBackup";
 
 const LONG_PRESS_ACTION_OPTIONS: {
   label: string;
@@ -74,6 +78,29 @@ export default function Downloads() {
   const downloadDestination =
     (storedDownloadDestination as DownloadDestination | undefined) ??
     DOWNLOAD_DESTINATION_DEFAULT;
+  const settingsScope = getActiveSettingsScope();
+
+  useEffect(() => {
+    if (
+      storedLongPressAction === undefined &&
+      storedDownloadDestination === undefined &&
+      !filesRootUri
+    ) {
+      return;
+    }
+    void setDownloadSettingsBackup(settingsScope, {
+      longPressAction,
+      downloadDestination,
+      filesRootUri: filesRootUri ?? undefined,
+    });
+  }, [
+    downloadDestination,
+    filesRootUri,
+    longPressAction,
+    settingsScope,
+    storedDownloadDestination,
+    storedLongPressAction,
+  ]);
 
   const { openPicker: openLongPressActionPicker, rightIcon: longPressActionIcon } =
     useSettingsPicker({

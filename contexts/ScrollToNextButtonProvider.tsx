@@ -1,6 +1,7 @@
 import {
   Animated,
   GestureResponderEvent,
+  Platform,
   StyleSheet,
   View,
 } from "react-native";
@@ -15,9 +16,10 @@ import React, {
 import { ThemeContext } from "./SettingsContexts/ThemeContext";
 import { AntDesign } from "@expo/vector-icons";
 import { ScrollToNextButtonContext } from "./ScrollToNextButtonContext";
-import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
+import { BottomTabBarHeightContext } from "@react-navigation/bottom-tabs";
 import { TAB_BAR_REMOVED_PADDING_BOTTOM } from "../constants/TabBarPadding";
 import { useAccountScopedMMKVString } from "../utils/accountScopedSettings";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 const BUTTON_SIZE = 40;
 const EDGE_PADDING = 20;
@@ -26,8 +28,12 @@ export default function ScrollToNextButtonProvider({
   children,
 }: PropsWithChildren) {
   const { theme } = useContext(ThemeContext);
+  const insets = useSafeAreaInsets();
 
-  const tabBarHeight = useBottomTabBarHeight();
+  const tabBarHeightFromContext = useContext(BottomTabBarHeightContext);
+  const tabBarHeight =
+    tabBarHeightFromContext ??
+    (Platform.OS === "ios" ? insets.bottom + 49 : insets.bottom + 56);
 
   const scrollToNext = useRef<(() => void) | null>(null);
   const scrollToPrevious = useRef<(() => void) | null>(null);
