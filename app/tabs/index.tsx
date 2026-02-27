@@ -70,7 +70,7 @@ export default function Tabs() {
   const [isSwitchingAccount, setIsSwitchingAccount] = useState(false);
 
   const showLiquidGlassTabBar = Platform.OS === "ios" && liquidGlassEnabled;
-  const useNativeLiquidTabs = showLiquidGlassTabBar;
+  const useNativeLiquidTabs = false;
   const tabBarGlassTint =
     theme.systemModeStyle === "dark"
       ? "systemUltraThinMaterialDark"
@@ -225,7 +225,11 @@ export default function Tabs() {
                   );
                   return;
                 }
-
+              },
+              tabLongPress: (e) => {
+                const state = navigation.getState();
+                const stackItem = state.routes[state.index];
+                const isCurrentTab = stackItem.key === e.target;
                 if (e.target?.startsWith("Account") && isCurrentTab) {
                   openAccountSwitchMenu();
                 }
