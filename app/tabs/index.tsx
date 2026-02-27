@@ -6,6 +6,7 @@ import {
   Feather,
 } from "@expo/vector-icons";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
+import { createNativeBottomTabNavigator } from "@react-navigation/bottom-tabs/unstable";
 import { SplashScreen, useNavigation } from "expo-router";
 import React, { useContext, useEffect, useState } from "react";
 import { BlurView } from "expo-blur";
@@ -15,7 +16,7 @@ import {
   StackActions,
   TabActions,
 } from "@react-navigation/native";
-import { Platform, View } from "react-native";
+import { Platform, Pressable, View } from "react-native";
 
 import LoadingSplash from "../../components/UI/LoadingSplash";
 import { AccountContext } from "../../contexts/AccountContext";
@@ -42,6 +43,7 @@ export type TabParamsList = {
 };
 
 const Tab = createBottomTabNavigator();
+const NativeLiquidTab = createNativeBottomTabNavigator<TabParamsList>();
 
 const TAB_BAR_HEIGHT = 70;
 
@@ -68,14 +70,15 @@ export default function Tabs() {
   const [isSwitchingAccount, setIsSwitchingAccount] = useState(false);
 
   const showLiquidGlassTabBar = Platform.OS === "ios" && liquidGlassEnabled;
+  const useNativeLiquidTabs = showLiquidGlassTabBar;
   const tabBarGlassTint =
     theme.systemModeStyle === "dark"
-      ? "systemThinMaterialDark"
-      : "systemThinMaterialLight";
+      ? "systemUltraThinMaterialDark"
+      : "systemUltraThinMaterialLight";
   const tabBarGlassBackground =
     theme.systemModeStyle === "dark"
-      ? "rgba(8, 10, 14, 0.03)"
-      : "rgba(255, 255, 255, 0.02)";
+      ? "rgba(8, 10, 14, 0.015)"
+      : "rgba(255, 255, 255, 0.008)";
   const tabBarGlassBorderColor =
     theme.systemModeStyle === "dark"
       ? "rgba(255, 255, 255, 0.32)"
@@ -86,13 +89,25 @@ export default function Tabs() {
       : "rgba(255, 255, 255, 0.98)";
   const tabBarGlassBottomGlowColor =
     theme.systemModeStyle === "dark"
-      ? "rgba(255, 255, 255, 0.18)"
-      : "rgba(255, 255, 255, 0.56)";
+      ? "rgba(255, 255, 255, 0.14)"
+      : "rgba(255, 255, 255, 0.5)";
   const tabBarGlassShadowColor =
     theme.systemModeStyle === "dark"
-      ? "rgba(0, 0, 0, 0.42)"
-      : "rgba(20, 30, 50, 0.14)";
-  const tabBarGlassShadowOpacity = theme.systemModeStyle === "dark" ? 0.28 : 0.14;
+      ? "rgba(0, 0, 0, 0.38)"
+      : "rgba(20, 30, 50, 0.12)";
+  const tabBarGlassShadowOpacity = theme.systemModeStyle === "dark" ? 0.24 : 0.1;
+  const tabBarActivePillColor =
+    theme.systemModeStyle === "dark"
+      ? "rgba(255, 255, 255, 0.14)"
+      : "rgba(255, 255, 255, 0.42)";
+  const tabBarActivePillBorderColor =
+    theme.systemModeStyle === "dark"
+      ? "rgba(255, 255, 255, 0.22)"
+      : "rgba(255, 255, 255, 0.86)";
+  const tabBarActivePillHighlightColor =
+    theme.systemModeStyle === "dark"
+      ? "rgba(255, 255, 255, 0.18)"
+      : "rgba(255, 255, 255, 0.84)";
   const tabBarLeftInset = showLiquidGlassTabBar
     ? Math.max(14, insets.left + 10)
     : 0;
@@ -111,6 +126,51 @@ export default function Tabs() {
     }
   }, [loginInitialized]);
 
+  const openAccountSwitchMenu = () => {
+    if (isSwitchingAccount) return;
+
+    const switchableAccounts = accounts.filter(
+      (username) =>
+        username.toLowerCase() !== (currentUser?.userName.toLowerCase() ?? ""),
+    );
+    const accountOptions = [...switchableAccounts];
+
+    if (currentUser) {
+      accountOptions.push("Logged Out");
+    }
+    accountOptions.push("Manage Accounts");
+
+    if (!accountOptions.length) return;
+
+    (async () => {
+      const selection = await openContextMenu({
+        options: accountOptions,
+      });
+      if (!selection) return;
+
+      if (selection === "Manage Accounts") {
+        navigation.dispatch(TabActions.jumpTo("Account"));
+        navigation.dispatch(
+          StackActions.push("Accounts", {
+            url: "hydra://accounts",
+          }),
+        );
+        return;
+      }
+
+      setIsSwitchingAccount(true);
+      try {
+        if (selection === "Logged Out") {
+          await logOut();
+        } else {
+          await logIn(selection);
+        }
+      } finally {
+        setIsSwitchingAccount(false);
+      }
+    })();
+  };
+
   return (
     <SafeAreaView
       style={{ flex: 1, backgroundColor: theme.background }}
@@ -121,212 +181,348 @@ export default function Tabs() {
         onExit={() => setShowSubredditSearch(false)}
       />
       {loginInitialized ? (
-        <Tab.Navigator
-          screenOptions={{
-            tabBarStyle: {
-              position: "absolute",
-              paddingHorizontal: showLiquidGlassTabBar ? 12 : 10,
-              left: tabBarLeftInset,
-              right: tabBarRightInset,
-              bottom: tabBarFloatingBottom,
-              height: showLiquidGlassTabBar ? 70 : undefined,
-              paddingTop: showLiquidGlassTabBar ? 3 : 0,
-              paddingBottom: showLiquidGlassTabBar ? 3 : 0,
-              backgroundColor: showLiquidGlassTabBar
-                ? "transparent"
-                : theme.background,
-              borderWidth: showLiquidGlassTabBar ? 1 : 0,
-              borderColor: showLiquidGlassTabBar
-                ? tabBarGlassBorderColor
-                : "transparent",
-              borderTopWidth: 0,
-              borderRadius: showLiquidGlassTabBar ? 36 : 0,
-              overflow: showLiquidGlassTabBar ? "hidden" : "visible",
-              shadowColor: showLiquidGlassTabBar
-                ? tabBarGlassShadowColor
-                : "transparent",
-              shadowOpacity: showLiquidGlassTabBar ? tabBarGlassShadowOpacity : 0,
-                  shadowOffset: showLiquidGlassTabBar
-                    ? { width: 0, height: 11 }
-                    : { width: 0, height: 0 },
-                  shadowRadius: showLiquidGlassTabBar ? 20 : 0,
-                  elevation: showLiquidGlassTabBar ? 10 : 0,
-              transform: [
-                {
-                  translateY: tabBarTranslateY.interpolate({
-                    inputRange: [0, 1],
-                    outputRange: [0, TAB_BAR_HEIGHT],
-                  }),
-                },
-              ],
-              opacity: tabBarTranslateY.interpolate({
-                inputRange: [0, 1],
-                outputRange: [1, 0],
-              }),
-            },
-            tabBarItemStyle: showLiquidGlassTabBar
-                  ? {
-                      paddingVertical: 3,
-                    }
-                  : undefined,
-            tabBarIconStyle: showLiquidGlassTabBar
-                  ? {
-                      marginTop: 2,
-                      transform: [{ scale: 1.2 }],
-                    }
-                  : undefined,
-            tabBarLabelStyle: showLiquidGlassTabBar
-                  ? {
-                      fontSize: 12.5,
-                      marginTop: 0,
-                    }
-                  : undefined,
-            tabBarBackground: showLiquidGlassTabBar
-              ? () => (
-                  <View
-                    style={{
-                      position: "absolute",
-                      top: 0,
-                      left: 0,
-                      right: 0,
-                      bottom: 0,
-                    }}
-                  >
-                    <BlurView
-                      tint={tabBarGlassTint}
-                      intensity={88}
-                      style={{
-                        position: "absolute",
-                        top: 0,
-                        left: 0,
-                        right: 0,
-                        bottom: 0,
-                      }}
-                    />
-                    <View
-                      style={{
-                        position: "absolute",
-                        top: 0,
-                        left: 0,
-                        right: 0,
-                        bottom: 0,
-                        backgroundColor: tabBarGlassBackground,
-                      }}
-                    />
-                    <View
-                      style={{
-                        position: "absolute",
-                        top: 3,
-                        left: 10,
-                        right: 10,
-                        height: 22,
-                        borderRadius: 999,
-                        backgroundColor:
-                          theme.systemModeStyle === "dark"
-                            ? "rgba(255, 255, 255, 0.14)"
-                            : "rgba(255, 255, 255, 0.38)",
-                      }}
-                    />
-                    <View
-                      style={{
-                        position: "absolute",
-                        left: 16,
-                        right: 16,
-                        top: 0,
-                        height: 1,
-                        borderRadius: 999,
-                        backgroundColor: tabBarGlassHighlightColor,
-                      }}
-                    />
-                    <View
-                      style={{
-                        position: "absolute",
-                        left: 18,
-                        right: 18,
-                        bottom: 1,
-                        height: 1,
-                        borderRadius: 999,
-                        backgroundColor: tabBarGlassBottomGlowColor,
-                      }}
-                    />
-                  </View>
-                )
-              : undefined,
-            // This is broken in the latest version of react-navigation:
-            // https://github.com/react-navigation/react-navigation/issues/12755
-            // animation: 'fade',
-          }}
-          screenListeners={() => ({
-            tabPress: (e) => {
-              const state = navigation.getState();
-              const stackItem = state.routes[state.index];
-              const isCurrentTab = stackItem.key === e.target;
-              const stackHeight = stackItem.state?.index;
-              if (isCurrentTab && stackHeight && stackHeight > 0) {
-                navigation.dispatch(StackActions.pop());
-                e.preventDefault();
-              }
-              if (e.target?.startsWith("Search")) {
-                oneTimeAlert(
-                  "quickSearchGuideAlert",
-                  "Did you know?",
-                  "You can quick search for subreddits by long pressing the search tab.",
-                );
-              }
-            },
-            tabLongPress: (e) => {
-              if (e.target?.startsWith("Search")) {
-                setShowSubredditSearch(true);
-                return;
-              }
+        useNativeLiquidTabs ? (
+          <NativeLiquidTab.Navigator
+            screenOptions={{
+              headerShown: false,
+              tabBarControllerMode: "tabBar",
+              tabBarMinimizeBehavior: "onScrollDown",
+              tabBarBlurEffect: "systemDefault",
+              tabBarActiveTintColor: theme.iconOrTextButton as string,
+              tabBarInactiveTintColor: theme.subtleText as string,
+              tabBarStyle: {
+                backgroundColor:
+                  theme.systemModeStyle === "dark"
+                    ? "rgba(20, 20, 24, 0.72)"
+                    : "rgba(248, 248, 252, 0.78)",
+                shadowColor: "transparent",
+              },
+              tabBarLabelStyle: {
+                fontSize: 12,
+                fontWeight: "500",
+              },
+            }}
+            screenListeners={() => ({
+              tabPress: (e) => {
+                const state = navigation.getState();
+                const stackItem = state.routes[state.index];
+                const isCurrentTab = stackItem.key === e.target;
+                const stackHeight = stackItem.state?.index;
+                if (isCurrentTab && stackHeight && stackHeight > 0) {
+                  navigation.dispatch(StackActions.pop());
+                  return;
+                }
 
-              if (!e.target?.startsWith("Account")) return;
-              if (isSwitchingAccount) return;
-
-              const switchableAccounts = accounts.filter(
-                (username) =>
-                  username.toLowerCase() !==
-                  (currentUser?.userName.toLowerCase() ?? ""),
-              );
-              const accountOptions = [...switchableAccounts];
-
-              if (currentUser) {
-                accountOptions.push("Logged Out");
-              }
-              accountOptions.push("Manage Accounts");
-
-              if (!accountOptions.length) return;
-
-              (async () => {
-                const selection = await openContextMenu({
-                  options: accountOptions,
-                });
-                if (!selection) return;
-
-                if (selection === "Manage Accounts") {
-                  navigation.dispatch(TabActions.jumpTo("Account"));
-                  navigation.dispatch(
-                    StackActions.push("Accounts", {
-                      url: "hydra://accounts",
-                    }),
+                if (e.target?.startsWith("Search")) {
+                  if (isCurrentTab) {
+                    setShowSubredditSearch(true);
+                    return;
+                  }
+                  oneTimeAlert(
+                    "quickSearchGuideAlertNative",
+                    "Did you know?",
+                    "You can quick search for subreddits by tapping the search tab again.",
                   );
                   return;
                 }
 
-                setIsSwitchingAccount(true);
-                try {
-                  if (selection === "Logged Out") {
-                    await logOut();
-                  } else {
-                    await logIn(selection);
-                  }
-                } finally {
-                  setIsSwitchingAccount(false);
+                if (e.target?.startsWith("Account") && isCurrentTab) {
+                  openAccountSwitchMenu();
                 }
-              })();
-            },
-          })}
-        >
+              },
+            })}
+          >
+            <NativeLiquidTab.Screen
+              name="Posts"
+              options={{
+                title: "Posts",
+                tabBarIcon: ({ focused }) =>
+                  ({
+                    type: "sfSymbol",
+                    name: focused ? "newspaper.fill" : "newspaper",
+                  }) as any,
+                tabBarLabel: "Posts",
+              }}
+              component={Stack}
+            />
+            <NativeLiquidTab.Screen
+              name="Inbox"
+              options={{
+                title: "Inbox",
+                tabBarIcon: ({ focused }) =>
+                  ({
+                    type: "sfSymbol",
+                    name: focused ? "tray.fill" : "tray",
+                  }) as any,
+                tabBarLabel: "Inbox",
+                tabBarBadge: inboxCount > 0 ? inboxCount : undefined,
+              }}
+              component={Stack}
+            />
+            <NativeLiquidTab.Screen
+              name="Account"
+              options={{
+                title: currentUser?.userName ?? "Accounts",
+                tabBarIcon: ({ focused }) =>
+                  ({
+                    type: "sfSymbol",
+                    name: focused ? "person.crop.circle.fill" : "person.crop.circle",
+                  }) as any,
+                tabBarLabel: showUsername
+                  ? (currentUser?.userName ?? "Account")
+                  : "Account",
+              }}
+              component={Stack}
+            />
+            <NativeLiquidTab.Screen
+              name="Search"
+              options={{
+                title: "Search",
+                tabBarIcon: () =>
+                  ({
+                    type: "sfSymbol",
+                    name: "magnifyingglass",
+                  }) as any,
+                tabBarLabel: "Search",
+              }}
+              component={Stack}
+            />
+            <NativeLiquidTab.Screen
+              name="Settings"
+              options={{
+                title: "Settings",
+                tabBarIcon: ({ focused }) =>
+                  ({
+                    type: "sfSymbol",
+                    name: focused ? "gearshape.fill" : "gearshape",
+                  }) as any,
+                tabBarLabel: "Settings",
+              }}
+              component={Stack}
+            />
+          </NativeLiquidTab.Navigator>
+        ) : (
+          <Tab.Navigator
+            screenOptions={{
+              tabBarStyle: {
+                position: "absolute",
+                paddingHorizontal: showLiquidGlassTabBar ? 12 : 10,
+                left: tabBarLeftInset,
+                right: tabBarRightInset,
+                bottom: tabBarFloatingBottom,
+                height: showLiquidGlassTabBar ? 70 : undefined,
+                paddingTop: showLiquidGlassTabBar ? 3 : 0,
+                paddingBottom: showLiquidGlassTabBar ? 3 : 0,
+                backgroundColor: showLiquidGlassTabBar
+                  ? "transparent"
+                  : theme.background,
+                borderWidth: showLiquidGlassTabBar ? 1 : 0,
+                borderColor: showLiquidGlassTabBar
+                  ? tabBarGlassBorderColor
+                  : "transparent",
+                borderTopWidth: 0,
+                borderRadius: showLiquidGlassTabBar ? 36 : 0,
+                overflow: showLiquidGlassTabBar ? "hidden" : "visible",
+                shadowColor: showLiquidGlassTabBar
+                  ? tabBarGlassShadowColor
+                  : "transparent",
+                shadowOpacity: showLiquidGlassTabBar ? tabBarGlassShadowOpacity : 0,
+                shadowOffset: showLiquidGlassTabBar
+                  ? { width: 0, height: 11 }
+                  : { width: 0, height: 0 },
+                shadowRadius: showLiquidGlassTabBar ? 20 : 0,
+                elevation: showLiquidGlassTabBar ? 10 : 0,
+                transform: [
+                  {
+                    translateY: tabBarTranslateY.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: [0, TAB_BAR_HEIGHT],
+                    }),
+                  },
+                ],
+                opacity: tabBarTranslateY.interpolate({
+                  inputRange: [0, 1],
+                  outputRange: [1, 0],
+                }),
+              },
+              tabBarItemStyle: showLiquidGlassTabBar
+                ? {
+                    marginHorizontal: 3,
+                    marginVertical: 6,
+                    paddingVertical: 2,
+                  }
+                : undefined,
+              tabBarIconStyle: showLiquidGlassTabBar
+                ? {
+                    marginTop: 1,
+                    transform: [{ scale: 1.16 }],
+                  }
+                : undefined,
+              tabBarLabelStyle: showLiquidGlassTabBar
+                ? {
+                    fontSize: 12.5,
+                    marginTop: 0,
+                  }
+                : undefined,
+              tabBarButton: showLiquidGlassTabBar
+                ? ({ accessibilityState, children, style, ...props }) => {
+                    const isSelected = accessibilityState?.selected === true;
+                    return (
+                      <Pressable
+                        {...props}
+                        style={[
+                          style,
+                          {
+                            overflow: "visible",
+                            alignItems: "center",
+                            justifyContent: "center",
+                          },
+                        ]}
+                      >
+                        <View
+                          pointerEvents="none"
+                          style={{
+                            position: "absolute",
+                            left: 10,
+                            right: 10,
+                            top: 6,
+                            bottom: 6,
+                            borderRadius: 999,
+                            opacity: isSelected ? 1 : 0,
+                            backgroundColor: tabBarActivePillColor,
+                            borderWidth: 0.8,
+                            borderColor: tabBarActivePillBorderColor,
+                            shadowColor:
+                              theme.systemModeStyle === "dark"
+                                ? "rgba(0, 0, 0, 0.34)"
+                                : "rgba(20, 30, 50, 0.14)",
+                            shadowOpacity: isSelected ? 0.18 : 0,
+                            shadowOffset: { width: 0, height: 4 },
+                            shadowRadius: 7,
+                          }}
+                        />
+                        <View
+                          pointerEvents="none"
+                          style={{
+                            position: "absolute",
+                            left: 20,
+                            right: 20,
+                            top: 9,
+                            height: 8,
+                            borderRadius: 999,
+                            opacity: isSelected ? 1 : 0,
+                            backgroundColor: tabBarActivePillHighlightColor,
+                          }}
+                        />
+                        {children}
+                      </Pressable>
+                    );
+                  }
+                : undefined,
+              tabBarBackground: showLiquidGlassTabBar
+                ? () => (
+                    <View
+                      style={{
+                        position: "absolute",
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                      }}
+                    >
+                      <BlurView
+                        tint={tabBarGlassTint}
+                        intensity={82}
+                        style={{
+                          position: "absolute",
+                          top: 0,
+                          left: 0,
+                          right: 0,
+                          bottom: 0,
+                        }}
+                      />
+                      <View
+                        style={{
+                          position: "absolute",
+                          top: 0,
+                          left: 0,
+                          right: 0,
+                          bottom: 0,
+                          backgroundColor: tabBarGlassBackground,
+                        }}
+                      />
+                      <View
+                        style={{
+                          position: "absolute",
+                          top: 3,
+                          left: 10,
+                          right: 10,
+                          height: 22,
+                          borderRadius: 999,
+                          backgroundColor:
+                            theme.systemModeStyle === "dark"
+                              ? "rgba(255, 255, 255, 0.1)"
+                              : "rgba(255, 255, 255, 0.32)",
+                        }}
+                      />
+                      <View
+                        style={{
+                          position: "absolute",
+                          left: 16,
+                          right: 16,
+                          top: 0,
+                          height: 1,
+                          borderRadius: 999,
+                          backgroundColor: tabBarGlassHighlightColor,
+                        }}
+                      />
+                      <View
+                        style={{
+                          position: "absolute",
+                          left: 18,
+                          right: 18,
+                          bottom: 1,
+                          height: 1,
+                          borderRadius: 999,
+                          backgroundColor: tabBarGlassBottomGlowColor,
+                        }}
+                      />
+                    </View>
+                  )
+                : undefined,
+              // This is broken in the latest version of react-navigation:
+              // https://github.com/react-navigation/react-navigation/issues/12755
+              // animation: 'fade',
+            }}
+            screenListeners={() => ({
+              tabPress: (e) => {
+                const state = navigation.getState();
+                const stackItem = state.routes[state.index];
+                const isCurrentTab = stackItem.key === e.target;
+                const stackHeight = stackItem.state?.index;
+                if (isCurrentTab && stackHeight && stackHeight > 0) {
+                  navigation.dispatch(StackActions.pop());
+                  e.preventDefault();
+                }
+                if (e.target?.startsWith("Search")) {
+                  oneTimeAlert(
+                    "quickSearchGuideAlert",
+                    "Did you know?",
+                    "You can quick search for subreddits by long pressing the search tab.",
+                  );
+                }
+              },
+              tabLongPress: (e) => {
+                if (e.target?.startsWith("Search")) {
+                  setShowSubredditSearch(true);
+                  return;
+                }
+
+                if (!e.target?.startsWith("Account")) return;
+                openAccountSwitchMenu();
+              },
+            })}
+          >
           <Tab.Screen
             name="Posts"
             options={{
@@ -421,9 +617,9 @@ export default function Tabs() {
             component={Stack}
           />
         </Tab.Navigator>
-      ) : (
-        <LoadingSplash />
-      )}
+	      )) : (
+	        <LoadingSplash />
+	      )}
     </SafeAreaView>
   );
 }
