@@ -17,9 +17,13 @@ export default function MultiredditScreen({
     <StackNavigator.Screen<"MultiredditPage">
       name="MultiredditPage"
       component={PostsPage}
-      options={({ route }) => ({
-        title: new RedditURL(route.params.url).getPageName(),
-      })}
+      options={({ route }) => {
+        const pageName = new RedditURL(route.params.url).getPageName();
+        return {
+          title: pageName,
+          headerBackTitle: pageName,
+        };
+      }}
     />
   );
 }
