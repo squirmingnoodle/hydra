@@ -19,6 +19,7 @@ import SortAndContext, {
   SortTypes,
 } from "../components/Navbar/SortAndContext";
 import { SubredditContext } from "../contexts/SubredditContext";
+import { AccountContext } from "../contexts/AccountContext";
 import AccessFailureComponent from "../components/UI/AccessFailureComponent";
 import useOfferGalleryMode from "../utils/useOfferGalleryMode";
 import PostDetails from "./PostDetails";
@@ -43,6 +44,7 @@ export default function PostsPage({
 
   const { theme } = useContext(ThemeContext);
   const { subreddits } = useContext(SubredditContext);
+  const { currentUser } = useContext(AccountContext);
 
   const {
     filterPostsByText,
@@ -79,7 +81,7 @@ export default function PostsPage({
       ...(isCombinedSubredditFeed ? [filterPostsBySubreddit] : []),
     ],
     limitRampUp: [10, 20, 40, 70, 100],
-    refreshDependencies: [searchText, sort, sortTime],
+    refreshDependencies: [searchText, sort, sortTime, currentUser?.userName],
   });
 
   useOfferGalleryMode({ url, posts });
