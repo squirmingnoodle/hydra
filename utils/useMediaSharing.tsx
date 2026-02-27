@@ -35,6 +35,10 @@ import {
   setDownloadSettingsBackup,
 } from "./downloadSettingsBackup";
 import useContextMenu from "./useContextMenu";
+import {
+  copyFileToBookmarkedRoot,
+  storeBookmark,
+} from "./folderBookmarkAccess";
 
 type ShareMediaOptions = {
   subreddit?: string;
@@ -50,6 +54,15 @@ const SAVE_ALL_TO_HYDRA_ALBUM_OPTION = "Save all to Hydra album";
 const SAVE_TO_FILES_OPTION = "Save to Files";
 const SAVE_ALL_TO_FILES_OPTION = "Save all to Files";
 const SHARE_OPTION = "Share";
+
+function isRecoverableBookmarkError(error: unknown) {
+  const code = (error as { code?: string })?.code;
+  return (
+    code === "BOOKMARK_MISSING" ||
+    code === "BOOKMARK_STALE" ||
+    code === "BOOKMARK_IO_FAILED"
+  );
+}
 
 function splitNameAndExtension(fileName: string) {
   const dot = fileName.lastIndexOf(".");
@@ -97,6 +110,7 @@ export default function useMediaSharing() {
   const { width, height } = useWindowDimensions();
 
   const alreadyAsking = useRef(false);
+  const toastTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
   const latestFilesRootUriRef = useRef<string | undefined>(
     storedFilesRootUri ?? undefined,
   );
@@ -174,6 +188,16 @@ export default function useMediaSharing() {
       const pickedDirectory = await Directory.pickDirectoryAsync(uri);
       latestFilesRootUriRef.current = pickedDirectory.uri;
       setStoredFilesRootUri(pickedDirectory.uri);
+      if (Platform.OS === "ios") {
+        try {
+          await storeBookmark(settingsScope, pickedDirectory.uri);
+        } catch (bookmarkError) {
+          const bookmarkCode = (bookmarkError as { code?: string })?.code;
+          if (bookmarkCode !== "BOOKMARK_UNAVAILABLE") {
+            throw bookmarkError;
+          }
+        }
+      }
       void setDownloadSettingsBackup(settingsScope, {
         longPressAction,
         downloadDestination,
@@ -226,13 +250,48 @@ export default function useMediaSharing() {
     allowReprompt = true,
     rootUriOverride?: string,
   ) => {
+    const subredditFolderName = normalizeSubredditFolder(subreddit);
+    const initialName = normalizeFileName(originalFileName, type);
+
+    if (Platform.OS === "ios") {
+      try {
+        const result = await copyFileToBookmarkedRoot(
+          settingsScope,
+          file.uri,
+          subredditFolderName,
+          initialName,
+        );
+        return result.folder;
+      } catch (error) {
+        const bookmarkCode = (error as { code?: string })?.code;
+        if (bookmarkCode === "BOOKMARK_UNAVAILABLE") {
+          // Fall back to Expo file writes when the native bridge isn't available.
+        } else if (allowReprompt && isRecoverableBookmarkError(error)) {
+          const repromptedRoot = await pickDirectoryWithFallback(
+            rootUriOverride ?? latestFilesRootUriRef.current,
+          );
+          if (!repromptedRoot) {
+            throw new Error("missing-files-root");
+          }
+          return await saveToFiles(
+            file,
+            type,
+            originalFileName,
+            subreddit,
+            false,
+            repromptedRoot,
+          );
+        } else {
+          throw error;
+        }
+      }
+    }
+
     const writeToRoot = (rootUri: string) => {
       const rootDirectory = new Directory(rootUri);
-      const subredditFolderName = normalizeSubredditFolder(subreddit);
       const subredditDirectory = new Directory(rootDirectory, subredditFolderName);
       subredditDirectory.create({ intermediates: true, idempotent: true });
 
-      const initialName = normalizeFileName(originalFileName, type);
       const { name, extension } = splitNameAndExtension(initialName);
       let destinationName = initialName;
       let destinationFile = new File(subredditDirectory, destinationName);
@@ -339,12 +398,53 @@ export default function useMediaSharing() {
     };
   };
 
+  const showTopToast = (message: string) => {
+    if (toastTimeout.current) {
+      clearTimeout(toastTimeout.current);
+      toastTimeout.current = null;
+    }
+
+    setModal(
+      <View pointerEvents="none" style={[styles.toastContainer, { width }]}>
+        <View
+          style={[
+            styles.toastPill,
+            {
+              backgroundColor: theme.background,
+              borderColor: theme.divider,
+            },
+          ]}
+        >
+          <Text
+            style={[
+              styles.toastText,
+              {
+                color: theme.text,
+              },
+            ]}
+          >
+            {message}
+          </Text>
+        </View>
+      </View>,
+    );
+
+    toastTimeout.current = setTimeout(() => {
+      setModal(null);
+      toastTimeout.current = null;
+    }, 1800);
+  };
+
   return async (
     type: "image" | "video",
     mediaUrl: string,
     options: ShareMediaOptions = {},
   ) => {
     if (alreadyAsking.current) return;
+    if (toastTimeout.current) {
+      clearTimeout(toastTimeout.current);
+      toastTimeout.current = null;
+    }
     alreadyAsking.current = true;
     let action: MediaLongPressAction = options.forceAction ?? "share";
     let mediaUrls = [mediaUrl];
@@ -446,7 +546,17 @@ export default function useMediaSharing() {
           mediaUrls.length === 1
             ? type
             : `${mediaUrls.length} ${type === "image" ? "images" : "videos"}`;
-        if (resolvedDownloadDestination === "photos") {
+        if (type === "image") {
+          if (resolvedDownloadDestination === "photos") {
+            showTopToast(
+              `Saved ${itemLabel} to ${HYDRA_PHOTOS_ALBUM_NAME}.`,
+            );
+          } else {
+            showTopToast(
+              `Saved ${itemLabel} to ${destinationFolderName ?? "selected folder"}.`,
+            );
+          }
+        } else if (resolvedDownloadDestination === "photos") {
           Alert.alert(
             "Saved to Photos",
             `Saved ${itemLabel} to the ${HYDRA_PHOTOS_ALBUM_NAME} album.`,
@@ -506,5 +616,22 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 16,
     marginBottom: 10,
+  },
+  toastContainer: {
+    position: "absolute",
+    top: 56,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  toastPill: {
+    borderWidth: 1,
+    borderRadius: 999,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    maxWidth: "90%",
+  },
+  toastText: {
+    fontSize: 13,
+    textAlign: "center",
   },
 });

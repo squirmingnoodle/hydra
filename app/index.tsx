@@ -35,6 +35,10 @@ import { StartupModalProvider } from "../contexts/StartupModalContext";
 import { modifyStat, Stat } from "../db/functions/Stats";
 import { ActionSheetBgProvider } from "../contexts/ActionSheetBgProvider";
 import VideoCache from "../utils/VideoCache";
+import {
+  hydrateSettingsFromSnapshot,
+  startSettingsAutosaveListener,
+} from "../utils/settingsDurability";
 
 LogBox.ignoreLogs([
   "Require cycle: ",
@@ -75,6 +79,32 @@ function RootLayout() {
   }, [error]);
 
   const [dbMaintenanceDone, setDbMaintenanceDone] = useState(false);
+  const [settingsHydrated, setSettingsHydrated] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+    let stopAutosave: (() => void) | null = null;
+
+    const hydrateSettings = async () => {
+      try {
+        await hydrateSettingsFromSnapshot();
+      } catch (_error) {
+        // If snapshot hydration fails, continue boot normally.
+      } finally {
+        if (active) {
+          setSettingsHydrated(true);
+          stopAutosave = startSettingsAutosaveListener();
+        }
+      }
+    };
+
+    hydrateSettings();
+
+    return () => {
+      active = false;
+      stopAutosave?.();
+    };
+  }, []);
 
   const doDBMaintenanceAsync = async () => {
     await doDBMaintenance();
@@ -104,7 +134,8 @@ function RootLayout() {
   return (
     migrationsComplete &&
     fontsLoaded &&
-    dbMaintenanceDone && (
+    dbMaintenanceDone &&
+    settingsHydrated && (
       <SafeAreaProvider>
         <AccountProvider>
           <SubscriptionsProvider>

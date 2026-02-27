@@ -20,6 +20,7 @@ import {
   useAccountScopedMMKVString,
 } from "../../../utils/accountScopedSettings";
 import { setDownloadSettingsBackup } from "../../../utils/downloadSettingsBackup";
+import { clearBookmark, storeBookmark } from "../../../utils/folderBookmarkAccess";
 
 const LONG_PRESS_ACTION_OPTIONS: {
   label: string;
@@ -135,6 +136,14 @@ export default function Downloads() {
     const directoryUri = await pickDirectoryWithFallback(filesRootUri ?? undefined);
     if (directoryUri) {
       setFilesRootUri(directoryUri);
+      try {
+        await storeBookmark(settingsScope, directoryUri);
+      } catch (_error) {
+        Alert.alert(
+          "Folder Access Error",
+          "Hydra could not persist folder access. Please try selecting the folder again.",
+        );
+      }
     }
   };
 
@@ -190,7 +199,14 @@ export default function Downloads() {
                   {
                     text: "Clear",
                     style: "destructive",
-                    onPress: () => setFilesRootUri(undefined),
+                    onPress: async () => {
+                      setFilesRootUri(undefined);
+                      try {
+                        await clearBookmark(settingsScope);
+                      } catch (_error) {
+                        // No-op. Clearing bookmark is best effort.
+                      }
+                    },
                   },
                 ],
               ),
@@ -206,9 +222,9 @@ export default function Downloads() {
         ]}
       >
         Files downloads are saved into subreddit folders under the selected
-        root folder. On iOS, folder access can expire after app restarts.
-        Hydra will automatically prompt once to re-select the folder and retry
-        the save when needed.
+        root folder. Hydra saves this folder between app restarts and upgrades.
+        If the folder is moved, deleted, or permissions are revoked, Hydra
+        will prompt once to re-select it and retry the save.
       </Text>
     </>
   );
