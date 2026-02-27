@@ -52,7 +52,7 @@ export async function api(
     return await res.text();
   }
 
-  const json = await res.json<any>();
+  const json = await res.json();
   if (apiOptions.depaginate) {
     if (json?.data?.after != null) {
       const newURL = new RedditURL(url)
