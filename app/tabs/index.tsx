@@ -9,13 +9,13 @@ import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { SplashScreen, useNavigation } from "expo-router";
 import React, { useContext, useEffect, useState } from "react";
 import { BlurView } from "expo-blur";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import {
   NavigationContainerRef,
   StackActions,
   TabActions,
 } from "@react-navigation/native";
-import { Platform } from "react-native";
+import { Platform, View } from "react-native";
 
 import LoadingSplash from "../../components/UI/LoadingSplash";
 import { AccountContext } from "../../contexts/AccountContext";
@@ -43,7 +43,7 @@ export type TabParamsList = {
 
 const Tab = createBottomTabNavigator();
 
-const TAB_BAR_HEIGHT = 90;
+const TAB_BAR_HEIGHT = 64;
 
 export default function Tabs() {
   if (__DEV__) {
@@ -62,16 +62,46 @@ export default function Tabs() {
   const { inboxCount } = useContext(InboxContext);
   const { showUsername, liquidGlassEnabled } = useContext(TabSettingsContext);
   const { tabBarTranslateY } = useContext(TabScrollContext);
+  const insets = useSafeAreaInsets();
 
   const [showSubredditSearch, setShowSubredditSearch] = useState(false);
   const [isSwitchingAccount, setIsSwitchingAccount] = useState(false);
 
   const showLiquidGlassTabBar = Platform.OS === "ios" && liquidGlassEnabled;
-  const tabBarGlassTint = theme.systemModeStyle === "dark" ? "dark" : "light";
+  const tabBarGlassTint =
+    theme.systemModeStyle === "dark"
+      ? "systemChromeMaterialDark"
+      : "systemChromeMaterialLight";
   const tabBarGlassBackground =
     theme.systemModeStyle === "dark"
-      ? "rgba(18, 18, 20, 0.72)"
-      : "rgba(250, 250, 252, 0.78)";
+      ? "rgba(8, 10, 14, 0.04)"
+      : "rgba(255, 255, 255, 0.03)";
+  const tabBarGlassBorderColor =
+    theme.systemModeStyle === "dark"
+      ? "rgba(255, 255, 255, 0.2)"
+      : "rgba(255, 255, 255, 0.62)";
+  const tabBarGlassHighlightColor =
+    theme.systemModeStyle === "dark"
+      ? "rgba(255, 255, 255, 0.3)"
+      : "rgba(255, 255, 255, 0.9)";
+  const tabBarGlassBottomGlowColor =
+    theme.systemModeStyle === "dark"
+      ? "rgba(255, 255, 255, 0.1)"
+      : "rgba(255, 255, 255, 0.36)";
+  const tabBarGlassShadowColor =
+    theme.systemModeStyle === "dark"
+      ? "rgba(0, 0, 0, 0.38)"
+      : "rgba(20, 30, 50, 0.12)";
+  const tabBarGlassShadowOpacity = theme.systemModeStyle === "dark" ? 0.22 : 0.1;
+  const tabBarLeftInset = showLiquidGlassTabBar
+    ? Math.max(12, insets.left + 10)
+    : 0;
+  const tabBarRightInset = showLiquidGlassTabBar
+    ? Math.max(12, insets.right + 10)
+    : 0;
+  const tabBarFloatingBottom = showLiquidGlassTabBar
+    ? Math.max(8, insets.bottom - 16)
+    : -TAB_BAR_REMOVED_PADDING_BOTTOM;
 
   useHandleIncomingURLs();
 
@@ -95,12 +125,32 @@ export default function Tabs() {
           screenOptions={{
             tabBarStyle: {
               position: "absolute",
-              paddingHorizontal: 10,
-              bottom: -TAB_BAR_REMOVED_PADDING_BOTTOM,
+              paddingHorizontal: showLiquidGlassTabBar ? 8 : 10,
+              left: tabBarLeftInset,
+              right: tabBarRightInset,
+              bottom: tabBarFloatingBottom,
+              height: showLiquidGlassTabBar ? 64 : undefined,
+              paddingTop: showLiquidGlassTabBar ? 2 : 0,
+              paddingBottom: showLiquidGlassTabBar ? 2 : 0,
               backgroundColor: showLiquidGlassTabBar
-                ? tabBarGlassBackground
+                ? "transparent"
                 : theme.background,
+              borderWidth: showLiquidGlassTabBar ? 0.8 : 0,
+              borderColor: showLiquidGlassTabBar
+                ? tabBarGlassBorderColor
+                : "transparent",
               borderTopWidth: 0,
+              borderRadius: showLiquidGlassTabBar ? 32 : 0,
+              overflow: showLiquidGlassTabBar ? "hidden" : "visible",
+              shadowColor: showLiquidGlassTabBar
+                ? tabBarGlassShadowColor
+                : "transparent",
+              shadowOpacity: showLiquidGlassTabBar ? tabBarGlassShadowOpacity : 0,
+              shadowOffset: showLiquidGlassTabBar
+                ? { width: 0, height: 8 }
+                : { width: 0, height: 0 },
+              shadowRadius: showLiquidGlassTabBar ? 16 : 0,
+              elevation: showLiquidGlassTabBar ? 8 : 0,
               transform: [
                 {
                   translateY: tabBarTranslateY.interpolate({
@@ -114,11 +164,26 @@ export default function Tabs() {
                 outputRange: [1, 0],
               }),
             },
+            tabBarItemStyle: showLiquidGlassTabBar
+              ? {
+                  paddingVertical: 2,
+                }
+              : undefined,
+            tabBarIconStyle: showLiquidGlassTabBar
+              ? {
+                  marginTop: 1,
+                  transform: [{ scale: 1.12 }],
+                }
+              : undefined,
+            tabBarLabelStyle: showLiquidGlassTabBar
+              ? {
+                  fontSize: 11.5,
+                  marginTop: -1,
+                }
+              : undefined,
             tabBarBackground: showLiquidGlassTabBar
               ? () => (
-                  <BlurView
-                    tint={tabBarGlassTint}
-                    intensity={45}
+                  <View
                     style={{
                       position: "absolute",
                       top: 0,
@@ -126,7 +191,65 @@ export default function Tabs() {
                       right: 0,
                       bottom: 0,
                     }}
-                  />
+                  >
+                    <BlurView
+                      tint={tabBarGlassTint}
+                      intensity={94}
+                      style={{
+                        position: "absolute",
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                      }}
+                    />
+                    <View
+                      style={{
+                        position: "absolute",
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        backgroundColor: tabBarGlassBackground,
+                      }}
+                    />
+                    <View
+                      style={{
+                        position: "absolute",
+                        top: 2,
+                        left: 10,
+                        right: 10,
+                        height: 18,
+                        borderRadius: 999,
+                        backgroundColor:
+                          theme.systemModeStyle === "dark"
+                            ? "rgba(255, 255, 255, 0.09)"
+                            : "rgba(255, 255, 255, 0.26)",
+                      }}
+                    />
+                    <View
+                      style={{
+                        position: "absolute",
+                        left: 16,
+                        right: 16,
+                        top: 0,
+                        height: 1,
+                        borderRadius: 999,
+                        backgroundColor: tabBarGlassHighlightColor,
+                      }}
+                    />
+                    <View
+                      style={{
+                        position: "absolute",
+                        left: 18,
+                        right: 18,
+                        bottom: 1,
+                        height: 1,
+                        borderRadius: 999,
+                        backgroundColor: tabBarGlassBottomGlowColor,
+                      }}
+                    />
+                  </View>
                 )
               : undefined,
             // This is broken in the latest version of react-navigation:

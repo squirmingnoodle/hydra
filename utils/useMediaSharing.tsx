@@ -66,24 +66,6 @@ function normalizeFileName(fileName: string, type: "image" | "video") {
   return `${safeName}.${type === "image" ? "jpg" : "mp4"}`;
 }
 
-function getNameFromUri(uri: string) {
-  const lastPart = uri.split("/").pop() ?? "";
-  return decodeURIComponent(lastPart.split("?")[0]);
-}
-
-function makeUniqueFileName(fileName: string, existingNamesLowercase: Set<string>) {
-  const fileNameLower = fileName.toLowerCase();
-  if (!existingNamesLowercase.has(fileNameLower)) {
-    return fileName;
-  }
-  const { name, extension } = splitNameAndExtension(fileName);
-  let suffix = 1;
-  while (existingNamesLowercase.has(`${name}-${suffix}${extension}`.toLowerCase())) {
-    suffix += 1;
-  }
-  return `${name}-${suffix}${extension}`;
-}
-
 export default function useMediaSharing() {
   const { setModal } = useContext(ModalContext);
   const { theme } = useContext(ThemeContext);
@@ -100,6 +82,12 @@ export default function useMediaSharing() {
   const { width, height } = useWindowDimensions();
 
   const alreadyAsking = useRef(false);
+  const latestFilesRootUriRef = useRef<string | undefined>(
+    storedFilesRootUri ?? undefined,
+  );
+  if (latestFilesRootUriRef.current !== storedFilesRootUri) {
+    latestFilesRootUriRef.current = storedFilesRootUri ?? undefined;
+  }
 
   const longPressAction =
     (storedLongPressAction as MediaLongPressAction | undefined) ??
@@ -108,16 +96,36 @@ export default function useMediaSharing() {
     (storedDownloadDestination as DownloadDestination | undefined) ??
     DOWNLOAD_DESTINATION_DEFAULT;
 
-  const pickFilesRoot = async () => {
-    try {
-      const pickedDirectory = await Directory.pickDirectoryAsync(
-        storedFilesRootUri ?? undefined,
-      );
+  const pickDirectoryWithFallback = async (
+    initialUri?: string,
+  ): Promise<string | null> => {
+    const tryPick = async (uri?: string) => {
+      const pickedDirectory = await Directory.pickDirectoryAsync(uri);
+      latestFilesRootUriRef.current = pickedDirectory.uri;
       setStoredFilesRootUri(pickedDirectory.uri);
       return pickedDirectory.uri;
-    } catch (_e) {
+    };
+
+    try {
+      return await tryPick(initialUri);
+    } catch (_error) {
+      if (!initialUri) {
+        return null;
+      }
+      try {
+        return await tryPick(undefined);
+      } catch (_fallbackError) {
+        return null;
+      }
+    }
+  };
+
+  const pickFilesRoot = async () => {
+    const rootUri = await pickDirectoryWithFallback(latestFilesRootUriRef.current);
+    if (!rootUri) {
       return null;
     }
+    return rootUri;
   };
 
   const saveToPhotos = async (file: File) => {
@@ -148,24 +156,21 @@ export default function useMediaSharing() {
       const subredditDirectory = new Directory(rootDirectory, subredditFolderName);
       subredditDirectory.create({ intermediates: true, idempotent: true });
 
-      const existingNamesLowercase = new Set(
-        subredditDirectory
-          .list()
-          .map((entry) => getNameFromUri(entry.uri).toLowerCase())
-          .filter(Boolean),
-      );
-
       const initialName = normalizeFileName(originalFileName, type);
-      const destinationName = makeUniqueFileName(
-        initialName,
-        existingNamesLowercase,
-      );
-      const destinationFile = new File(subredditDirectory, destinationName);
+      const { name, extension } = splitNameAndExtension(initialName);
+      let destinationName = initialName;
+      let destinationFile = new File(subredditDirectory, destinationName);
+      let suffix = 1;
+      while (destinationFile.exists) {
+        destinationName = `${name}-${suffix}${extension}`;
+        destinationFile = new File(subredditDirectory, destinationName);
+        suffix += 1;
+      }
       file.copy(destinationFile);
       return subredditFolderName;
     };
 
-    let rootUri = rootUriOverride ?? storedFilesRootUri;
+    let rootUri = rootUriOverride ?? latestFilesRootUriRef.current;
     if (!rootUri) {
       rootUri = await pickFilesRoot();
       if (!rootUri) {
@@ -177,7 +182,7 @@ export default function useMediaSharing() {
       return writeToRoot(rootUri);
     } catch (e) {
       if (allowReprompt && Platform.OS === "ios") {
-        const repromptedRoot = await pickFilesRoot();
+        const repromptedRoot = await pickDirectoryWithFallback(rootUri);
         if (!repromptedRoot) {
           throw new Error("missing-files-root");
         }
