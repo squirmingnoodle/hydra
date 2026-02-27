@@ -24,7 +24,11 @@ export default function SubredditIcon({
     overridePostAppearanceSetting ? (
     <View style={styles.container}>
       {subredditIcon ? (
-        <Image source={{ uri: subredditIcon }} style={styles.image} recyclingKey={subredditIcon} />
+        <Image
+          source={{ uri: subredditIcon }}
+          style={styles.image}
+          recyclingKey={subredditIcon}
+        />
       ) : (
         <FontAwesome name="reddit" size={20} color={theme.text} />
       )}
