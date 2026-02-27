@@ -16,7 +16,7 @@ import {
   StackActions,
   TabActions,
 } from "@react-navigation/native";
-import { Platform, Pressable, View } from "react-native";
+import { Platform, View } from "react-native";
 
 import LoadingSplash from "../../components/UI/LoadingSplash";
 import { AccountContext } from "../../contexts/AccountContext";
@@ -70,44 +70,44 @@ export default function Tabs() {
   const [isSwitchingAccount, setIsSwitchingAccount] = useState(false);
 
   const showLiquidGlassTabBar = Platform.OS === "ios" && liquidGlassEnabled;
-  const useNativeLiquidTabs = false;
+  const useNativeLiquidTabs = showLiquidGlassTabBar;
   const tabBarGlassTint =
     theme.systemModeStyle === "dark"
-      ? "systemUltraThinMaterialDark"
-      : "systemUltraThinMaterialLight";
+      ? "systemChromeMaterialDark"
+      : "systemChromeMaterialLight";
   const tabBarGlassBackground =
     theme.systemModeStyle === "dark"
-      ? "rgba(8, 10, 14, 0.015)"
-      : "rgba(255, 255, 255, 0.008)";
+      ? "rgba(16, 18, 22, 0.18)"
+      : "rgba(255, 255, 255, 0.18)";
   const tabBarGlassBorderColor =
     theme.systemModeStyle === "dark"
-      ? "rgba(255, 255, 255, 0.32)"
-      : "rgba(255, 255, 255, 0.78)";
+      ? "rgba(255, 255, 255, 0.26)"
+      : "rgba(255, 255, 255, 0.72)";
   const tabBarGlassHighlightColor =
     theme.systemModeStyle === "dark"
-      ? "rgba(255, 255, 255, 0.45)"
-      : "rgba(255, 255, 255, 0.98)";
+      ? "rgba(255, 255, 255, 0.35)"
+      : "rgba(255, 255, 255, 0.9)";
   const tabBarGlassBottomGlowColor =
     theme.systemModeStyle === "dark"
-      ? "rgba(255, 255, 255, 0.14)"
-      : "rgba(255, 255, 255, 0.5)";
+      ? "rgba(255, 255, 255, 0.16)"
+      : "rgba(255, 255, 255, 0.4)";
   const tabBarGlassShadowColor =
     theme.systemModeStyle === "dark"
       ? "rgba(0, 0, 0, 0.38)"
       : "rgba(20, 30, 50, 0.12)";
-  const tabBarGlassShadowOpacity = theme.systemModeStyle === "dark" ? 0.24 : 0.1;
+  const tabBarGlassShadowOpacity = theme.systemModeStyle === "dark" ? 0.22 : 0.08;
   const tabBarActivePillColor =
     theme.systemModeStyle === "dark"
-      ? "rgba(255, 255, 255, 0.14)"
-      : "rgba(255, 255, 255, 0.42)";
+      ? "rgba(255, 255, 255, 0.32)"
+      : "rgba(255, 255, 255, 0.72)";
   const tabBarActivePillBorderColor =
     theme.systemModeStyle === "dark"
-      ? "rgba(255, 255, 255, 0.22)"
-      : "rgba(255, 255, 255, 0.86)";
+      ? "rgba(255, 255, 255, 0.38)"
+      : "rgba(255, 255, 255, 0.95)";
   const tabBarActivePillHighlightColor =
     theme.systemModeStyle === "dark"
-      ? "rgba(255, 255, 255, 0.18)"
-      : "rgba(255, 255, 255, 0.84)";
+      ? "rgba(255, 255, 255, 0.28)"
+      : "rgba(255, 255, 255, 0.98)";
   const tabBarLeftInset = showLiquidGlassTabBar
     ? Math.max(14, insets.left + 10)
     : 0;
@@ -225,6 +225,10 @@ export default function Tabs() {
                   );
                   return;
                 }
+
+                if (e.target?.startsWith("Account") && isCurrentTab) {
+                  openAccountSwitchMenu();
+                }
               },
               tabLongPress: (e) => {
                 const state = navigation.getState();
@@ -314,9 +318,9 @@ export default function Tabs() {
                 left: tabBarLeftInset,
                 right: tabBarRightInset,
                 bottom: tabBarFloatingBottom,
-                height: showLiquidGlassTabBar ? 70 : undefined,
-                paddingTop: showLiquidGlassTabBar ? 3 : 0,
-                paddingBottom: showLiquidGlassTabBar ? 3 : 0,
+                height: showLiquidGlassTabBar ? 66 : undefined,
+                paddingTop: showLiquidGlassTabBar ? 2 : 0,
+                paddingBottom: showLiquidGlassTabBar ? 2 : 0,
                 backgroundColor: showLiquidGlassTabBar
                   ? "transparent"
                   : theme.background,
@@ -325,17 +329,17 @@ export default function Tabs() {
                   ? tabBarGlassBorderColor
                   : "transparent",
                 borderTopWidth: 0,
-                borderRadius: showLiquidGlassTabBar ? 36 : 0,
+                borderRadius: showLiquidGlassTabBar ? 33 : 0,
                 overflow: showLiquidGlassTabBar ? "hidden" : "visible",
                 shadowColor: showLiquidGlassTabBar
                   ? tabBarGlassShadowColor
                   : "transparent",
                 shadowOpacity: showLiquidGlassTabBar ? tabBarGlassShadowOpacity : 0,
                 shadowOffset: showLiquidGlassTabBar
-                  ? { width: 0, height: 11 }
+                  ? { width: 0, height: 9 }
                   : { width: 0, height: 0 },
-                shadowRadius: showLiquidGlassTabBar ? 20 : 0,
-                elevation: showLiquidGlassTabBar ? 10 : 0,
+                shadowRadius: showLiquidGlassTabBar ? 16 : 0,
+                elevation: showLiquidGlassTabBar ? 8 : 0,
                 transform: [
                   {
                     translateY: tabBarTranslateY.interpolate({
@@ -351,76 +355,27 @@ export default function Tabs() {
               },
               tabBarItemStyle: showLiquidGlassTabBar
                 ? {
-                    marginHorizontal: 3,
+                    marginHorizontal: 4,
                     marginVertical: 6,
                     paddingVertical: 2,
+                    borderRadius: 999,
+                    overflow: "hidden",
                   }
                 : undefined,
+              tabBarActiveBackgroundColor: showLiquidGlassTabBar
+                ? tabBarActivePillColor
+                : undefined,
+              tabBarInactiveBackgroundColor: "transparent",
               tabBarIconStyle: showLiquidGlassTabBar
                 ? {
-                    marginTop: 1,
-                    transform: [{ scale: 1.16 }],
+                    marginTop: 0,
+                    transform: [{ scale: 1.12 }],
                   }
                 : undefined,
               tabBarLabelStyle: showLiquidGlassTabBar
                 ? {
-                    fontSize: 12.5,
-                    marginTop: 0,
-                  }
-                : undefined,
-              tabBarButton: showLiquidGlassTabBar
-                ? ({ accessibilityState, children, style, ...props }) => {
-                    const isSelected = accessibilityState?.selected === true;
-                    return (
-                      <Pressable
-                        {...props}
-                        style={[
-                          style,
-                          {
-                            overflow: "visible",
-                            alignItems: "center",
-                            justifyContent: "center",
-                          },
-                        ]}
-                      >
-                        <View
-                          pointerEvents="none"
-                          style={{
-                            position: "absolute",
-                            left: 10,
-                            right: 10,
-                            top: 6,
-                            bottom: 6,
-                            borderRadius: 999,
-                            opacity: isSelected ? 1 : 0,
-                            backgroundColor: tabBarActivePillColor,
-                            borderWidth: 0.8,
-                            borderColor: tabBarActivePillBorderColor,
-                            shadowColor:
-                              theme.systemModeStyle === "dark"
-                                ? "rgba(0, 0, 0, 0.34)"
-                                : "rgba(20, 30, 50, 0.14)",
-                            shadowOpacity: isSelected ? 0.18 : 0,
-                            shadowOffset: { width: 0, height: 4 },
-                            shadowRadius: 7,
-                          }}
-                        />
-                        <View
-                          pointerEvents="none"
-                          style={{
-                            position: "absolute",
-                            left: 20,
-                            right: 20,
-                            top: 9,
-                            height: 8,
-                            borderRadius: 999,
-                            opacity: isSelected ? 1 : 0,
-                            backgroundColor: tabBarActivePillHighlightColor,
-                          }}
-                        />
-                        {children}
-                      </Pressable>
-                    );
+                    fontSize: 12,
+                    marginTop: -1,
                   }
                 : undefined,
               tabBarBackground: showLiquidGlassTabBar
@@ -436,7 +391,7 @@ export default function Tabs() {
                     >
                       <BlurView
                         tint={tabBarGlassTint}
-                        intensity={82}
+                        intensity={88}
                         style={{
                           position: "absolute",
                           top: 0,
@@ -458,15 +413,15 @@ export default function Tabs() {
                       <View
                         style={{
                           position: "absolute",
-                          top: 3,
-                          left: 10,
-                          right: 10,
-                          height: 22,
+                          top: 2,
+                          left: 12,
+                          right: 12,
+                          height: 18,
                           borderRadius: 999,
                           backgroundColor:
                             theme.systemModeStyle === "dark"
-                              ? "rgba(255, 255, 255, 0.1)"
-                              : "rgba(255, 255, 255, 0.32)",
+                              ? "rgba(255, 255, 255, 0.08)"
+                              : "rgba(255, 255, 255, 0.28)",
                         }}
                       />
                       <View
