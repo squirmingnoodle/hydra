@@ -24,11 +24,12 @@ import { StackFutureProvider } from "../../contexts/StackFutureContext";
 import SidebarScreen from "./SidebarScreen";
 import WikiScreen from "./WikiScreen";
 import { GesturesContext } from "../../contexts/SettingsContexts/GesturesContext";
-import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
+import { BottomTabBarHeightContext } from "@react-navigation/bottom-tabs";
 import SubredditSearchScreen from "./SubredditSearchScreen";
 import { TAB_BAR_REMOVED_PADDING_BOTTOM } from "../../constants/TabBarPadding";
 import GalleryScreen from "./GalleryScreen";
 import { TabSettingsContext } from "../../contexts/SettingsContexts/TabSettingsContext";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export type StackParamsList = {
   Subreddits: undefined;
@@ -120,8 +121,12 @@ export default function Stack() {
   const { theme } = useContext(ThemeContext);
   const { swipeAnywhereToNavigate } = useContext(GesturesContext);
   const { liquidGlassEnabled } = useContext(TabSettingsContext);
+  const insets = useSafeAreaInsets();
 
-  const tabBarHeight = useBottomTabBarHeight();
+  const tabBarHeightFromContext = useContext(BottomTabBarHeightContext);
+  const tabBarHeight =
+    tabBarHeightFromContext ??
+    (Platform.OS === "ios" ? insets.bottom + 49 : insets.bottom + 56);
   const showLiquidGlassHeader = Platform.OS === "ios" && liquidGlassEnabled;
   const liquidGlassHeaderBackground =
     theme.systemModeStyle === "dark"
@@ -174,7 +179,7 @@ export default function Stack() {
           contentStyle: {
             paddingBottom: SHOWS_BENEATH_TABS[route.name]
               ? 0
-              : tabBarHeight - TAB_BAR_REMOVED_PADDING_BOTTOM,
+              : Math.max(0, tabBarHeight - TAB_BAR_REMOVED_PADDING_BOTTOM),
             backgroundColor: theme.background,
           },
         })}
