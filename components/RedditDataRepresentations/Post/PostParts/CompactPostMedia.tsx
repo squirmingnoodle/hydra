@@ -123,6 +123,7 @@ export default function CompactPostMedia({ post }: CompactPostMediaProps) {
               onLongPress={() =>
                 shareMedia("image", post.images[imageIndex], {
                   subreddit: post.subreddit,
+                  allMediaUrls: post.images,
                 })
               }
               onImageIndexChange={(index) => setImageIndex(index)}
