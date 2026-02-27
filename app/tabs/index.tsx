@@ -43,7 +43,7 @@ export type TabParamsList = {
 
 const Tab = createBottomTabNavigator();
 
-const TAB_BAR_HEIGHT = 64;
+const TAB_BAR_HEIGHT = 70;
 
 export default function Tabs() {
   if (__DEV__) {
@@ -70,37 +70,37 @@ export default function Tabs() {
   const showLiquidGlassTabBar = Platform.OS === "ios" && liquidGlassEnabled;
   const tabBarGlassTint =
     theme.systemModeStyle === "dark"
-      ? "systemChromeMaterialDark"
-      : "systemChromeMaterialLight";
+      ? "systemThinMaterialDark"
+      : "systemThinMaterialLight";
   const tabBarGlassBackground =
     theme.systemModeStyle === "dark"
-      ? "rgba(8, 10, 14, 0.04)"
-      : "rgba(255, 255, 255, 0.03)";
+      ? "rgba(8, 10, 14, 0.03)"
+      : "rgba(255, 255, 255, 0.02)";
   const tabBarGlassBorderColor =
     theme.systemModeStyle === "dark"
-      ? "rgba(255, 255, 255, 0.2)"
-      : "rgba(255, 255, 255, 0.62)";
+      ? "rgba(255, 255, 255, 0.32)"
+      : "rgba(255, 255, 255, 0.78)";
   const tabBarGlassHighlightColor =
     theme.systemModeStyle === "dark"
-      ? "rgba(255, 255, 255, 0.3)"
-      : "rgba(255, 255, 255, 0.9)";
+      ? "rgba(255, 255, 255, 0.45)"
+      : "rgba(255, 255, 255, 0.98)";
   const tabBarGlassBottomGlowColor =
     theme.systemModeStyle === "dark"
-      ? "rgba(255, 255, 255, 0.1)"
-      : "rgba(255, 255, 255, 0.36)";
+      ? "rgba(255, 255, 255, 0.18)"
+      : "rgba(255, 255, 255, 0.56)";
   const tabBarGlassShadowColor =
     theme.systemModeStyle === "dark"
-      ? "rgba(0, 0, 0, 0.38)"
-      : "rgba(20, 30, 50, 0.12)";
-  const tabBarGlassShadowOpacity = theme.systemModeStyle === "dark" ? 0.22 : 0.1;
+      ? "rgba(0, 0, 0, 0.42)"
+      : "rgba(20, 30, 50, 0.14)";
+  const tabBarGlassShadowOpacity = theme.systemModeStyle === "dark" ? 0.28 : 0.14;
   const tabBarLeftInset = showLiquidGlassTabBar
-    ? Math.max(12, insets.left + 10)
+    ? Math.max(14, insets.left + 10)
     : 0;
   const tabBarRightInset = showLiquidGlassTabBar
-    ? Math.max(12, insets.right + 10)
+    ? Math.max(14, insets.right + 10)
     : 0;
   const tabBarFloatingBottom = showLiquidGlassTabBar
-    ? Math.max(8, insets.bottom - 16)
+    ? Math.max(14, insets.bottom - 10)
     : -TAB_BAR_REMOVED_PADDING_BOTTOM;
 
   useHandleIncomingURLs();
@@ -125,32 +125,32 @@ export default function Tabs() {
           screenOptions={{
             tabBarStyle: {
               position: "absolute",
-              paddingHorizontal: showLiquidGlassTabBar ? 8 : 10,
+              paddingHorizontal: showLiquidGlassTabBar ? 12 : 10,
               left: tabBarLeftInset,
               right: tabBarRightInset,
               bottom: tabBarFloatingBottom,
-              height: showLiquidGlassTabBar ? 64 : undefined,
-              paddingTop: showLiquidGlassTabBar ? 2 : 0,
-              paddingBottom: showLiquidGlassTabBar ? 2 : 0,
+              height: showLiquidGlassTabBar ? 70 : undefined,
+              paddingTop: showLiquidGlassTabBar ? 3 : 0,
+              paddingBottom: showLiquidGlassTabBar ? 3 : 0,
               backgroundColor: showLiquidGlassTabBar
                 ? "transparent"
                 : theme.background,
-              borderWidth: showLiquidGlassTabBar ? 0.8 : 0,
+              borderWidth: showLiquidGlassTabBar ? 1 : 0,
               borderColor: showLiquidGlassTabBar
                 ? tabBarGlassBorderColor
                 : "transparent",
               borderTopWidth: 0,
-              borderRadius: showLiquidGlassTabBar ? 32 : 0,
+              borderRadius: showLiquidGlassTabBar ? 36 : 0,
               overflow: showLiquidGlassTabBar ? "hidden" : "visible",
               shadowColor: showLiquidGlassTabBar
                 ? tabBarGlassShadowColor
                 : "transparent",
               shadowOpacity: showLiquidGlassTabBar ? tabBarGlassShadowOpacity : 0,
-              shadowOffset: showLiquidGlassTabBar
-                ? { width: 0, height: 8 }
-                : { width: 0, height: 0 },
-              shadowRadius: showLiquidGlassTabBar ? 16 : 0,
-              elevation: showLiquidGlassTabBar ? 8 : 0,
+                  shadowOffset: showLiquidGlassTabBar
+                    ? { width: 0, height: 11 }
+                    : { width: 0, height: 0 },
+                  shadowRadius: showLiquidGlassTabBar ? 20 : 0,
+                  elevation: showLiquidGlassTabBar ? 10 : 0,
               transform: [
                 {
                   translateY: tabBarTranslateY.interpolate({
@@ -165,22 +165,22 @@ export default function Tabs() {
               }),
             },
             tabBarItemStyle: showLiquidGlassTabBar
-              ? {
-                  paddingVertical: 2,
-                }
-              : undefined,
+                  ? {
+                      paddingVertical: 3,
+                    }
+                  : undefined,
             tabBarIconStyle: showLiquidGlassTabBar
-              ? {
-                  marginTop: 1,
-                  transform: [{ scale: 1.12 }],
-                }
-              : undefined,
+                  ? {
+                      marginTop: 2,
+                      transform: [{ scale: 1.2 }],
+                    }
+                  : undefined,
             tabBarLabelStyle: showLiquidGlassTabBar
-              ? {
-                  fontSize: 11.5,
-                  marginTop: -1,
-                }
-              : undefined,
+                  ? {
+                      fontSize: 12.5,
+                      marginTop: 0,
+                    }
+                  : undefined,
             tabBarBackground: showLiquidGlassTabBar
               ? () => (
                   <View
@@ -194,7 +194,7 @@ export default function Tabs() {
                   >
                     <BlurView
                       tint={tabBarGlassTint}
-                      intensity={94}
+                      intensity={88}
                       style={{
                         position: "absolute",
                         top: 0,
@@ -216,15 +216,15 @@ export default function Tabs() {
                     <View
                       style={{
                         position: "absolute",
-                        top: 2,
+                        top: 3,
                         left: 10,
                         right: 10,
-                        height: 18,
+                        height: 22,
                         borderRadius: 999,
                         backgroundColor:
                           theme.systemModeStyle === "dark"
-                            ? "rgba(255, 255, 255, 0.09)"
-                            : "rgba(255, 255, 255, 0.26)",
+                            ? "rgba(255, 255, 255, 0.14)"
+                            : "rgba(255, 255, 255, 0.38)",
                       }}
                     />
                     <View
