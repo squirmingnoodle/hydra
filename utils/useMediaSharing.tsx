@@ -34,14 +34,22 @@ import {
   getDownloadSettingsBackup,
   setDownloadSettingsBackup,
 } from "./downloadSettingsBackup";
+import useContextMenu from "./useContextMenu";
 
 type ShareMediaOptions = {
   subreddit?: string;
   forceAction?: MediaLongPressAction;
+  allMediaUrls?: string[];
+  forceDownloadDestination?: DownloadDestination;
 };
 
 const INVALID_FILE_AND_FOLDER_CHARS = /[\\/:*?"<>|]/g;
 const UNKNOWN_SUBREDDIT_FOLDER = "unknown";
+const SAVE_TO_HYDRA_ALBUM_OPTION = "Save to Hydra album";
+const SAVE_ALL_TO_HYDRA_ALBUM_OPTION = "Save all to Hydra album";
+const SAVE_TO_FILES_OPTION = "Save to Files";
+const SAVE_ALL_TO_FILES_OPTION = "Save all to Files";
+const SHARE_OPTION = "Share";
 
 function splitNameAndExtension(fileName: string) {
   const dot = fileName.lastIndexOf(".");
@@ -76,6 +84,7 @@ function normalizeFileName(fileName: string, type: "image" | "video") {
 export default function useMediaSharing() {
   const { setModal } = useContext(ModalContext);
   const { theme } = useContext(ThemeContext);
+  const openContextMenu = useContextMenu();
   const [storedLongPressAction, setStoredLongPressAction] = useAccountScopedMMKVString(
     DOWNLOAD_LONG_PRESS_ACTION_KEY,
   );
@@ -266,6 +275,70 @@ export default function useMediaSharing() {
     }
   };
 
+  const showLongPressMediaMenu = async (
+    type: "image" | "video",
+    mediaUrl: string,
+    options: ShareMediaOptions,
+  ) => {
+    const uniqueMediaUrls = Array.from(
+      new Set(
+        [mediaUrl, ...(options.allMediaUrls ?? [])].filter(
+          (url): url is string => !!url,
+        ),
+      ),
+    );
+    const canSaveAllToHydraAlbum =
+      type === "image" && uniqueMediaUrls.length > 1;
+    const canSaveAllToFiles = type === "image" && uniqueMediaUrls.length > 1;
+    const menuOptions = [
+      SAVE_TO_HYDRA_ALBUM_OPTION,
+      ...(canSaveAllToHydraAlbum ? [SAVE_ALL_TO_HYDRA_ALBUM_OPTION] : []),
+      SAVE_TO_FILES_OPTION,
+      ...(canSaveAllToFiles ? [SAVE_ALL_TO_FILES_OPTION] : []),
+      SHARE_OPTION,
+    ];
+    const selectedAction = await openContextMenu({
+      title: "Media Options",
+      options: menuOptions,
+    });
+    if (!selectedAction) {
+      return null;
+    }
+    if (selectedAction === SHARE_OPTION) {
+      return {
+        action: "share" as MediaLongPressAction,
+        downloadDestination: undefined,
+        mediaUrls: [mediaUrl],
+      };
+    }
+    if (selectedAction === SAVE_TO_FILES_OPTION) {
+      return {
+        action: "download" as MediaLongPressAction,
+        downloadDestination: "files" as DownloadDestination,
+        mediaUrls: [mediaUrl],
+      };
+    }
+    if (selectedAction === SAVE_ALL_TO_FILES_OPTION) {
+      return {
+        action: "download" as MediaLongPressAction,
+        downloadDestination: "files" as DownloadDestination,
+        mediaUrls: uniqueMediaUrls,
+      };
+    }
+    if (selectedAction === SAVE_ALL_TO_HYDRA_ALBUM_OPTION) {
+      return {
+        action: "download" as MediaLongPressAction,
+        downloadDestination: "photos" as DownloadDestination,
+        mediaUrls: uniqueMediaUrls,
+      };
+    }
+    return {
+      action: "download" as MediaLongPressAction,
+      downloadDestination: "photos" as DownloadDestination,
+      mediaUrls: [mediaUrl],
+    };
+  };
+
   return async (
     type: "image" | "video",
     mediaUrl: string,
@@ -273,10 +346,35 @@ export default function useMediaSharing() {
   ) => {
     if (alreadyAsking.current) return;
     alreadyAsking.current = true;
-    const resolvedSettings = await restoreBackupIfNeeded();
-    const action = options.forceAction ?? resolvedSettings.longPressAction;
-    let file: File | null = null;
+    let action: MediaLongPressAction = options.forceAction ?? "share";
+    let mediaUrls = [mediaUrl];
+    let forcedDownloadDestination = options.forceDownloadDestination;
+    let downloadedFiles: File[] = [];
+    let destinationFolderName: string | null = null;
     try {
+      if (!options.forceAction) {
+        const selectedAction = await showLongPressMediaMenu(type, mediaUrl, options);
+        if (!selectedAction) {
+          return;
+        }
+        action = selectedAction.action;
+        mediaUrls = selectedAction.mediaUrls;
+        forcedDownloadDestination = selectedAction.downloadDestination;
+      }
+      const resolvedSettings =
+        action === "download" ? await restoreBackupIfNeeded() : null;
+      const resolvedDownloadDestination =
+        forcedDownloadDestination ??
+        resolvedSettings?.downloadDestination ??
+        DOWNLOAD_DESTINATION_DEFAULT;
+      const mediaTypeLabel =
+        type === "image"
+          ? mediaUrls.length > 1
+            ? "Images"
+            : "Image"
+          : mediaUrls.length > 1
+            ? "Videos"
+            : "Video";
       setModal(
         <TouchableOpacity
           style={[styles.modalContainer, { width, height }]}
@@ -301,46 +399,64 @@ export default function useMediaSharing() {
               ]}
             >
               {action === "share"
-                ? `Preparing ${type === "image" ? "Image" : "Video"}...`
-                : `Downloading ${type === "image" ? "Image" : "Video"}...`}
+                ? `Preparing ${mediaTypeLabel}...`
+                : `Saving ${mediaTypeLabel}...`}
             </Text>
             <ActivityIndicator size="small" />
           </View>
         </TouchableOpacity>,
       );
-      const fileName = normalizeFileName(
-        new URL(mediaUrl).getBasePath().split("/").pop() ?? `hydra-${Date.now()}`,
-        type,
-      );
-      file = new File(Paths.cache, `${Date.now()}-${fileName}`);
-      if (file.exists) {
-        file.delete();
-      }
-      await File.downloadFileAsync(mediaUrl, file);
 
-      if (action === "share") {
-        setModal(null);
-        await Share.share({
-          url: file.uri,
-        });
-      } else if (resolvedSettings.downloadDestination === "photos") {
-        await saveToPhotos(file);
-        setModal(null);
-        Alert.alert(
-          "Saved to Photos",
-          `Saved ${type} to the ${HYDRA_PHOTOS_ALBUM_NAME} album.`,
-        );
-      } else {
-        const folder = await saveToFiles(
-          file,
+      for (let i = 0; i < mediaUrls.length; i += 1) {
+        const currentUrl = mediaUrls[i];
+        const fileName = normalizeFileName(
+          new URL(currentUrl).getBasePath().split("/").pop() ?? `hydra-${Date.now()}`,
           type,
-          fileName,
-          options.subreddit,
-          true,
-          resolvedSettings.filesRootUri,
         );
+        const file = new File(Paths.cache, `${Date.now()}-${i}-${fileName}`);
+        if (file.exists) {
+          file.delete();
+        }
+        await File.downloadFileAsync(currentUrl, file);
+        downloadedFiles.push(file);
+
+        if (action === "share") {
+          setModal(null);
+          await Share.share({
+            url: file.uri,
+          });
+          break;
+        } else if (resolvedDownloadDestination === "photos") {
+          await saveToPhotos(file);
+        } else {
+          destinationFolderName = await saveToFiles(
+            file,
+            type,
+            fileName,
+            options.subreddit,
+            true,
+            resolvedSettings?.filesRootUri,
+          );
+        }
+      }
+
+      if (action === "download") {
         setModal(null);
-        Alert.alert("Saved to Files", `Saved ${type} to ${folder}.`);
+        const itemLabel =
+          mediaUrls.length === 1
+            ? type
+            : `${mediaUrls.length} ${type === "image" ? "images" : "videos"}`;
+        if (resolvedDownloadDestination === "photos") {
+          Alert.alert(
+            "Saved to Photos",
+            `Saved ${itemLabel} to the ${HYDRA_PHOTOS_ALBUM_NAME} album.`,
+          );
+        } else {
+          Alert.alert(
+            "Saved to Files",
+            `Saved ${itemLabel} to ${destinationFolderName ?? "selected folder"}.`,
+          );
+        }
       }
     } catch (e) {
       setModal(null);
@@ -363,8 +479,10 @@ export default function useMediaSharing() {
         );
       }
     } finally {
-      if (file?.exists) {
-        file.delete();
+      for (const file of downloadedFiles) {
+        if (file.exists) {
+          file.delete();
+        }
       }
       alreadyAsking.current = false;
     }

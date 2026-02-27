@@ -86,7 +86,10 @@ export default function ImageViewer({
           onLongPress={(imgSource) =>
             typeof imgSource === "object" &&
             imgSource.uri &&
-            shareMedia("image", imgSource.uri, { subreddit })
+            shareMedia("image", imgSource.uri, {
+              subreddit,
+              allMediaUrls: images,
+            })
           }
           onImageIndexChange={(index) => (initialImageIndex.current = index)}
           delayLongPress={500}
@@ -108,7 +111,10 @@ export default function ImageViewer({
           style={styles.touchableZone}
           underlayColor={theme.background}
           onLongPress={() =>
-            shareMedia("image", images[index], { subreddit })
+            shareMedia("image", images[index], {
+              subreddit,
+              allMediaUrls: images,
+            })
           }
         >
           <Image
