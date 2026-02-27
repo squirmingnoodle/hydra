@@ -157,6 +157,10 @@ export default function PostsPage({
         subreddit={subreddit}
       >
         <RedditDataScroller<Post>
+          contentInsetAdjustmentBehavior={
+            route.name === "Home" ? "never" : "automatic"
+          }
+          automaticallyAdjustContentInsets={route.name !== "Home"}
           ListHeaderComponent={
             route.name === "PostsPage" ? (
               <SearchBar
