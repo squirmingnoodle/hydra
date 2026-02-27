@@ -89,12 +89,25 @@ export default function Downloads() {
       onChange: setDownloadDestination,
     });
 
-  const selectFilesRootFolder = async () => {
+  const pickDirectoryWithFallback = async (initialUri?: string) => {
     try {
-      const directory = await Directory.pickDirectoryAsync(filesRootUri ?? undefined);
-      setFilesRootUri(directory.uri);
-    } catch (_e) {
-      // User canceled.
+      return (await Directory.pickDirectoryAsync(initialUri)).uri;
+    } catch (_error) {
+      if (!initialUri) {
+        return null;
+      }
+      try {
+        return (await Directory.pickDirectoryAsync(undefined)).uri;
+      } catch (_fallbackError) {
+        return null;
+      }
+    }
+  };
+
+  const selectFilesRootFolder = async () => {
+    const directoryUri = await pickDirectoryWithFallback(filesRootUri ?? undefined);
+    if (directoryUri) {
+      setFilesRootUri(directoryUri);
     }
   };
 
@@ -166,8 +179,9 @@ export default function Downloads() {
         ]}
       >
         Files downloads are saved into subreddit folders under the selected
-        root folder. On iOS, folder access can expire after app restarts and
-        Hydra will prompt you to select the folder again when needed.
+        root folder. On iOS, folder access can expire after app restarts.
+        Hydra will automatically prompt once to re-select the folder and retry
+        the save when needed.
       </Text>
     </>
   );

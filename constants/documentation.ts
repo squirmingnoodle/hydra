@@ -648,7 +648,7 @@ If a file with the same name already exists, Hydra keeps both by adding suffixes
 ## Notes
 
 - Share buttons still open the system share sheet even if long press is set to Download.
-- On iOS, Files folder access can expire after app restarts. Hydra will prompt you to re-select the folder if needed.
+- On iOS, Files folder access can expire after app restarts. Hydra will automatically prompt once to re-select the folder and retry the save if needed.
 - If saving to Photos, make sure Hydra has Photos permission in iOS Settings.
 
 ---
