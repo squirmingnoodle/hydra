@@ -84,9 +84,9 @@ export default function PostsPage({
 
   useOfferGalleryMode({ url, posts });
 
-  const handleScrolledPastPost = (post: Post) => {
+  const handleScrolledPastPost = async (post: Post) => {
     if (autoMarkAsSeen) {
-      markPostSeen(post);
+      await markPostSeen(post);
       rerender((prev) => prev + 1);
     }
   };

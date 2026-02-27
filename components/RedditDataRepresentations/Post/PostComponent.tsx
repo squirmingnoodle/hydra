@@ -157,11 +157,11 @@ export default function PostComponent({
         ? theme.downvote
         : theme.subtleText;
 
-  const setSeenValue = (value: boolean) => {
+  const setSeenValue = async (value: boolean) => {
     if (value) {
-      markPostSeen(post);
+      await markPostSeen(post);
     } else {
-      markPostUnseen(post);
+      await markPostUnseen(post);
     }
     rerender((prev) => prev + 1);
   };

@@ -22,7 +22,7 @@ export type SafeFetchResponse = {
   headers: Headers;
   url: string;
   text: () => Promise<string>;
-  json: <T = unknown>() => Promise<T>;
+  json: <T = any>() => Promise<T>;
   blob: () => Promise<Blob>;
 };
 
