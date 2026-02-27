@@ -46,6 +46,7 @@ const Tab = createBottomTabNavigator();
 const NativeLiquidTab = createNativeBottomTabNavigator<TabParamsList>();
 
 const TAB_BAR_HEIGHT = 70;
+const FULLY_TRANSPARENT_COLOR = "#00000000";
 
 export default function Tabs() {
   if (__DEV__) {
@@ -173,7 +174,12 @@ export default function Tabs() {
 
   return (
     <SafeAreaView
-      style={{ flex: 1, backgroundColor: theme.background }}
+      style={{
+        flex: 1,
+        backgroundColor: showLiquidGlassTabBar
+          ? FULLY_TRANSPARENT_COLOR
+          : theme.background,
+      }}
       edges={["right", "left"]}
     >
       <QuickSubredditSearch
@@ -312,6 +318,11 @@ export default function Tabs() {
         ) : (
           <Tab.Navigator
             screenOptions={{
+              sceneStyle: {
+                backgroundColor: showLiquidGlassTabBar
+                  ? FULLY_TRANSPARENT_COLOR
+                  : theme.background,
+              },
               tabBarStyle: {
                 position: "absolute",
                 paddingHorizontal: showLiquidGlassTabBar ? 12 : 10,
@@ -322,7 +333,7 @@ export default function Tabs() {
                 paddingTop: showLiquidGlassTabBar ? 2 : 0,
                 paddingBottom: showLiquidGlassTabBar ? 2 : 0,
                 backgroundColor: showLiquidGlassTabBar
-                  ? "transparent"
+                  ? FULLY_TRANSPARENT_COLOR
                   : theme.background,
                 borderWidth: showLiquidGlassTabBar ? 1 : 0,
                 borderColor: showLiquidGlassTabBar

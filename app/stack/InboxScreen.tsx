@@ -25,7 +25,7 @@ export default function InboxScreen({ StackNavigator }: InboxScreenProps) {
       name="InboxPage"
       component={InboxPage}
       options={{
-        headerTitle: "Inbox",
+        title: "Inbox",
         headerRight: () => (
           <IconButton
             icon={

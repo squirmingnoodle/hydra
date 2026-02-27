@@ -7,11 +7,13 @@ import {
   TouchableOpacity,
   LayoutChangeEvent,
   GestureResponderEvent,
+  Platform,
 } from "react-native";
 
 import MultiredditLink from "../components/RedditDataRepresentations/Multireddit/MultiredditLink";
 import SubredditCompactLink from "../components/RedditDataRepresentations/Subreddit/SubredditCompactLink";
 import { ThemeContext } from "../contexts/SettingsContexts/ThemeContext";
+import { TabSettingsContext } from "../contexts/SettingsContexts/TabSettingsContext";
 import { SubredditContext } from "../contexts/SubredditContext";
 import { useURLNavigation } from "../utils/navigation";
 import { FlashList, FlashListRef } from "@shopify/flash-list";
@@ -226,8 +228,11 @@ function TopButton({ item }: { item: TopButtonItem }) {
 
 export default function Subreddits() {
   const { theme } = useContext(ThemeContext);
+  const { liquidGlassEnabled } = useContext(TabSettingsContext);
   const { subreddits, multis } = useContext(SubredditContext);
   const flashListRef = useRef<FlashListRef<ScrollItem>>(null);
+  const shouldUseSystemContentInsets =
+    Platform.OS === "ios" && liquidGlassEnabled;
 
   const scrollItems: ScrollItem[] = [
     {
@@ -354,6 +359,12 @@ export default function Subreddits() {
     <View style={styles.subredditsContainer}>
       <FlashList
         ref={flashListRef}
+        contentInsetAdjustmentBehavior={
+          shouldUseSystemContentInsets ? "automatic" : undefined
+        }
+        automaticallyAdjustContentInsets={
+          shouldUseSystemContentInsets ? true : undefined
+        }
         data={scrollItems}
         renderItem={({ item }) =>
           item.type === "topButton" ? (

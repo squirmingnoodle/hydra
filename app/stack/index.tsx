@@ -31,6 +31,8 @@ import GalleryScreen from "./GalleryScreen";
 import { TabSettingsContext } from "../../contexts/SettingsContexts/TabSettingsContext";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
+const FULLY_TRANSPARENT_COLOR = "#00000000";
+
 export type StackParamsList = {
   Subreddits: undefined;
   Home: {
@@ -113,6 +115,26 @@ const SHOWS_BENEATH_TABS: Record<keyof StackParamsList, boolean> = {
   ErrorPage: false,
 };
 
+const HIDE_CENTER_TITLE_ROUTES: Record<keyof StackParamsList, boolean> = {
+  Subreddits: true,
+  Home: true,
+  InboxPage: true,
+  MessagesPage: false,
+  PostsPage: true,
+  SubredditSearchPage: true,
+  PostDetailsPage: true,
+  MultiredditPage: true,
+  UserPage: true,
+  Accounts: false,
+  WikiPage: true,
+  GalleryPage: true,
+  SidebarPage: true,
+  SettingsPage: false,
+  SearchPage: true,
+  WebviewPage: false,
+  ErrorPage: false,
+};
+
 export type StackPageProps<Pages extends keyof StackParamsList> =
   NativeStackScreenProps<StackParamsList, Pages>;
 
@@ -128,10 +150,6 @@ export default function Stack() {
     tabBarHeightFromContext ??
     (Platform.OS === "ios" ? insets.bottom + 49 : insets.bottom + 56);
   const showLiquidGlassHeader = Platform.OS === "ios" && liquidGlassEnabled;
-  const liquidGlassHeaderBackground =
-    theme.systemModeStyle === "dark"
-      ? "rgba(20, 20, 24, 0.84)"
-      : "rgba(248, 248, 252, 0.88)";
 
   const futureRoutes = useRef<
     NavigationRoute<StackParamsList, keyof StackParamsList>[]
@@ -162,27 +180,55 @@ export default function Stack() {
   return (
     // Wrapped view is a fix for this bug:
     // https://github.com/expo/expo/issues/39969
-    <View style={{ flex: 1, backgroundColor: theme.background }}>
+    <View
+      style={{
+        flex: 1,
+        backgroundColor: showLiquidGlassHeader
+          ? FULLY_TRANSPARENT_COLOR
+          : theme.background,
+      }}
+    >
       <StackNavigator.Navigator
-        screenOptions={({ route }) => ({
-          headerTintColor: theme.iconOrTextButton.toString(),
-          navigationBarColor: theme.background.toString(),
-          headerStyle: {
-            backgroundColor: showLiquidGlassHeader
-              ? liquidGlassHeaderBackground
-              : theme.background.toString(),
-          },
-          headerTitleStyle: {
-            color: theme.text.toString(),
-          },
-          fullScreenGestureEnabled: swipeAnywhereToNavigate,
-          contentStyle: {
-            paddingBottom: SHOWS_BENEATH_TABS[route.name]
-              ? 0
-              : Math.max(0, tabBarHeight - TAB_BAR_REMOVED_PADDING_BOTTOM),
-            backgroundColor: theme.background,
-          },
-        })}
+        screenOptions={({ route }) => {
+          const hideCenterTitle =
+            showLiquidGlassHeader && HIDE_CENTER_TITLE_ROUTES[route.name];
+
+          return {
+            headerTintColor: theme.iconOrTextButton.toString(),
+            navigationBarColor: theme.background.toString(),
+            headerTransparent: showLiquidGlassHeader,
+            headerBlurEffect: showLiquidGlassHeader ? "none" : undefined,
+            headerShadowVisible: showLiquidGlassHeader ? false : undefined,
+            headerBackground: showLiquidGlassHeader
+              ? () => (
+                  <View
+                    style={{
+                      flex: 1,
+                      backgroundColor: FULLY_TRANSPARENT_COLOR,
+                    }}
+                  />
+                )
+              : undefined,
+            headerStyle: {
+              backgroundColor: showLiquidGlassHeader
+                ? FULLY_TRANSPARENT_COLOR
+                : theme.background.toString(),
+            },
+            headerTitle: hideCenterTitle ? "" : undefined,
+            headerTitleStyle: {
+              color: theme.text.toString(),
+            },
+            fullScreenGestureEnabled: swipeAnywhereToNavigate,
+            contentStyle: {
+              paddingBottom: SHOWS_BENEATH_TABS[route.name]
+                ? 0
+                : Math.max(0, tabBarHeight - TAB_BAR_REMOVED_PADDING_BOTTOM),
+              backgroundColor: showLiquidGlassHeader
+                ? FULLY_TRANSPARENT_COLOR
+                : theme.background,
+            },
+          };
+        }}
         screenLayout={({ children }) => (
           <StackFutureProvider futureRoutes={futureRoutes}>
             {children}

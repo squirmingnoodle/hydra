@@ -6,6 +6,7 @@ import {
   Text,
   ActivityIndicator,
   TouchableOpacity,
+  Platform,
 } from "react-native";
 
 import { getConversationMessages, Message } from "../api/Messages";
@@ -15,6 +16,7 @@ import ReplyToMessage from "../components/Modals/ReplyToMessage";
 import { AccountContext } from "../contexts/AccountContext";
 import { ModalContext } from "../contexts/ModalContext";
 import { ThemeContext } from "../contexts/SettingsContexts/ThemeContext";
+import { TabSettingsContext } from "../contexts/SettingsContexts/TabSettingsContext";
 import RedditURL from "../utils/RedditURL";
 import Time from "../utils/Time";
 
@@ -22,8 +24,11 @@ export default function MessagesPage({
   route,
 }: StackPageProps<"MessagesPage">) {
   const { theme } = useContext(ThemeContext);
+  const { liquidGlassEnabled } = useContext(TabSettingsContext);
   const { currentUser } = useContext(AccountContext);
   const { setModal } = useContext(ModalContext);
+  const shouldUseSystemContentInsets =
+    Platform.OS === "ios" && liquidGlassEnabled;
 
   const { url } = route.params;
 
@@ -71,6 +76,12 @@ export default function MessagesPage({
       >
         <ScrollView
           ref={scrollView}
+          contentInsetAdjustmentBehavior={
+            shouldUseSystemContentInsets ? "automatic" : undefined
+          }
+          automaticallyAdjustContentInsets={
+            shouldUseSystemContentInsets ? true : undefined
+          }
           contentContainerStyle={{ flexGrow: 1, paddingBottom: 100 }}
         >
           {!loading ? (

@@ -14,6 +14,7 @@ import {
   ScrollView,
   RefreshControl,
   ColorValue,
+  Platform,
 } from "react-native";
 
 import {
@@ -32,6 +33,7 @@ import Comments from "../components/RedditDataRepresentations/Post/PostParts/Com
 import { AccountContext } from "../contexts/AccountContext";
 import { ScrollerContext, ScrollerProvider } from "../contexts/ScrollerContext";
 import { ThemeContext } from "../contexts/SettingsContexts/ThemeContext";
+import { TabSettingsContext } from "../contexts/SettingsContexts/TabSettingsContext";
 import RedditURL from "../utils/RedditURL";
 import { useURLNavigation } from "../utils/navigation";
 import { TabScrollContext } from "../contexts/TabScrollContext";
@@ -60,9 +62,12 @@ function PostDetails(props: PostDetailsProps) {
   const navigation = useURLNavigation();
 
   const { theme } = useContext(ThemeContext);
+  const { liquidGlassEnabled } = useContext(TabSettingsContext);
   const { scrollDisabled } = useContext(ScrollerContext);
   const { currentUser } = useContext(AccountContext);
   const { handleScrollForTabBar } = useContext(TabScrollContext);
+  const shouldUseSystemContentInsets =
+    Platform.OS === "ios" && liquidGlassEnabled;
   const { setScrollToNext, setScrollToPrevious } = useContext(
     ScrollToNextButtonContext,
   );
@@ -304,6 +309,12 @@ function PostDetails(props: PostDetailsProps) {
       {postDetail ? (
         <ScrollView
           ref={scrollView}
+          contentInsetAdjustmentBehavior={
+            shouldUseSystemContentInsets ? "automatic" : undefined
+          }
+          automaticallyAdjustContentInsets={
+            shouldUseSystemContentInsets ? true : undefined
+          }
           refreshControl={
             <RefreshControl
               tintColor={refreshControlColor}
