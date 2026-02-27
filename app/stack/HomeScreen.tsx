@@ -15,13 +15,14 @@ export default function HomeScreen({ StackNavigator }: HomeScreenProps) {
     <StackNavigator.Screen<"Home">
       name="Home"
       component={PostsPage}
-      options={({ route }) => ({
-        headerBackTitle: new RedditURL(route.params.url).getPageName(),
-        title: "",
-        headerTransparent: true,
-        headerStyle: { backgroundColor: "transparent" },
-        freezeOnBlur: true,
-      })}
+      options={({ route }) => {
+        const pageName = new RedditURL(route.params.url).getPageName();
+        return {
+          headerBackTitle: pageName,
+          title: pageName,
+          freezeOnBlur: true,
+        };
+      }}
     />
   );
 }

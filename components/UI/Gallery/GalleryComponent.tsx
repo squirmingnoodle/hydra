@@ -5,6 +5,7 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   Text,
+  Platform,
 } from "react-native";
 import { Post } from "../../../api/Posts";
 import { Image } from "expo-image";
@@ -13,6 +14,7 @@ import MediaViewer, { MediaViewerRef } from "../MediaViewer.tsx/MediaViewer";
 import Video from "./Video";
 import PostOverlay from "../MediaViewer.tsx/PostOverlay";
 import { ThemeContext } from "../../../contexts/SettingsContexts/ThemeContext";
+import { TabSettingsContext } from "../../../contexts/SettingsContexts/TabSettingsContext";
 import GetHydraProButton from "../GetHydraProButton";
 import { SubscriptionsContext } from "../../../contexts/SubscriptionsContext";
 import useMediaSharing from "../../../utils/useMediaSharing";
@@ -45,7 +47,10 @@ export default function GalleryComponent({
   hitFilterLimit,
 }: GalleryComponentProps) {
   const { theme } = useContext(ThemeContext);
+  const { liquidGlassEnabled } = useContext(TabSettingsContext);
   const { isPro } = useContext(SubscriptionsContext);
+  const shouldUseSystemContentInsets =
+    Platform.OS === "ios" && liquidGlassEnabled;
 
   const shareMedia = useMediaSharing();
 
@@ -115,6 +120,12 @@ export default function GalleryComponent({
     >
       <FlashList
         ref={flashListRef}
+        contentInsetAdjustmentBehavior={
+          shouldUseSystemContentInsets ? "automatic" : undefined
+        }
+        automaticallyAdjustContentInsets={
+          shouldUseSystemContentInsets ? true : undefined
+        }
         data={galleryMedia}
         renderItem={({ item, index }) => (
           <TouchableOpacity

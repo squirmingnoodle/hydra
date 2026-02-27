@@ -136,7 +136,7 @@ function RootLayout() {
     fontsLoaded &&
     dbMaintenanceDone &&
     settingsHydrated && (
-      <SafeAreaProvider>
+      <SafeAreaProvider style={{ backgroundColor: "#00000000" }}>
         <AccountProvider>
           <SubscriptionsProvider>
             <SettingsProvider>
