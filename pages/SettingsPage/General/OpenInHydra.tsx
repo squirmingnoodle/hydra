@@ -2,10 +2,10 @@ import { Feather, MaterialIcons } from "@expo/vector-icons";
 import * as Linking from "expo-linking";
 import React, { useContext } from "react";
 import { Switch, Text, StyleSheet } from "react-native";
-import { useMMKVBoolean } from "react-native-mmkv";
 
 import List from "../../../components/UI/List";
 import { ThemeContext } from "../../../contexts/SettingsContexts/ThemeContext";
+import { useAccountScopedMMKVBoolean } from "../../../utils/accountScopedSettings";
 
 export const READ_CLIPBOARD_KEY = "readClipboard";
 export const READ_CLIPBOARD_DEFAULT = false;
@@ -14,7 +14,7 @@ export default function OpenInHydra() {
   const { theme } = useContext(ThemeContext);
 
   const [storedReadClipboard, setReadClipboard] =
-    useMMKVBoolean(READ_CLIPBOARD_KEY);
+    useAccountScopedMMKVBoolean(READ_CLIPBOARD_KEY);
 
   const readClipboard = storedReadClipboard ?? READ_CLIPBOARD_DEFAULT;
 

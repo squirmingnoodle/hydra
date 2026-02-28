@@ -5,6 +5,32 @@ import {
   HYDRA_SERVER_URL,
 } from "../constants/HydraServer";
 
+async function parseSummaryResponse(response: Response): Promise<string> {
+  if (!response.ok) return "";
+
+  const text = (await response.text()).trim();
+  if (!text) return "";
+
+  const contentType = response.headers.get("content-type")?.toLowerCase() ?? "";
+  const isHtmlResponse =
+    contentType.includes("text/html") ||
+    text.startsWith("<!doctype html") ||
+    text.startsWith("<html");
+
+  if (isHtmlResponse) return "";
+
+  if (
+    text.includes("__bunfallback") ||
+    text.includes("BunErrorOverlay") ||
+    text.includes("AI_RetryError") ||
+    text.includes("AI_APICallError")
+  ) {
+    return "";
+  }
+
+  return text;
+}
+
 export async function summarizePostDetails(
   customerId: string,
   post: PostDetail,
@@ -22,7 +48,7 @@ export async function summarizePostDetails(
       }),
     },
   );
-  return await response.text();
+  return parseSummaryResponse(response);
 }
 
 export async function summarizePostComments(
@@ -43,7 +69,7 @@ export async function summarizePostComments(
       comments: topComments,
     }),
   });
-  return await response.text();
+  return parseSummaryResponse(response);
 }
 
 export async function filterPosts(

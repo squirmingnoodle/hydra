@@ -18,10 +18,12 @@ export default function ImageViewer({
   images,
   thumbnail,
   aspectRatio,
+  subreddit,
 }: {
   images: string[];
   thumbnail?: string;
   aspectRatio?: number;
+  subreddit?: string;
 }) {
   const { currentDataMode } = useContext(DataModeContext);
   const shareMedia = useMediaSharing();
@@ -36,7 +38,7 @@ export default function ImageViewer({
   const isGif = new URL(images[0]).getRelativePath().endsWith(".gif");
 
   let displayImgs = images.slice(0, 2);
-  if ((loadLowData || isGif) && thumbnail) {
+  if (loadLowData && thumbnail) {
     displayImgs = [thumbnail];
   }
 
@@ -59,7 +61,10 @@ export default function ImageViewer({
 
   const imgRatio = aspectRatio ?? (img1 ? img1.width / img1.height : 0);
   const heightIfFullSize = width / imgRatio;
-  const imgHeight = Math.min(height * 0.6, heightIfFullSize);
+  const isSingleImage = imgRefs.length === 1;
+  const maxImageHeight =
+    imgRatio < 1 && isSingleImage ? height * 0.9 : height * 0.6;
+  const imgHeight = Math.min(maxImageHeight, heightIfFullSize);
 
   return (
     <View
@@ -81,7 +86,10 @@ export default function ImageViewer({
           onLongPress={(imgSource) =>
             typeof imgSource === "object" &&
             imgSource.uri &&
-            shareMedia("image", imgSource.uri)
+            shareMedia("image", imgSource.uri, {
+              subreddit,
+              allMediaUrls: images,
+            })
           }
           onImageIndexChange={(index) => (initialImageIndex.current = index)}
           delayLongPress={500}
@@ -102,7 +110,12 @@ export default function ImageViewer({
           }}
           style={styles.touchableZone}
           underlayColor={theme.background}
-          onLongPress={() => shareMedia("image", images[index])}
+          onLongPress={() =>
+            shareMedia("image", images[index], {
+              subreddit,
+              allMediaUrls: images,
+            })
+          }
         >
           <Image
             style={[

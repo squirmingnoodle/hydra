@@ -1,10 +1,5 @@
 import { createContext, useContext, useMemo } from "react";
 import { Alert } from "react-native";
-import {
-  useMMKVBoolean,
-  useMMKVObject,
-  useMMKVString,
-} from "react-native-mmkv";
 
 import { filterPosts } from "../../api/AI";
 import { Comment } from "../../api/PostDetail";
@@ -17,6 +12,11 @@ import {
 import { FilterFunction } from "../../utils/useRedditDataState";
 import { SubscriptionsContext } from "../SubscriptionsContext";
 import RedditURL from "../../utils/RedditURL";
+import {
+  useAccountScopedMMKVBoolean,
+  useAccountScopedMMKVObject,
+  useAccountScopedMMKVString,
+} from "../../utils/accountScopedSettings";
 
 type HideSeenURLs = Record<string, boolean>;
 
@@ -62,29 +62,32 @@ export const FiltersContext = createContext(initialPostSettingsContext);
 export function FiltersProvider({ children }: React.PropsWithChildren) {
   const { customerId, isPro } = useContext(SubscriptionsContext);
 
-  const [storedFilterSeenPosts, setFilterSeenPosts] = useMMKVBoolean(
-    FILTER_SEEN_POSTS_KEY,
-  );
+  const [storedFilterSeenPosts, setFilterSeenPosts] =
+    useAccountScopedMMKVBoolean(FILTER_SEEN_POSTS_KEY);
   const filterSeenPosts =
     storedFilterSeenPosts ?? initialValues.filterSeenPosts;
 
   const [storedHideSeenURLs, setHideSeenURLs] =
-    useMMKVObject<HideSeenURLs>(HIDE_SEEN_URLS_KEY);
+    useAccountScopedMMKVObject<HideSeenURLs>(HIDE_SEEN_URLS_KEY);
   const hideSeenURLs = storedHideSeenURLs ?? HIDE_SEEN_URLS_DEFAULT;
 
   const [storedHideFilteredSubreddits, setHideFilteredSubreddits] =
-    useMMKVObject<HideFilteredSubreddits>(HIDE_FILTERED_SUBREDDITS_KEY);
+    useAccountScopedMMKVObject<HideFilteredSubreddits>(
+      HIDE_FILTERED_SUBREDDITS_KEY,
+    );
   const hideFilteredSubreddits =
     storedHideFilteredSubreddits ?? initialValues.hideFilteredSubreddits;
 
   const [storedAutoMarkAsSeen, setAutoMarkAsSeen] =
-    useMMKVBoolean("autoMarkAsSeen");
+    useAccountScopedMMKVBoolean("autoMarkAsSeen");
   const autoMarkAsSeen = storedAutoMarkAsSeen ?? initialValues.autoMarkAsSeen;
 
-  const [storedFilterText, setFilterText] = useMMKVString("filterText");
+  const [storedFilterText, setFilterText] =
+    useAccountScopedMMKVString("filterText");
   const filterText = storedFilterText ?? initialValues.filterText;
 
-  const [storedAiFilterText, setAiFilterText] = useMMKVString("aiFilterText");
+  const [storedAiFilterText, setAiFilterText] =
+    useAccountScopedMMKVString("aiFilterText");
   const aiFilterText = storedAiFilterText ?? initialValues.aiFilterText;
 
   const textFilterMap = useMemo(

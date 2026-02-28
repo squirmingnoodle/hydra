@@ -1,5 +1,5 @@
 import { FontAwesome, MaterialCommunityIcons } from "@expo/vector-icons";
-import React, { useContext, useState } from "react";
+import React, { useContext, useEffect, useState } from "react";
 import {
   StyleSheet,
   ColorValue,
@@ -8,7 +8,6 @@ import {
   TouchableOpacity,
   Text,
 } from "react-native";
-import { useMMKVBoolean, useMMKVString } from "react-native-mmkv";
 
 import List from "../../../components/UI/List";
 import {
@@ -22,6 +21,11 @@ import {
 import { ThemeContext } from "../../../contexts/SettingsContexts/ThemeContext";
 import KeyStore from "../../../utils/KeyStore";
 import { useSettingsPicker } from "../../../utils/useSettingsPicker";
+import {
+  makeAccountScopedSettingPrefix,
+  useAccountScopedMMKVBoolean,
+  useAccountScopedMMKVString,
+} from "../../../utils/accountScopedSettings";
 
 const POST_SORT_OPTIONS = [
   {
@@ -108,23 +112,26 @@ const COMMENT_SORT_OPTIONS = [
   },
 ];
 
+const LEGACY_POST_SUBREDDIT_SORT_PREFIX = "PostSubredditSort-";
+const LEGACY_POST_SUBREDDIT_SORT_TOP_PREFIX = "PostSubredditSortTop-";
+const LEGACY_COMMENT_SUBREDDIT_SORT_PREFIX = "CommentSubredditSort-";
+
 export default function General() {
   const { theme } = useContext(ThemeContext);
 
-  const [storedDefaultPostSort, setDefaultPostSort] = useMMKVString(
+  const [storedDefaultPostSort, setDefaultPostSort] = useAccountScopedMMKVString(
     DEFAULT_POST_SORT_KEY,
   );
-  const [storedDefaultPostSortTop, setDefaultPostSortTop] = useMMKVString(
-    DEFAULT_POST_SORT_TOP_KEY,
-  );
+  const [storedDefaultPostSortTop, setDefaultPostSortTop] =
+    useAccountScopedMMKVString(DEFAULT_POST_SORT_TOP_KEY);
   const [storedRememberPostSubredditSort, setRememberPostSubredditSort] =
-    useMMKVBoolean(REMEMBER_POST_SUBREDDIT_SORT_KEY);
-  const [storedDefaultCommentSort, setDefaultCommentSort] = useMMKVString(
-    DEFAULT_COMMENT_SORT_KEY,
-  );
+    useAccountScopedMMKVBoolean(REMEMBER_POST_SUBREDDIT_SORT_KEY);
+  const [storedDefaultCommentSort, setDefaultCommentSort] =
+    useAccountScopedMMKVString(DEFAULT_COMMENT_SORT_KEY);
   const [storedRememberCommentSubredditSort, setRememberCommentSubredditSort] =
-    useMMKVBoolean(REMEMBER_COMMENT_SUBREDDIT_SORT_KEY);
-  const [storedSortHomePage, setSortHomePage] = useMMKVBoolean(SORT_HOME_PAGE);
+    useAccountScopedMMKVBoolean(REMEMBER_COMMENT_SUBREDDIT_SORT_KEY);
+  const [storedSortHomePage, setSortHomePage] =
+    useAccountScopedMMKVBoolean(SORT_HOME_PAGE);
 
   const defaultPostSort = storedDefaultPostSort ?? "default";
   const defaultPostSortTop = storedDefaultPostSortTop ?? "all";
@@ -161,18 +168,65 @@ export default function General() {
     onChange: setDefaultCommentSort,
   });
 
-  const keys = KeyStore.getAllKeys();
+  const accountScopedPrefix = makeAccountScopedSettingPrefix();
+  const scopedPostSubredditSortPrefix =
+    `${accountScopedPrefix}${LEGACY_POST_SUBREDDIT_SORT_PREFIX}`;
+  const scopedPostSubredditSortTopPrefix =
+    `${accountScopedPrefix}${LEGACY_POST_SUBREDDIT_SORT_TOP_PREFIX}`;
+  const scopedCommentSubredditSortPrefix =
+    `${accountScopedPrefix}${LEGACY_COMMENT_SUBREDDIT_SORT_PREFIX}`;
 
   const [numRememberedPostSubreddits, setNumRememberedPostSubreddits] =
-    useState(keys.filter((key) => key.startsWith("PostSubredditSort-")).length);
+    useState(0);
   const [numRememberedCommentSubreddits, setNumRememberedCommentSubreddits] =
-    useState(
-      keys.filter((key) => key.startsWith("CommentSubredditSort-")).length,
+    useState(0);
+
+  useEffect(() => {
+    const keys = KeyStore.getAllKeys();
+
+    keys.forEach((legacyKey) => {
+      if (
+        !legacyKey.startsWith(LEGACY_POST_SUBREDDIT_SORT_PREFIX) &&
+        !legacyKey.startsWith(LEGACY_POST_SUBREDDIT_SORT_TOP_PREFIX) &&
+        !legacyKey.startsWith(LEGACY_COMMENT_SUBREDDIT_SORT_PREFIX)
+      ) {
+        return;
+      }
+
+      const scopedKey = `${accountScopedPrefix}${legacyKey}`;
+      if (KeyStore.contains(scopedKey)) {
+        return;
+      }
+
+      const legacyValue = KeyStore.getString(legacyKey);
+      if (legacyValue !== undefined) {
+        KeyStore.set(scopedKey, legacyValue);
+      }
+    });
+
+    const scopedKeys = KeyStore.getAllKeys();
+    setNumRememberedPostSubreddits(
+      scopedKeys.filter((key) => key.startsWith(scopedPostSubredditSortPrefix))
+        .length,
     );
+    setNumRememberedCommentSubreddits(
+      scopedKeys.filter((key) =>
+        key.startsWith(scopedCommentSubredditSortPrefix),
+      ).length,
+    );
+  }, [
+    accountScopedPrefix,
+    scopedCommentSubredditSortPrefix,
+    scopedPostSubredditSortPrefix,
+  ]);
 
   const clearRememberedPostSubredditSorts = () => {
+    const keys = KeyStore.getAllKeys();
     keys.forEach((key) => {
-      if (key.startsWith("PostSubredditSort-")) {
+      if (
+        key.startsWith(scopedPostSubredditSortPrefix) ||
+        key.startsWith(scopedPostSubredditSortTopPrefix)
+      ) {
         KeyStore.delete(key);
       }
     });
@@ -180,8 +234,9 @@ export default function General() {
   };
 
   const clearRememberedCommentSubredditSorts = () => {
+    const keys = KeyStore.getAllKeys();
     keys.forEach((key) => {
-      if (key.startsWith("CommentSubredditSort-")) {
+      if (key.startsWith(scopedCommentSubredditSortPrefix)) {
         KeyStore.delete(key);
       }
     });

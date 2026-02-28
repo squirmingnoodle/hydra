@@ -1,11 +1,13 @@
-import { createContext, useEffect, useRef, useState } from "react";
+import { createContext, useContext, useEffect, useRef, useState } from "react";
 import {
   Keyboard,
+  Platform,
   ScrollView,
   ScrollViewProps,
   TextInput,
   useWindowDimensions,
 } from "react-native";
+import { TabSettingsContext } from "../../contexts/SettingsContexts/TabSettingsContext";
 
 type KeyboardAvoidingScrollerProps = ScrollViewProps;
 
@@ -52,6 +54,9 @@ export default function KeyboardAvoidingScroller(
   props: KeyboardAvoidingScrollerProps,
 ) {
   const { height } = useWindowDimensions();
+  const { liquidGlassEnabled } = useContext(TabSettingsContext);
+  const shouldUseSystemContentInsets =
+    Platform.OS === "ios" && liquidGlassEnabled;
 
   const scrollViewRef = useRef<ScrollView>(null);
   const [currentInput, setCurrentInput] = useState<TextInput | null>(null);
@@ -103,6 +108,14 @@ export default function KeyboardAvoidingScroller(
       <ScrollView
         ref={scrollViewRef}
         automaticallyAdjustKeyboardInsets
+        contentInsetAdjustmentBehavior={
+          props.contentInsetAdjustmentBehavior ??
+          (shouldUseSystemContentInsets ? "automatic" : undefined)
+        }
+        automaticallyAdjustContentInsets={
+          props.automaticallyAdjustContentInsets ??
+          (shouldUseSystemContentInsets ? true : undefined)
+        }
         {...props}
       />
     </KeyboardAvoidingScrollerContext.Provider>

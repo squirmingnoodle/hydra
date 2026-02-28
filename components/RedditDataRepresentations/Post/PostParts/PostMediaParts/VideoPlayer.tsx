@@ -28,6 +28,7 @@ type VideoPlayerProps = {
   straightToFullscreen?: boolean;
   exitedFullScreenCallback?: () => void;
   aspectRatio?: number;
+  subreddit?: string;
 };
 
 function VideoPlayer({
@@ -37,6 +38,7 @@ function VideoPlayer({
   straightToFullscreen,
   exitedFullScreenCallback,
   aspectRatio,
+  subreddit,
 }: VideoPlayerProps) {
   const { theme } = useContext(ThemeContext);
   const { currentDataMode } = useContext(DataModeContext);
@@ -95,7 +97,8 @@ function VideoPlayer({
 
   const videoRatio = aspectRatio ?? 1;
   const heightIfFullSize = width / videoRatio;
-  const videoHeight = Math.min(height * 0.6, heightIfFullSize);
+  const maxVideoHeight = videoRatio < 1 ? height * 0.9 : height * 0.6;
+  const videoHeight = Math.min(maxVideoHeight, heightIfFullSize);
 
   const video = useRef<VideoView>(null);
   const progress = useRef(new Animated.Value(0)).current;
@@ -127,7 +130,7 @@ function VideoPlayer({
         >
           {/* Have to put an invisible layer on top of the ImageViewer to keep it from stealing clicks */}
           <View style={styles.invisibleLayer} />
-          <ImageViewer images={[thumbnail]} />
+          <ImageViewer images={[thumbnail]} subreddit={subreddit} />
           <View
             style={[
               styles.isVideoContainer,
@@ -157,7 +160,9 @@ function VideoPlayer({
               player.play();
             }}
             onLongPress={() =>
-              videoDownloadURL ? shareMedia("video", videoDownloadURL) : null
+              videoDownloadURL
+                ? shareMedia("video", videoDownloadURL, { subreddit })
+                : null
             }
           >
             {failedToLoadErr ? (

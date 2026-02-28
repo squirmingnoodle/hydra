@@ -4,6 +4,7 @@ import { StyleSheet, View } from "react-native";
 import Advanced from "./Advanced";
 import Appearance from "./Appearance";
 import DataUse from "./DataUse";
+import Downloads from "./General/Downloads";
 import Filters from "./General/Filters";
 import GeneralRoot from "./General/GeneralRoot";
 import HydraPro from "./HydraPro";
@@ -63,6 +64,7 @@ export default function SettingsPage({
         {relativePath === "settings/general" && <GeneralRoot />}
         {relativePath === "settings/general/gestures" && <Gestures />}
         {relativePath === "settings/general/sorting" && <Sorting />}
+        {relativePath === "settings/general/downloads" && <Downloads />}
         {relativePath === "settings/general/openInHydra" && <OpenInHydra />}
         {relativePath === "settings/general/filters" && <Filters />}
         {relativePath === "settings/general/startup" && <Startup />}

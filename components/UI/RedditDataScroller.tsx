@@ -8,6 +8,7 @@ import {
   Text,
   View,
   ColorValue,
+  Platform,
 } from "react-native";
 
 import { RedditDataObject } from "../../api/RedditApi";
@@ -16,6 +17,7 @@ import {
   ScrollerProvider,
 } from "../../contexts/ScrollerContext";
 import { ThemeContext } from "../../contexts/SettingsContexts/ThemeContext";
+import { TabSettingsContext } from "../../contexts/SettingsContexts/TabSettingsContext";
 import { TabScrollContext } from "../../contexts/TabScrollContext";
 import { modifyStat, Stat } from "../../db/functions/Stats";
 
@@ -52,8 +54,11 @@ function RedditDataScroller<T extends RedditDataObject>(
   props: RedditDataScrollerProps<T>,
 ) {
   const { theme } = useContext(ThemeContext);
+  const { liquidGlassEnabled } = useContext(TabSettingsContext);
   const { scrollDisabled } = useContext(ScrollerContext);
   const { handleScrollForTabBar } = useContext(TabScrollContext);
+  const shouldUseSystemContentInsets =
+    Platform.OS === "ios" && liquidGlassEnabled;
 
   const [refreshing, setRefreshing] = useState(false);
   const [isLoadingMore, setIsLoadingMore] = useState(
@@ -86,9 +91,18 @@ function RedditDataScroller<T extends RedditDataObject>(
     }, 500);
   }, []);
 
+  const contentInsetAdjustmentBehavior =
+    props.contentInsetAdjustmentBehavior ??
+    (shouldUseSystemContentInsets ? "automatic" : undefined);
+  const automaticallyAdjustContentInsets =
+    props.automaticallyAdjustContentInsets ??
+    (shouldUseSystemContentInsets ? true : undefined);
+
   return (
     <FlashList<T>
       {...props}
+      contentInsetAdjustmentBehavior={contentInsetAdjustmentBehavior}
+      automaticallyAdjustContentInsets={automaticallyAdjustContentInsets}
       scrollEnabled={!scrollDisabled}
       indicatorStyle={theme.systemModeStyle === "dark" ? "white" : "black"}
       refreshControl={

@@ -41,9 +41,15 @@ export default function PostOverlay({
           onPress={async () => {
             setIsDownloading(true);
             if (post.images.length > 0) {
-              await shareMedia("image", post.images[rowIndex]);
+              await shareMedia("image", post.images[rowIndex], {
+                subreddit: post.subreddit,
+                forceAction: "share",
+              });
             } else if (post.videoDownloadURL) {
-              await shareMedia("video", post.videoDownloadURL);
+              await shareMedia("video", post.videoDownloadURL, {
+                subreddit: post.subreddit,
+                forceAction: "share",
+              });
             }
             setIsDownloading(false);
           }}

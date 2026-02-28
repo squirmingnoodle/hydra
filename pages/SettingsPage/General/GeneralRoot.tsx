@@ -32,6 +32,12 @@ export default function GeneralRoot() {
             onPress: () => pushURL("hydra://settings/general/sorting"),
           },
           {
+            key: "downloads",
+            icon: <Feather name="download" size={24} color={theme.text} />,
+            text: "Downloads",
+            onPress: () => pushURL("hydra://settings/general/downloads"),
+          },
+          {
             key: "filters",
             icon: <AntDesign name="filter" size={24} color={theme.text} />,
             text: "Filters",

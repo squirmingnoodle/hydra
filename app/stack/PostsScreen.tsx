@@ -15,9 +15,13 @@ export default function PostsScreen({ StackNavigator }: PostsScreenProps) {
     <StackNavigator.Screen<"PostsPage">
       name="PostsPage"
       component={PostsPage}
-      options={({ route }) => ({
-        title: new RedditURL(route.params.url).getPageName(),
-      })}
+      options={({ route }) => {
+        const pageName = new RedditURL(route.params.url).getPageName();
+        return {
+          title: pageName,
+          headerBackTitle: pageName,
+        };
+      }}
     />
   );
 }

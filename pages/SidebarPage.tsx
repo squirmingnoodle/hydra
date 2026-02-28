@@ -6,9 +6,11 @@ import {
   ScrollView,
   Text,
   TouchableOpacity,
+  Platform,
 } from "react-native";
 
 import { ThemeContext } from "../contexts/SettingsContexts/ThemeContext";
+import { TabSettingsContext } from "../contexts/SettingsContexts/TabSettingsContext";
 import { getRules, getSidebar, Rule, Sidebar } from "../api/SubredditDetails";
 import { URLRoutes } from "../app/stack";
 import { useRoute } from "../utils/navigation";
@@ -18,9 +20,12 @@ import RenderHtml from "../components/HTML/RenderHTML";
 export default function SidebarPage() {
   const { params } = useRoute<URLRoutes>();
   const { theme } = useContext(ThemeContext);
+  const { liquidGlassEnabled } = useContext(TabSettingsContext);
   const [sidebar, setSidebar] = useState<Sidebar | null>(null);
   const [rules, setRules] = useState<Rule[] | null>(null);
   const [expandedRules, setExpandedRules] = useState<Set<string>>(new Set());
+  const shouldUseSystemContentInsets =
+    Platform.OS === "ios" && liquidGlassEnabled;
 
   const subreddit = new RedditURL(params.url).getSubreddit();
 
@@ -51,7 +56,15 @@ export default function SidebarPage() {
       ]}
     >
       {sidebar && rules ? (
-        <ScrollView style={styles.scrollView}>
+        <ScrollView
+          style={styles.scrollView}
+          contentInsetAdjustmentBehavior={
+            shouldUseSystemContentInsets ? "automatic" : undefined
+          }
+          automaticallyAdjustContentInsets={
+            shouldUseSystemContentInsets ? true : undefined
+          }
+        >
           <View
             style={[
               styles.statsContainer,

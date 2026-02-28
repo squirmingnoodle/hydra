@@ -15,6 +15,7 @@ import {
   TouchableHighlight,
   Alert,
 } from "react-native";
+import * as Clipboard from "expo-clipboard";
 
 import PostMedia from "./PostParts/PostMedia";
 import SubredditIcon from "./PostParts/SubredditIcon";
@@ -35,6 +36,11 @@ import Time from "../../../utils/Time";
 type Summary = {
   post: string | null;
   comments: string | null;
+};
+
+type SummaryUnavailable = {
+  post: boolean;
+  comments: boolean;
 };
 
 type PostDetailsComponentProps = {
@@ -62,6 +68,11 @@ export default function PostDetailsComponent({
   const [mediaCollapsed, setMediaCollapsed] = useState(false);
   const [commentSummaryCollapsed, setCommentSummaryCollapsed] = useState(false);
   const [summary, setSummary] = useState<Summary | null>(null);
+  const [summaryUnavailable, setSummaryUnavailable] =
+    useState<SummaryUnavailable>({
+      post: false,
+      comments: false,
+    });
 
   const contextDepth = Number(new RedditURL(url).getQueryParam("context") ?? 0);
 
@@ -75,38 +86,67 @@ export default function PostDetailsComponent({
   };
 
   const getSummary = async () => {
-    if (!isPro || !customerId) return;
-    let postSummary = null;
-    let commentsSummary = null;
-    if (showPostSummary && postDetail.text.length > 850) {
-      postSummary = await summarizePostDetails(customerId, postDetail);
-      setSummary({
-        post: postSummary,
-        comments: null,
-      });
+    if (!isPro || !customerId) {
+      setSummary(null);
+      setSummaryUnavailable({ post: false, comments: false });
+      return;
     }
-    if (
+    const canSummarizePost = showPostSummary && postDetail.text.length > 850;
+    const canSummarizeComments =
       showCommentSummary &&
       postDetail.comments.reduce(
         (acc, comment) => acc + comment.text.length,
         0,
-      ) > 1_000
-    ) {
-      commentsSummary = await summarizePostComments(
-        customerId,
-        postDetail,
-        postSummary ?? postDetail.text,
-      );
-      setSummary({
-        post: postSummary,
-        comments: commentsSummary,
-      });
+      ) > 1_000;
+
+    let postSummary = null;
+    let commentsSummary = null;
+    let postSummaryUnavailable = false;
+    let commentsSummaryUnavailable = false;
+
+    if (canSummarizePost) {
+      try {
+        postSummary = await summarizePostDetails(customerId, postDetail);
+        postSummaryUnavailable = !postSummary;
+      } catch (_e) {
+        postSummaryUnavailable = true;
+      }
     }
+
+    if (canSummarizeComments) {
+      try {
+        commentsSummary = await summarizePostComments(
+          customerId,
+          postDetail,
+          postSummary ?? postDetail.text,
+        );
+        commentsSummaryUnavailable = !commentsSummary;
+      } catch (_e) {
+        commentsSummaryUnavailable = true;
+      }
+    }
+
+    setSummary({
+      post: postSummary,
+      comments: commentsSummary,
+    });
+    setSummaryUnavailable({
+      post: canSummarizePost && postSummaryUnavailable,
+      comments: canSummarizeComments && commentsSummaryUnavailable,
+    });
   };
 
   useEffect(() => {
     getSummary();
-  }, []);
+  }, [
+    isPro,
+    customerId,
+    showPostSummary,
+    showCommentSummary,
+    postDetail.id,
+    postDetail.text.length,
+    postDetail.comments.length,
+  ]);
 
   return (
     <View>
@@ -158,6 +198,40 @@ export default function PostDetailsComponent({
               </Text>
             </View>
           )}
+          {!mediaCollapsed &&
+            !summary?.post &&
+            summaryUnavailable.post &&
+            postDetail.text.length > 850 && (
+              <View
+                style={[
+                  styles.postSummaryContainer,
+                  {
+                    borderColor: theme.divider,
+                  },
+                ]}
+              >
+                <Text
+                  style={[
+                    styles.postSummaryTitle,
+                    {
+                      color: theme.text,
+                    },
+                  ]}
+                >
+                  Summary
+                </Text>
+                <Text
+                  style={[
+                    styles.postSummaryText,
+                    {
+                      color: theme.subtleText,
+                    },
+                  ]}
+                >
+                  Summary unavailable right now. Please try again later.
+                </Text>
+              </View>
+            )}
           {!mediaCollapsed && <PostMedia post={postDetail} />}
           <View style={styles.metadataContainer}>
             <View style={styles.metadataRow}>
@@ -386,6 +460,14 @@ export default function PostDetailsComponent({
           activeOpacity={1}
           underlayColor={theme.tint}
           onPress={() => setCommentSummaryCollapsed(!commentSummaryCollapsed)}
+          onLongPress={(e) => {
+            if (e.nativeEvent.touches.length > 1) return;
+            Clipboard.setStringAsync(summary.comments);
+            Alert.alert(
+              "Comments Summary Copied",
+              "The comment summary has been copied to your clipboard.",
+            );
+          }}
           style={[
             styles.commentsSummaryContainer,
             {
@@ -418,6 +500,37 @@ export default function PostDetailsComponent({
             )}
           </View>
         </TouchableHighlight>
+      )}
+      {!summary?.comments && summaryUnavailable.comments && (
+        <View
+          style={[
+            styles.commentsSummaryContainer,
+            {
+              borderTopColor: theme.divider,
+            },
+          ]}
+        >
+          <Text
+            style={[
+              styles.commentsSummaryTitle,
+              {
+                color: theme.text,
+              },
+            ]}
+          >
+            Comments Summary
+          </Text>
+          <Text
+            style={[
+              styles.commentsSummaryText,
+              {
+                color: theme.subtleText,
+              },
+            ]}
+          >
+            Comment summary unavailable right now. Please try again later.
+          </Text>
+        </View>
       )}
     </View>
   );
