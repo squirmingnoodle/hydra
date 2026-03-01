@@ -13,9 +13,15 @@
 		BB2F792D24A3F905000567C9 /* Expo.plist in Resources */ = {isa = PBXBuildFile; fileRef = BB2F792C24A3F905000567C9 /* Expo.plist */; };
 		D9920B8EC5594086CB9B6399 /* libPods-Hydra.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 0E016E9A6AB8AF7DE330462A /* libPods-Hydra.a */; };
 		E2E6B6FE8E8D79095952ACC4 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 9C74C7E2BF5664EAFD91AF77 /* PrivacyInfo.xcprivacy */; };
+		F11748422D0307B40044C1D9 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = F11748412D0307B40044C1D9 /* AppDelegate.swift */; };
 		F2A1B7C12EAB100100A1B2C3 /* HydraFolderBookmarks.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2A1B7BF2EAB100100A1B2C3 /* HydraFolderBookmarks.swift */; };
 		F2A1B7C22EAB100100A1B2C3 /* HydraFolderBookmarks.m in Sources */ = {isa = PBXBuildFile; fileRef = F2A1B7C02EAB100100A1B2C3 /* HydraFolderBookmarks.m */; };
-		F11748422D0307B40044C1D9 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = F11748412D0307B40044C1D9 /* AppDelegate.swift */; };
+		FAD6CDDD2F54A69300247391 /* HydraSeenPosts.swift in Sources */ = {isa = PBXBuildFile; fileRef = FAD6CDDC2F54A69300247391 /* HydraSeenPosts.swift */; };
+		FAD6CDDF2F54A69700247391 /* HydraSeenPosts.m in Sources */ = {isa = PBXBuildFile; fileRef = FAD6CDDE2F54A69700247391 /* HydraSeenPosts.m */; };
+		FAD6CDE12F54A6EF00247391 /* HydraCommentTree.swift in Sources */ = {isa = PBXBuildFile; fileRef = FAD6CDE02F54A6EF00247391 /* HydraCommentTree.swift */; };
+		FAD6CDE32F54A6F500247391 /* HydraCommentTree.m in Sources */ = {isa = PBXBuildFile; fileRef = FAD6CDE22F54A6F500247391 /* HydraCommentTree.m */; };
+		FAD6CDE52F54A71E00247391 /* HydraCookies.swift in Sources */ = {isa = PBXBuildFile; fileRef = FAD6CDE42F54A71E00247391 /* HydraCookies.swift */; };
+		FAD6CDE72F54A72500247391 /* HydraCookies.m in Sources */ = {isa = PBXBuildFile; fileRef = FAD6CDE62F54A72500247391 /* HydraCookies.m */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -26,14 +32,20 @@
 		2076F25D1D7C83E95BB6E4A2 /* Pods-Hydra.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Hydra.debug.xcconfig"; path = "Target Support Files/Pods-Hydra/Pods-Hydra.debug.xcconfig"; sourceTree = "<group>"; };
 		79EA5859AF8B8CD061F5496E /* Pods-Hydra.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Hydra.release.xcconfig"; path = "Target Support Files/Pods-Hydra/Pods-Hydra.release.xcconfig"; sourceTree = "<group>"; };
 		8640CCADEE0D0D5170A9A556 /* ExpoModulesProvider.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ExpoModulesProvider.swift; path = "Pods/Target Support Files/Pods-Hydra/ExpoModulesProvider.swift"; sourceTree = "<group>"; };
-		9C74C7E2BF5664EAFD91AF77 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; includeInIndex = 1; name = PrivacyInfo.xcprivacy; path = Hydra/PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
+		9C74C7E2BF5664EAFD91AF77 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xml; name = PrivacyInfo.xcprivacy; path = Hydra/PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		AA286B85B6C04FC6940260E9 /* SplashScreen.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; name = SplashScreen.storyboard; path = Hydra/SplashScreen.storyboard; sourceTree = "<group>"; };
 		BB2F792C24A3F905000567C9 /* Expo.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = Expo.plist; sourceTree = "<group>"; };
 		ED297162215061F000B7C4FE /* JavaScriptCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = JavaScriptCore.framework; path = System/Library/Frameworks/JavaScriptCore.framework; sourceTree = SDKROOT; };
-		F2A1B7BF2EAB100100A1B2C3 /* HydraFolderBookmarks.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = HydraFolderBookmarks.swift; path = Hydra/HydraFolderBookmarks.swift; sourceTree = "<group>"; };
-		F2A1B7C02EAB100100A1B2C3 /* HydraFolderBookmarks.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = HydraFolderBookmarks.m; path = Hydra/HydraFolderBookmarks.m; sourceTree = "<group>"; };
 		F11748412D0307B40044C1D9 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = AppDelegate.swift; path = Hydra/AppDelegate.swift; sourceTree = "<group>"; };
 		F11748442D0722820044C1D9 /* Hydra-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = "Hydra-Bridging-Header.h"; path = "Hydra/Hydra-Bridging-Header.h"; sourceTree = "<group>"; };
+		F2A1B7BF2EAB100100A1B2C3 /* HydraFolderBookmarks.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = HydraFolderBookmarks.swift; path = Hydra/HydraFolderBookmarks.swift; sourceTree = "<group>"; };
+		F2A1B7C02EAB100100A1B2C3 /* HydraFolderBookmarks.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = HydraFolderBookmarks.m; path = Hydra/HydraFolderBookmarks.m; sourceTree = "<group>"; };
+		FAD6CDDC2F54A69300247391 /* HydraSeenPosts.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HydraSeenPosts.swift; sourceTree = "<group>"; };
+		FAD6CDDE2F54A69700247391 /* HydraSeenPosts.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = HydraSeenPosts.m; sourceTree = "<group>"; };
+		FAD6CDE02F54A6EF00247391 /* HydraCommentTree.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HydraCommentTree.swift; sourceTree = "<group>"; };
+		FAD6CDE22F54A6F500247391 /* HydraCommentTree.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = HydraCommentTree.m; sourceTree = "<group>"; };
+		FAD6CDE42F54A71E00247391 /* HydraCookies.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HydraCookies.swift; sourceTree = "<group>"; };
+		FAD6CDE62F54A72500247391 /* HydraCookies.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = HydraCookies.m; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -60,6 +72,12 @@
 				13B07FB61A68108700A75B9A /* Info.plist */,
 				AA286B85B6C04FC6940260E9 /* SplashScreen.storyboard */,
 				9C74C7E2BF5664EAFD91AF77 /* PrivacyInfo.xcprivacy */,
+				FAD6CDDC2F54A69300247391 /* HydraSeenPosts.swift */,
+				FAD6CDDE2F54A69700247391 /* HydraSeenPosts.m */,
+				FAD6CDE02F54A6EF00247391 /* HydraCommentTree.swift */,
+				FAD6CDE22F54A6F500247391 /* HydraCommentTree.m */,
+				FAD6CDE42F54A71E00247391 /* HydraCookies.swift */,
+				FAD6CDE62F54A72500247391 /* HydraCookies.m */,
 			);
 			name = Hydra;
 			sourceTree = "<group>";
@@ -95,7 +113,6 @@
 				2076F25D1D7C83E95BB6E4A2 /* Pods-Hydra.debug.xcconfig */,
 				79EA5859AF8B8CD061F5496E /* Pods-Hydra.release.xcconfig */,
 			);
-			name = Pods;
 			path = Pods;
 			sourceTree = "<group>";
 		};
@@ -370,8 +387,14 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				FAD6CDE32F54A6F500247391 /* HydraCommentTree.m in Sources */,
+				FAD6CDDD2F54A69300247391 /* HydraSeenPosts.swift in Sources */,
+				FAD6CDE52F54A71E00247391 /* HydraCookies.swift in Sources */,
+				FAD6CDDF2F54A69700247391 /* HydraSeenPosts.m in Sources */,
+				FAD6CDE72F54A72500247391 /* HydraCookies.m in Sources */,
 				F11748422D0307B40044C1D9 /* AppDelegate.swift in Sources */,
 				F2A1B7C12EAB100100A1B2C3 /* HydraFolderBookmarks.swift in Sources */,
+				FAD6CDE12F54A6EF00247391 /* HydraCommentTree.swift in Sources */,
 				F2A1B7C22EAB100100A1B2C3 /* HydraFolderBookmarks.m in Sources */,
 				A2E9072DD1F91456E4A6855D /* ExpoModulesProvider.swift in Sources */,
 			);

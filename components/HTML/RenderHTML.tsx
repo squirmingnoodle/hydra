@@ -20,8 +20,59 @@ import { ThemeContext } from "../../contexts/SettingsContexts/ThemeContext";
 import RedditURL, { PageType } from "../../utils/RedditURL";
 import { useURLNavigation } from "../../utils/navigation";
 import ImageViewer from "../RedditDataRepresentations/Post/PostParts/PostMediaParts/ImageViewer";
+import VideoPlayer from "../RedditDataRepresentations/Post/PostParts/PostMediaParts/VideoPlayer";
 import ThemeImport from "../UI/Themes/ThemeImport";
 import { extractThemeFromText } from "../../utils/colors";
+
+/**
+ * Extracts a Giphy GIF ID from a giphy.com share URL.
+ * Handles:
+ *   https://giphy.com/gifs/some-title-{id}
+ *   https://giphy.com/gifs/{id}
+ *   https://media.giphy.com/media/{id}/giphy.gif  (already resolved)
+ * Returns null if the URL is not a recognisable Giphy link.
+ */
+function getGiphyId(url: string): string | null {
+  try {
+    // Already a direct media URL
+    const directMatch = url.match(
+      /media\d*\.giphy\.com\/media\/([a-zA-Z0-9]+)\//,
+    );
+    if (directMatch) return directMatch[1];
+
+    // Share URL: last path segment after the final hyphen is the ID
+    const shareMatch = url.match(/giphy\.com\/gifs\/(?:[^/?#]+-)?([a-zA-Z0-9]+)(?:[/?#]|$)/);
+    if (shareMatch) return shareMatch[1];
+  } catch {}
+  return null;
+}
+
+/** Returns a direct looping .mp4 URL for a Giphy ID. */
+function giphyMp4Url(id: string): string {
+  return `https://media.giphy.com/media/${id}/giphy.mp4`;
+}
+
+function getInlineMediaType(
+  url: string,
+): "image" | "gif" | "video" | "giphy" | "none" {
+  try {
+    if (getGiphyId(url)) return "giphy";
+    const lower = url.toLowerCase().split("?")[0];
+    if (lower.match(/\.(gif)$/)) return "gif";
+    if (lower.match(/\.(mp4|webm|mov)$/)) return "video";
+    if (lower.match(/\.(jpg|jpeg|png|webp|avif)$/)) return "image";
+    if (url.startsWith("https://v.redd.it")) return "video";
+    if (
+      url.startsWith("https://i.redd.it") ||
+      url.startsWith("https://preview.redd.it")
+    ) return "image";
+    if (
+      url.includes("imgur.com") &&
+      (lower.endsWith(".gifv") || lower.endsWith(".gif"))
+    ) return "gif";
+  } catch {}
+  return "none";
+}
 const SCREEN_WIDTH = Dimensions.get("screen").width;
 
 type InheritedStyles = ViewStyle & TextStyle;
@@ -53,21 +104,27 @@ function makeChildNodeKey(node: AnyNode, index: number): string {
 
 /**
  * <p> tags are normally rendered as a Text component. However,
- * Reddit sends inline images as <p> tags with an <a> tag inside
- * with the <a> tag containing a link to an image. When that happens,
+ * Reddit sends inline images/gifs/videos as <p> tags with an <a> tag inside
+ * with the <a> tag containing a media URL. When that happens,
  * instead of rendering the <p> tag as a Text component, we have to
- * render it as an ImageViewer component. This is because rendering
+ * render it as a media component. This is because rendering
  * a TouchableOpacity component inside a Text component breaks touches.
  */
-function isElementImgLinkInParagraph(element: ElementNode): boolean {
+function getInlineMediaLinkInParagraph(
+  element: ElementNode,
+): "image" | "gif" | "video" | "none" {
   const child = element.children[0] as ElementNode | undefined;
-  return !!(
+  if (
     element.name === "p" &&
     child?.name === "a" &&
     child?.children[0]?.type === ElementType.Text &&
-    child?.attribs.href &&
-    RedditURL.getPageType(child?.attribs.href) === PageType.IMAGE
-  );
+    child?.attribs.href
+  ) {
+    const href = child.attribs.href;
+    if (RedditURL.getPageType(href) === PageType.IMAGE) return "image";
+    return getInlineMediaType(href);
+  }
+  return "none";
 }
 
 export function Element({ element, index, inheritedStyles }: ElementProps) {
@@ -105,13 +162,30 @@ export function Element({ element, index, inheritedStyles }: ElementProps) {
     );
     wrapperStyles.padding = 10;
     wrapperStyles.backgroundColor = theme.tint;
-  } else if (isElementImgLinkInParagraph(element)) {
-    const imgURL = (element.children[0] as ElementNode)?.attribs.href;
-    Wrapper = () => (
-      <View style={styles.imageContainer}>
-        <ImageViewer images={[imgURL]} aspectRatio={16 / 9} />
-      </View>
-    );
+  } else if (getInlineMediaLinkInParagraph(element) !== "none") {
+    const mediaURL = (element.children[0] as ElementNode)?.attribs.href;
+    const mediaType = getInlineMediaLinkInParagraph(element);
+    if (mediaType === "video") {
+      Wrapper = () => (
+        <VideoPlayer source={mediaURL} thumbnail="" aspectRatio={16 / 9} />
+      );
+    } else if (mediaType === "giphy") {
+      const mp4 = giphyMp4Url(getGiphyId(mediaURL)!);
+      Wrapper = () => (
+        <VideoPlayer source={mp4} thumbnail="" aspectRatio={16 / 9} />
+      );
+    } else {
+      // image or gif — ImageViewer handles both
+      const gifUrl =
+        mediaType === "gif" && mediaURL.includes("imgur.com")
+          ? mediaURL.replace(".gifv", ".gif")
+          : mediaURL;
+      Wrapper = () => (
+        <View style={styles.imageContainer}>
+          <ImageViewer images={[gifUrl]} aspectRatio={16 / 9} />
+        </View>
+      );
+    }
     wrapperStyles.marginVertical = 10;
     inheritedStyles.textAlign = "center";
   } else if (element.name === "p") {
@@ -196,6 +270,35 @@ export function Element({ element, index, inheritedStyles }: ElementProps) {
     inheritedStyles.marginVertical = 0;
     inheritedStyles.paddingHorizontal = 0;
     inheritedStyles.fontSize = 11;
+  } else if (
+    element.name === "a" &&
+    element.children[0]?.type === ElementType.Text &&
+    getInlineMediaType(element.attribs.href ?? "") !== "none"
+  ) {
+    // Bare <a> link whose href is a media URL — render inline
+    const mediaURL = element.attribs.href;
+    const mediaType = getInlineMediaType(mediaURL);
+    if (mediaType === "video") {
+      Wrapper = () => (
+        <VideoPlayer source={mediaURL} thumbnail="" aspectRatio={16 / 9} />
+      );
+    } else if (mediaType === "giphy") {
+      const mp4 = giphyMp4Url(getGiphyId(mediaURL)!);
+      Wrapper = () => (
+        <VideoPlayer source={mp4} thumbnail="" aspectRatio={16 / 9} />
+      );
+    } else {
+      const gifUrl =
+        mediaType === "gif" && mediaURL.includes("imgur.com")
+          ? mediaURL.replace(".gifv", ".gif")
+          : mediaURL;
+      Wrapper = () => (
+        <View style={styles.imageContainer}>
+          <ImageViewer images={[gifUrl]} aspectRatio={16 / 9} />
+        </View>
+      );
+    }
+    wrapperStyles.marginVertical = 10;
   } else if (
     element.name === "a" &&
     element.children[0]?.type === ElementType.Text

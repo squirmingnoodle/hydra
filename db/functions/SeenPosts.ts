@@ -3,6 +3,7 @@ import { eq, inArray, lt } from "drizzle-orm";
 import db from "..";
 import { Post } from "../../api/Posts";
 import { SeenPosts } from "../schema";
+import { nativeArePostsSeen } from "../../utils/nativeSeenPosts";
 
 export async function maintainSeenPosts() {
   const MAX_SEEN_POSTS = 5_000;
@@ -63,4 +64,11 @@ export function arePostsSeen(posts: Post[]) {
   return posts.map((post) =>
     seenPosts.some((seenPost) => seenPost.postId === post.id),
   );
+}
+
+/** Async variant that uses the native SQLite module when available. */
+export async function arePostsSeenAsync(posts: Post[]): Promise<boolean[]> {
+  const native = await nativeArePostsSeen(posts.map((p) => p.id));
+  if (native !== null) return native;
+  return arePostsSeen(posts);
 }

@@ -1,8 +1,8 @@
 import { Post } from "../../api/Posts";
-import { arePostsSeen } from "../../db/functions/SeenPosts";
+import { arePostsSeenAsync } from "../../db/functions/SeenPosts";
 import { FilterFunction } from "../useRedditDataState";
 
-export const filterSeenItems: FilterFunction<Post> = (posts) => {
-  const seenPosts = arePostsSeen(posts);
+export const filterSeenItems: FilterFunction<Post> = async (posts) => {
+  const seenPosts = await arePostsSeenAsync(posts);
   return posts.filter((_post, index) => !seenPosts[index]);
 };
