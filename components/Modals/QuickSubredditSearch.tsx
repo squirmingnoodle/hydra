@@ -119,6 +119,7 @@ export default function QuickSubredditSearch({
               borderRadius: 10,
             },
           ]}
+          autoCorrect={false}
           value={searchText}
           onChangeText={setSearchText}
           placeholder="Search for a subreddit"
