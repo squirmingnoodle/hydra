@@ -139,7 +139,7 @@ export async function formatPostData(child: any): Promise<Post> {
     } else if (externalLink.includes("redgifs.com")) {
       video = await Redgifs.getMediaURL(externalLink);
       videoDownloadURL = video;
-    } else if (externalLink) {
+    } else if (externalLink && !video && !images.length) {
       try {
         openGraphData = await new URL(externalLink).getOpenGraphData();
       } catch (_) {
@@ -236,6 +236,7 @@ export async function formatPostData(child: any): Promise<Post> {
 }
 
 export class BannedSubredditError extends Error {
+  name: "BannedSubredditError";
   constructor() {
     super("BannedSubredditError");
     this.name = "BannedSubredditError";
@@ -243,6 +244,7 @@ export class BannedSubredditError extends Error {
 }
 
 export class PrivateSubredditError extends Error {
+  name: "PrivateSubredditError";
   constructor() {
     super("PrivateSubredditError");
     this.name = "PrivateSubredditError";

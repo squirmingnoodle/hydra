@@ -29,6 +29,22 @@ type GetUserContentOptions = {
   after?: string;
 };
 
+export class UserDoesNotExistError extends Error {
+  name: "UserDoesNotExistError";
+  constructor() {
+    super("UserDoesNotExistError");
+    this.name = "UserDoesNotExistError";
+  }
+}
+
+export class BannedUserError extends Error {
+  name: "BannedUserError";
+  constructor() {
+    super("BannedUserError");
+    this.name = "BannedUserError";
+  }
+}
+
 export function formatUserData(child: any): User {
   return {
     id: child.id,
@@ -48,12 +64,21 @@ export function formatUserData(child: any): User {
   };
 }
 
+function handleBadUserResponse(response: any) {
+  if (response.error === 403 || response.data?.is_suspended) {
+    throw new BannedUserError();
+  }
+  if (response.error === 404) {
+    throw new UserDoesNotExistError();
+  }
+}
+
 export async function getUser(url: string): Promise<User> {
   const redditURL = new RedditURL(`${url}/about`);
   redditURL.jsonify();
   const response = await api(redditURL.toString());
-  const user: User = formatUserData(response.data);
-  return user;
+  handleBadUserResponse(response);
+  return formatUserData(response.data);
 }
 
 export async function getUserContent(
@@ -65,6 +90,7 @@ export async function getUserContent(
   redditURL.changeQueryParam("sr_detail", "true");
   redditURL.jsonify();
   const response = await api(redditURL.toString());
+  handleBadUserResponse(response);
   const overview = await Promise.all(
     response.data.children.map(async (child: any) => {
       if (child.kind === "t3") {
