@@ -236,6 +236,7 @@ export async function formatPostData(child: any): Promise<Post> {
 }
 
 export class BannedSubredditError extends Error {
+  name: "BannedSubredditError";
   constructor() {
     super("BannedSubredditError");
     this.name = "BannedSubredditError";
@@ -243,6 +244,7 @@ export class BannedSubredditError extends Error {
 }
 
 export class PrivateSubredditError extends Error {
+  name: "PrivateSubredditError";
   constructor() {
     super("PrivateSubredditError");
     this.name = "PrivateSubredditError";
