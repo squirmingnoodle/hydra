@@ -260,9 +260,11 @@ export async function getPosts(
   redditURL.changeQueryParam("limit", String(options?.limit ?? 10));
   redditURL.changeQueryParam("after", options?.after ?? "");
   redditURL.jsonify();
-  const response = await api(redditURL.toString());
-  if (response.quarantine_message) {
-    return handleGatedSubreddit(response.quarantine_message, url, options);
+  let response = await api(redditURL.toString());
+  const gatedResult = await handleGatedSubreddit(response, url);
+  if (gatedResult === "cancelled") return [];
+  if (gatedResult === "success") {
+    response = await api(redditURL.toString());
   }
   if (response.reason === "banned") {
     throw new BannedSubredditError();
@@ -278,25 +280,28 @@ export async function getPosts(
   return posts;
 }
 
-function handleGatedSubreddit(
-  warning: string,
+export async function handleGatedSubreddit(
+  response: any,
   url: string,
-  options: GetPostOptions,
-): Promise<Post[]> {
-  return new Promise<Post[]>((resolve) => {
+): Promise<"success" | "cancelled" | null> {
+  const warning =
+    response.quarantine_message ?? response.interstitial_warning_message;
+  if (!warning) return null;
+  const type = response.quarantine_message ? "quarantine" : "gated";
+  return new Promise((resolve) => {
     Alert.alert("Warning", warning, [
       {
         text: "Cancel",
         style: "cancel",
         onPress: () => {
-          resolve([]);
+          resolve("cancelled");
         },
       },
       {
         text: "Proceed",
         onPress: async () => {
           await api(
-            `https://old.reddit.com/quarantine`,
+            `https://old.reddit.com/${type}`,
             {
               method: "POST",
             },
@@ -309,7 +314,7 @@ function handleGatedSubreddit(
               dontJsonifyResponse: true,
             },
           );
-          resolve(await getPosts(url, options));
+          resolve("success");
         },
       },
     ]);
