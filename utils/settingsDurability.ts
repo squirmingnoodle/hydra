@@ -9,8 +9,6 @@ const AUTOSAVE_DEBOUNCE_MS = 500;
 
 const GLOBAL_SETTINGS_KEYS = new Set([
   "allowErrorReporting",
-  "useHydraServer",
-  "customHydraServerUrl",
 ]);
 
 type SnapshotPrimitive = string | number | boolean;

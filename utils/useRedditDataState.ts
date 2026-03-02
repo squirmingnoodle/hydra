@@ -118,6 +118,7 @@ export default function useRedditDataState<
       setData([]);
     }
     unfilteredAfter.current = undefined;
+    setHitFilterLimit(false);
     let newData: T[] = [];
     for (let i = 0; i < filterRetries; i++) {
       const potentialData = await loadDataWithFailureHandling(

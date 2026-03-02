@@ -4,6 +4,7 @@ import React, {
   SetStateAction,
   useContext,
   useEffect,
+  useRef,
   useState,
 } from "react";
 import {
@@ -29,9 +30,17 @@ import { PostSettingsContext } from "../../../contexts/SettingsContexts/PostSett
 import { ThemeContext } from "../../../contexts/SettingsContexts/ThemeContext";
 import { SubscriptionsContext } from "../../../contexts/SubscriptionsContext";
 import RedditURL from "../../../utils/RedditURL";
+import useContextMenu from "../../../utils/useContextMenu";
 import { useRoute, useURLNavigation } from "../../../utils/navigation";
 import NewComment from "../../Modals/NewComment";
+import SavedPostCategoryPrompt from "../../Modals/SavedPostCategoryPrompt";
 import Time from "../../../utils/Time";
+import {
+  clearCategory,
+  getAllCategories,
+  getCategory,
+  setCategory,
+} from "../../../utils/savedPostCategories";
 
 type Summary = {
   post: string | null;
@@ -60,6 +69,7 @@ export default function PostDetailsComponent({
 
   const { theme } = useContext(ThemeContext);
   const { setModal } = useContext(ModalContext);
+  const showContextMenu = useContextMenu();
   const { isPro, customerId } = useContext(SubscriptionsContext);
   const { showPostSummary, tapToCollapsePost } =
     useContext(PostSettingsContext);
@@ -73,6 +83,7 @@ export default function PostDetailsComponent({
       post: false,
       comments: false,
     });
+  const bookmarkLongPressTriggered = useRef(false);
 
   const contextDepth = Number(new RedditURL(url).getQueryParam("context") ?? 0);
 
@@ -82,6 +93,57 @@ export default function PostDetailsComponent({
       ...postDetail,
       upvotes: postDetail.upvotes - postDetail.userVote + result,
       userVote: result,
+    });
+  };
+
+  const setSavedPostCategory = async () => {
+    if (!postDetail.saved) return;
+
+    const currentCategory = getCategory(postDetail.name);
+    const newCategoryOption = "+ New Category";
+    const clearCategoryOption = "Clear Category";
+
+    const result = await showContextMenu({
+      options: [
+        ...getAllCategories(),
+        newCategoryOption,
+        ...(currentCategory ? [clearCategoryOption] : []),
+      ],
+    });
+
+    if (!result) return;
+    if (result === newCategoryOption) {
+      setModal(
+        <SavedPostCategoryPrompt
+          onCancel={() => setModal(undefined)}
+          onSubmit={(categoryName) => {
+            setCategory(postDetail.name, categoryName);
+            setModal(undefined);
+          }}
+        />,
+      );
+      return;
+    }
+    if (result === clearCategoryOption) {
+      clearCategory(postDetail.name);
+      return;
+    }
+    setCategory(postDetail.name, result);
+  };
+
+  const toggleSavedPost = async () => {
+    if (bookmarkLongPressTriggered.current) {
+      bookmarkLongPressTriggered.current = false;
+      return;
+    }
+    const shouldSave = !postDetail.saved;
+    await saveItem(postDetail, shouldSave);
+    if (!shouldSave) {
+      clearCategory(postDetail.name);
+    }
+    setPostDetail({
+      ...postDetail,
+      saved: shouldSave,
     });
   };
 
@@ -398,12 +460,14 @@ export default function PostDetailsComponent({
               backgroundColor: undefined,
             },
           ]}
-          onPress={async () => {
-            await saveItem(postDetail, !postDetail.saved);
-            setPostDetail({
-              ...postDetail,
-              saved: !postDetail.saved,
-            });
+          onPress={toggleSavedPost}
+          onLongPress={async () => {
+            if (!postDetail.saved) return;
+            bookmarkLongPressTriggered.current = true;
+            await setSavedPostCategory();
+            setTimeout(() => {
+              bookmarkLongPressTriggered.current = false;
+            }, 250);
           }}
         >
           <FontAwesome
@@ -462,7 +526,7 @@ export default function PostDetailsComponent({
           onPress={() => setCommentSummaryCollapsed(!commentSummaryCollapsed)}
           onLongPress={(e) => {
             if (e.nativeEvent.touches.length > 1) return;
-            Clipboard.setStringAsync(summary.comments);
+            Clipboard.setStringAsync(summary.comments ?? "");
             Alert.alert(
               "Comments Summary Copied",
               "The comment summary has been copied to your clipboard.",

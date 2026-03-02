@@ -39,6 +39,10 @@ import {
   hydrateSettingsFromSnapshot,
   startSettingsAutosaveListener,
 } from "../utils/settingsDurability";
+import {
+  startAccountSettingsSyncListener,
+  syncCurrentUserAccountSettings,
+} from "../utils/iCloudSettingsSync";
 
 LogBox.ignoreLogs([
   "Require cycle: ",
@@ -84,6 +88,7 @@ function RootLayout() {
   useEffect(() => {
     let active = true;
     let stopAutosave: (() => void) | null = null;
+    let stopSettingsSync: (() => void) | null = null;
 
     const hydrateSettings = async () => {
       try {
@@ -94,6 +99,8 @@ function RootLayout() {
         if (active) {
           setSettingsHydrated(true);
           stopAutosave = startSettingsAutosaveListener();
+          stopSettingsSync = startAccountSettingsSyncListener();
+          void syncCurrentUserAccountSettings();
         }
       }
     };
@@ -103,6 +110,7 @@ function RootLayout() {
     return () => {
       active = false;
       stopAutosave?.();
+      stopSettingsSync?.();
     };
   }, []);
 

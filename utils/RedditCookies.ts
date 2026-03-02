@@ -1,5 +1,6 @@
 import CookieManager from "@react-native-cookies/cookies";
 import * as SecureStore from "expo-secure-store";
+import { NativeCookies } from "./nativeCookies";
 
 export default class RedditCookies {
   static async restoreSessionCookies(username: string) {
@@ -7,10 +8,11 @@ export default class RedditCookies {
       `redditSession-${username}`,
     );
     if (redditSession) {
-      await CookieManager.set(
-        "https://www.reddit.com",
-        JSON.parse(redditSession),
-      );
+      const cookie = JSON.parse(redditSession);
+      // Write to WKHTTPCookieStore so the WebView sees the restored session.
+      await NativeCookies.setSessionCookie(cookie);
+      // Also write to NSHTTPCookieStorage for any non-WebView HTTP requests.
+      await CookieManager.set("https://www.reddit.com", cookie);
     }
   }
 
@@ -19,11 +21,25 @@ export default class RedditCookies {
   }
 
   static async hasSessionCookieBeenSet() {
+    const native = await NativeCookies.hasSessionCookie();
+    if (native !== null) return native;
     const cookies = await CookieManager.get("https://www.reddit.com");
     return cookies?.reddit_session !== undefined;
   }
 
   static async saveSessionCookies(username: string) {
+    // Prefer the native module which reads directly from WKHTTPCookieStore —
+    // the WebView sets cookies there, not in NSHTTPCookieStorage (which
+    // CookieManager.get reads). Falling back to CookieManager would cause
+    // saveSessionCookies to always return nothing after a WebView login.
+    const nativeCookie = await NativeCookies.getSessionCookieValue();
+    if (nativeCookie) {
+      await SecureStore.setItemAsync(
+        `redditSession-${username}`,
+        JSON.stringify(nativeCookie),
+      );
+      return;
+    }
     const cookies = await CookieManager.get("https://www.reddit.com");
     if (cookies?.reddit_session) {
       await SecureStore.setItemAsync(
@@ -38,6 +54,8 @@ export default class RedditCookies {
   }
 
   static async persistSessionCookies() {
+    if (await NativeCookies.persistSessionCookie()) return;
+    // JS fallback
     const cookies = await CookieManager.get("https://www.reddit.com");
     if (cookies?.reddit_session && !cookies?.reddit_session?.expires) {
       const newCookies = {
@@ -51,10 +69,11 @@ export default class RedditCookies {
   }
 
   static async clearSessionCookies() {
-    // First, invalidate the reddit_session cookie by setting it to expired.
-    // This works around a bug in @react-native-cookies/cookies where clearAll(true)
-    // triggers a sync FROM WebKit TO HTTP, restoring cookies that were just cleared.
-    // See: https://github.com/react-native-cookies/cookies/pull/152
+    // Use native module to delete cookies directly from WKHTTPCookieStore,
+    // bypassing the sync-back bug in @react-native-cookies/cookies (#152).
+    if (await NativeCookies.clearSessionCookies()) return;
+    // JS fallback: invalidate reddit_session before clearing to avoid bug
+    // where clearAll(true) triggers a sync FROM WebKit restoring cleared cookies.
     const staleRedditSessionCookie = {
       name: "reddit_session",
       value: "",

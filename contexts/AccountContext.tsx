@@ -3,6 +3,7 @@ import { createContext, useEffect, useState } from "react";
 
 import { UserAuth } from "../api/Authentication";
 import { User, getUser } from "../api/User";
+import { syncAccountSettingsForUser } from "../utils/iCloudSettingsSync";
 import KeyStore from "../utils/KeyStore";
 import RedditCookies from "../utils/RedditCookies";
 import { Alert } from "react-native";
@@ -53,6 +54,7 @@ export function AccountProvider({ children }: React.PropsWithChildren) {
       Sentry.setUser({ username: user.userName });
       await RedditCookies.saveSessionCookies(user.userName);
       await addUser(user.userName);
+      void syncAccountSettingsForUser(user.userName);
       return true;
     } catch (_e) {
       Alert.alert(
@@ -93,7 +95,7 @@ export function AccountProvider({ children }: React.PropsWithChildren) {
     if (usernames.includes(username)) {
       return;
     }
-    const accs = [...accounts, username];
+    const accs = [...usernames, username];
     await saveAccounts(accs);
     setAccounts(accs);
   };
