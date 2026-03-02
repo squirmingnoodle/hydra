@@ -204,7 +204,7 @@ export default class RedditURL extends URL {
       return PageType.SUBREDDIT_SEARCH;
     } else if (
       relativePath.startsWith("/r/") &&
-      relativePath.includes("/wiki/")
+      (relativePath.includes("/wiki/") || relativePath.includes("/w/"))
     ) {
       return PageType.WIKI;
     } else if (
