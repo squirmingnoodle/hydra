@@ -41,7 +41,6 @@ import {
 } from "../../../utils/savedPostCategories";
 import useContextMenu from "../../../utils/useContextMenu";
 import useComponentActions from "../../../utils/useComponentActions";
-import useContextMenu from "../../../utils/useContextMenu";
 
 type PostComponentProps = {
   post: Post;

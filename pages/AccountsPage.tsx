@@ -37,7 +37,10 @@ export default function AccountsPage() {
       ]}
     >
       {accounts.length ? (
-        <ScrollView style={styles.scrollView}>
+        <ScrollView
+          style={styles.scrollView}
+          contentInsetAdjustmentBehavior="automatic"
+        >
           {[...accounts, "Logged Out"].map((username) => (
             <Slideable
               key={username}
