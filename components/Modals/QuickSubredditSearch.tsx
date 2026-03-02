@@ -42,6 +42,7 @@ export default function QuickSubredditSearch({
 
   const textInputRef = useRef<TextInput>(null);
   const opacity = useAnimatedValue(0);
+  const [visible, setVisible] = useState(false);
   const [searchText, setSearchText] = useState("");
   const [subreddits, setSubreddits] = useState<Subreddit[]>([]);
   const [loading, setLoading] = useState(false);
@@ -86,6 +87,7 @@ export default function QuickSubredditSearch({
 
   useEffect(() => {
     if (show) {
+      setVisible(true);
       textInputRef.current?.focus();
     } else {
       textInputRef.current?.blur();
@@ -94,11 +96,14 @@ export default function QuickSubredditSearch({
       toValue: show ? 1 : 0,
       duration: 150,
       useNativeDriver: true,
-    }).start();
+    }).start(() => {
+      if (!show) setVisible(false);
+    });
   }, [show]);
 
   return (
     <Animated.View
+      pointerEvents={visible ? "auto" : "none"}
       style={[
         styles.container,
         {
