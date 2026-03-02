@@ -1,5 +1,11 @@
-import React, { useContext, useEffect, useState } from "react";
-import { StyleSheet, View } from "react-native";
+import React, { useContext, useEffect, useMemo, useState } from "react";
+import {
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 
 import {
   BannedUserError,
@@ -21,6 +27,14 @@ import RedditDataScroller from "../components/UI/RedditDataScroller";
 import { AccountContext } from "../contexts/AccountContext";
 import { ThemeContext } from "../contexts/SettingsContexts/ThemeContext";
 import RedditURL from "../utils/RedditURL";
+import {
+  getAllCategoriesFromMap,
+  matchesFilter,
+  SAVED_POST_CATEGORY_ALL,
+  SAVED_POST_CATEGORY_UNCATEGORIZED,
+  SavedPostCategoryFilter,
+  useSavedPostCategoryMap,
+} from "../utils/savedPostCategories";
 import URL from "../utils/URL";
 import { useURLNavigation } from "../utils/navigation";
 import useRedditDataState from "../utils/useRedditDataState";
@@ -33,11 +47,62 @@ export default function UserPage({ route }: StackPageProps<"UserPage">) {
   const navigation = useURLNavigation();
 
   const section = new RedditURL(url).getRelativePath().split("/")[3];
+  const savedType = new URL(url).getQueryParam("type");
+  const isSavedPostsPage = section === "saved" && savedType === "links";
 
   const { theme } = useContext(ThemeContext);
   const { currentUser } = useContext(AccountContext);
 
   const [user, setUser] = useState<User>();
+  const [savedPostCategoryMap] = useSavedPostCategoryMap();
+  const [selectedSavedPostCategoryFilter, setSelectedSavedPostCategoryFilter] =
+    useState<SavedPostCategoryFilter>(SAVED_POST_CATEGORY_ALL);
+
+  const savedPostCategories = useMemo(
+    () => getAllCategoriesFromMap(savedPostCategoryMap),
+    [savedPostCategoryMap],
+  );
+  const savedPostCategoryFilters = useMemo(
+    () => [
+      {
+        key: SAVED_POST_CATEGORY_ALL,
+        label: "All",
+      },
+      {
+        key: SAVED_POST_CATEGORY_UNCATEGORIZED,
+        label: "Uncategorized",
+      },
+      ...savedPostCategories.map((category) => ({
+        key: category,
+        label: category,
+      })),
+    ],
+    [savedPostCategories],
+  );
+
+  useEffect(() => {
+    if (!isSavedPostsPage) {
+      setSelectedSavedPostCategoryFilter(SAVED_POST_CATEGORY_ALL);
+      return;
+    }
+
+    if (
+      selectedSavedPostCategoryFilter === SAVED_POST_CATEGORY_ALL ||
+      selectedSavedPostCategoryFilter === SAVED_POST_CATEGORY_UNCATEGORIZED
+    ) {
+      return;
+    }
+
+    const filterStillExists = savedPostCategories.some(
+      (category) =>
+        category.toLowerCase() ===
+        selectedSavedPostCategoryFilter.toLowerCase(),
+    );
+
+    if (!filterStillExists) {
+      setSelectedSavedPostCategoryFilter(SAVED_POST_CATEGORY_ALL);
+    }
+  }, [isSavedPostsPage, selectedSavedPostCategoryFilter, savedPostCategories]);
 
   const {
     data: userContent,
@@ -50,7 +115,26 @@ export default function UserPage({ route }: StackPageProps<"UserPage">) {
     accessFailure,
   } = useRedditDataState<UserContent, "userLoadingError">({
     loadData: async (after) => await getUserContent(url, { after }),
-    refreshDependencies: [sort, sortTime],
+    filterRules: isSavedPostsPage
+      ? [
+          (content) =>
+            content.filter(
+              (item) =>
+                item.type !== "post" ||
+                matchesFilter(
+                  item.name,
+                  selectedSavedPostCategoryFilter,
+                  savedPostCategoryMap,
+                ),
+            ),
+        ]
+      : [],
+    refreshDependencies: [
+      sort,
+      sortTime,
+      isSavedPostsPage ? selectedSavedPostCategoryFilter : null,
+      isSavedPostsPage ? savedPostCategoryMap : null,
+    ],
   });
 
   const isDeepPath = !!new URL(url).getBasePath().split("/")[5]; // More than just /user/username like /user/username/comments
@@ -101,6 +185,44 @@ export default function UserPage({ route }: StackPageProps<"UserPage">) {
     });
   }, [sort, sortTime, user]);
 
+  const renderSavedPostCategoryFilters = () => (
+    <ScrollView
+      horizontal
+      showsHorizontalScrollIndicator={false}
+      contentContainerStyle={styles.savedCategoryFilterContainer}
+    >
+      {savedPostCategoryFilters.map((category) => {
+        const selected = category.key === selectedSavedPostCategoryFilter;
+
+        return (
+          <TouchableOpacity
+            key={category.key}
+            activeOpacity={0.8}
+            style={[
+              styles.savedCategoryFilterButton,
+              {
+                backgroundColor: selected ? theme.iconPrimary : theme.tint,
+                borderColor: selected ? theme.iconPrimary : theme.divider,
+              },
+            ]}
+            onPress={() => setSelectedSavedPostCategoryFilter(category.key)}
+          >
+            <Text
+              style={[
+                styles.savedCategoryFilterText,
+                {
+                  color: selected ? theme.text : theme.subtleText,
+                },
+              ]}
+            >
+              {category.label}
+            </Text>
+          </TouchableOpacity>
+        );
+      })}
+    </ScrollView>
+  );
+
   return (
     <View
       style={[
@@ -117,9 +239,22 @@ export default function UserPage({ route }: StackPageProps<"UserPage">) {
         }
       >
         <RedditDataScroller<UserContent>
-          ListHeaderComponent={() =>
-            !isDeepPath && user && <UserDetailsComponent user={user} />
-          }
+          ListHeaderComponent={() => {
+            if (!isDeepPath && user) {
+              return (
+                <View>
+                  <UserDetailsComponent user={user} />
+                  {isSavedPostsPage && renderSavedPostCategoryFilters()}
+                </View>
+              );
+            }
+
+            if (!isSavedPostsPage) {
+              return null;
+            }
+
+            return renderSavedPostCategoryFilters();
+          }}
           loadMore={loadMoreUserContent}
           refresh={refreshUserContent}
           fullyLoaded={fullyLoaded}
@@ -165,5 +300,20 @@ const styles = StyleSheet.create({
   },
   loaderContainer: {
     marginTop: 20,
+  },
+  savedCategoryFilterContainer: {
+    paddingHorizontal: 10,
+    marginBottom: 10,
+    gap: 8,
+  },
+  savedCategoryFilterButton: {
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    borderRadius: 999,
+    borderWidth: 1,
+  },
+  savedCategoryFilterText: {
+    fontSize: 14,
+    fontWeight: "500",
   },
 });

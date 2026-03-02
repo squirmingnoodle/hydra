@@ -17,7 +17,9 @@ import { vote } from "../../../api/PostDetail";
 import { Post, VoteOption } from "../../../api/Posts";
 import { saveItem } from "../../../api/Save";
 import { URLRoutes } from "../../../app/stack";
+import SavedPostCategoryPrompt from "../../Modals/SavedPostCategoryPrompt";
 import { PostInteractionProvider } from "../../../contexts/PostInteractionContext";
+import { ModalContext } from "../../../contexts/ModalContext";
 import { PostSettingsContext } from "../../../contexts/SettingsContexts/PostSettingsContext";
 import { ThemeContext } from "../../../contexts/SettingsContexts/ThemeContext";
 import {
@@ -31,6 +33,13 @@ import { useRoute, useURLNavigation } from "../../../utils/navigation";
 import Slideable from "../../UI/Slideable";
 import { FiltersContext } from "../../../contexts/SettingsContexts/FiltersContext";
 import { GesturesContext } from "../../../contexts/SettingsContexts/GesturesContext";
+import {
+  clearCategory,
+  getAllCategories,
+  getCategory,
+  setCategory,
+} from "../../../utils/savedPostCategories";
+import useContextMenu from "../../../utils/useContextMenu";
 import useComponentActions from "../../../utils/useComponentActions";
 import useContextMenu from "../../../utils/useContextMenu";
 
@@ -50,6 +59,7 @@ export default function PostComponent({
   const { params } = useRoute<URLRoutes | "SearchPage">();
   const { pushURL } = useURLNavigation();
   const { theme } = useContext(ThemeContext);
+  const { setModal } = useContext(ModalContext);
   const {
     postCompactMode,
     subredditAtTop,
@@ -61,6 +71,7 @@ export default function PostComponent({
   const { postSwipeOptions } = useContext(GesturesContext);
 
   const { toggleFilterSubreddit } = useContext(FiltersContext);
+  const showContextMenu = useContextMenu();
 
   const openContextMenu = useContextMenu();
 
@@ -72,6 +83,41 @@ export default function PostComponent({
   const seen = isPostSeen(post);
 
   const [_, rerender] = useState(0);
+
+  const openSavedPostCategoryPicker = async ({
+    showClearOption = true,
+  }: { showClearOption?: boolean } = {}) => {
+    const currentCategory = getCategory(post.name);
+    const newCategoryOption = "+ New Category";
+    const clearCategoryOption = "Clear Category";
+
+    const result = await showContextMenu({
+      options: [
+        ...getAllCategories(),
+        newCategoryOption,
+        ...(showClearOption && currentCategory ? [clearCategoryOption] : []),
+      ],
+    });
+
+    if (!result) return;
+    if (result === newCategoryOption) {
+      setModal(
+        <SavedPostCategoryPrompt
+          onCancel={() => setModal(undefined)}
+          onSubmit={(categoryName) => {
+            setCategory(post.name, categoryName);
+            setModal(undefined);
+          }}
+        />,
+      );
+      return;
+    }
+    if (result === clearCategoryOption) {
+      clearCategory(post.name);
+      return;
+    }
+    setCategory(post.name, result);
+  };
 
   const {
     accessibilityActions,
@@ -157,8 +203,22 @@ export default function PostComponent({
     {
       label: post.saved ? "Unsave" : "Save",
       handle: async () => {
-        await saveItem(post, !post.saved);
-        setPost({ ...post, saved: !post.saved });
+        const shouldSave = !post.saved;
+        await saveItem(post, shouldSave);
+        if (!shouldSave) {
+          clearCategory(post.name);
+          setPost({ ...post, saved: shouldSave });
+          return;
+        }
+        setPost({ ...post, saved: shouldSave });
+        await openSavedPostCategoryPicker({ showClearOption: false });
+      },
+    },
+    {
+      label: "Set Saved Category",
+      isAllowed: post.saved,
+      handle: async () => {
+        await openSavedPostCategoryPicker();
       },
     },
     {
@@ -215,7 +275,7 @@ export default function PostComponent({
     text += ` in the ${post.subreddit} subreddit`;
     text += `. Posted ${post.timeSince}`;
     return text;
-  }, [post.id]);
+  }, [post]);
 
   return (
     <PostInteractionProvider

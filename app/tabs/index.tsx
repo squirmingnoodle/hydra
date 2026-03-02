@@ -8,7 +8,7 @@ import {
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { createNativeBottomTabNavigator } from "@react-navigation/bottom-tabs/unstable";
 import { SplashScreen, useNavigation } from "expo-router";
-import React, { useContext, useEffect, useState } from "react";
+import React, { useContext, useEffect, useRef, useState } from "react";
 import { BlurView } from "expo-blur";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import {
@@ -68,7 +68,7 @@ export default function Tabs() {
   const insets = useSafeAreaInsets();
 
   const [showSubredditSearch, setShowSubredditSearch] = useState(false);
-  const [isSwitchingAccount, setIsSwitchingAccount] = useState(false);
+  const isSwitchingAccount = useRef(false);
 
   const showLiquidGlassTabBar = Platform.OS === "ios" && liquidGlassEnabled;
   const useNativeLiquidTabs = showLiquidGlassTabBar;
@@ -128,7 +128,7 @@ export default function Tabs() {
   }, [loginInitialized]);
 
   const openAccountSwitchMenu = () => {
-    if (isSwitchingAccount) return;
+    if (isSwitchingAccount.current) return;
 
     const switchableAccounts = accounts.filter(
       (username) =>
@@ -159,7 +159,7 @@ export default function Tabs() {
         return;
       }
 
-      setIsSwitchingAccount(true);
+      isSwitchingAccount.current = true;
       try {
         if (selection === "Logged Out") {
           await logOut();
@@ -167,7 +167,7 @@ export default function Tabs() {
           await logIn(selection);
         }
       } finally {
-        setIsSwitchingAccount(false);
+        isSwitchingAccount.current = false;
       }
     })();
   };

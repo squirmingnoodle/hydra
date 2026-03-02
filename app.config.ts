@@ -27,9 +27,12 @@ module.exports = {
     ios: {
       appStoreUrl: "https://apps.apple.com/us/app/hydra-for-reddit/id6478089063",
       supportsTablet: true,
-      bundleIdentifier: "com.dmilin.hydra",
+      bundleIdentifier: "com.darlops.hydra",
       infoPlist: {
         ITSAppUsesNonExemptEncryption: false,
+      },
+      entitlements: {
+        "com.apple.developer.ubiquity-kvstore-identifier": "$(TeamIdentifierPrefix)$(CFBundleIdentifier)",
       },
     },
     android: {
