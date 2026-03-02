@@ -229,28 +229,43 @@ export default function useMediaSharing() {
   };
 
   const saveToPhotos = async (file: File) => {
-    const permissions = await MediaLibrary.requestPermissionsAsync(true);
+    let permissions: MediaLibrary.PermissionResponse;
+    try {
+      permissions = await MediaLibrary.requestPermissionsAsync(true);
+    } catch {
+      throw new Error("photos-permission-unavailable");
+    }
     if (!permissions.granted) {
       throw new Error("photos-permission-denied");
     }
-    const asset = await MediaLibrary.createAssetAsync(file.uri);
     try {
-      const existingAlbum =
-        await MediaLibrary.getAlbumAsync(HYDRA_PHOTOS_ALBUM_NAME);
-      if (existingAlbum) {
-        await MediaLibrary.addAssetsToAlbumAsync([asset], existingAlbum, false);
-      } else {
-        await MediaLibrary.createAlbumAsync(
-          HYDRA_PHOTOS_ALBUM_NAME,
-          asset,
-          false,
-        );
+      const asset = await MediaLibrary.createAssetAsync(file.uri);
+      try {
+        const existingAlbum =
+          await MediaLibrary.getAlbumAsync(HYDRA_PHOTOS_ALBUM_NAME);
+        if (existingAlbum) {
+          await MediaLibrary.addAssetsToAlbumAsync([asset], existingAlbum, false);
+        } else {
+          await MediaLibrary.createAlbumAsync(
+            HYDRA_PHOTOS_ALBUM_NAME,
+            asset,
+            false,
+          );
+        }
+        return true;
+      } catch {
+        // In add-only photos permission mode, album queries/mutations can fail.
+        // The asset is already saved to Photos by createAssetAsync above.
+        return false;
       }
-      return true;
-    } catch {
-      // In add-only photos permission mode, album queries/mutations can fail.
-      // The asset is already saved to Photos by createAssetAsync above.
-      return false;
+    } catch (assetSaveError) {
+      // Fallback path: save directly to the library if asset creation fails.
+      try {
+        await MediaLibrary.saveToLibraryAsync(file.uri);
+        return false;
+      } catch {
+        throw assetSaveError;
+      }
     }
   };
 
@@ -594,6 +609,14 @@ export default function useMediaSharing() {
         Alert.alert(
           "Photos Permission Needed",
           "Allow Hydra to add photos in iOS Settings to save to the Hydra album.",
+        );
+      } else if (
+        e instanceof Error &&
+        e.message === "photos-permission-unavailable"
+      ) {
+        Alert.alert(
+          "Photos Permission Unavailable",
+          "This build is missing iOS photo permission support. Reinstall or rebuild Hydra and try again.",
         );
       } else if (e instanceof Error && e.message === "missing-files-root") {
         Alert.alert(
