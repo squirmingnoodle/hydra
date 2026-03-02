@@ -624,11 +624,13 @@ export default function useMediaSharing() {
           "Choose a root folder in Settings > General > Downloads.",
         );
       } else {
+        const detail =
+          e instanceof Error ? e.message : String(e);
         Alert.alert(
           "Error",
           action === "share"
-            ? `Failed to download ${type}`
-            : `Failed to save ${type}`,
+            ? `Failed to download ${type}: ${detail}`
+            : `Failed to save ${type}: ${detail}`,
         );
       }
     } finally {
