@@ -27,6 +27,19 @@ export default class RedditCookies {
     return cookies?.reddit_session !== undefined;
   }
 
+  /**
+   * Copy the reddit_session cookie from WKHTTPCookieStore (where the WebView
+   * writes it) into NSHTTPCookieStorage (which XMLHttpRequest uses).
+   * iOS does not sync these stores immediately, so API calls made right after
+   * a WebView login can fire unauthenticated without this step.
+   */
+  static async syncWebViewCookieToNativeStorage() {
+    const cookie = await NativeCookies.getSessionCookieValue();
+    if (cookie) {
+      await CookieManager.set("https://www.reddit.com", cookie);
+    }
+  }
+
   static async saveSessionCookies(username: string) {
     // Prefer the native module which reads directly from WKHTTPCookieStore —
     // the WebView sets cookies there, not in NSHTTPCookieStorage (which

@@ -11,7 +11,7 @@ export type DownloadSettingsBackup = {
 };
 
 function makeDownloadSettingsBackupKey(scope: string) {
-  return `${DOWNLOAD_SETTINGS_BACKUP_KEY_PREFIX}:${scope}`;
+  return `${DOWNLOAD_SETTINGS_BACKUP_KEY_PREFIX}_${scope}`;
 }
 
 function parseDownloadSettingsBackup(

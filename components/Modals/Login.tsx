@@ -81,6 +81,9 @@ export default function Login() {
 
   const loginFinished = useRef(false);
   const resolver = useRef<((value: boolean) => void) | null>(null);
+  // Grace period ref: prevents cookie checks from firing before the previous
+  // user's session cookies have had time to clear from WKHTTPCookieStore.
+  const cookieClearReady = useRef(false);
 
   const handleLoginCanceled = () => {
     resolver.current?.(true);
@@ -120,14 +123,25 @@ export default function Login() {
      * This is necessary because the onLoadStart event isn't triggering for all
      * users. I've been unable to reproduce the issue and it may be because Reddit
      * is running an experiment.
+     *
+     * We wait 2 seconds before starting the poll to avoid a race condition where
+     * the previous user's session cookie hasn't fully cleared from WKHTTPCookieStore
+     * yet, which would cause handleLoginFinished to fire immediately.
      */
     if (!canShow) return;
-    const interval = setInterval(async () => {
-      if (await RedditCookies.hasSessionCookieBeenSet()) {
-        handleLoginFinished();
-      }
-    }, 500);
-    return () => clearInterval(interval);
+    let interval: ReturnType<typeof setInterval>;
+    const timeout = setTimeout(() => {
+      cookieClearReady.current = true;
+      interval = setInterval(async () => {
+        if (await RedditCookies.hasSessionCookieBeenSet()) {
+          handleLoginFinished();
+        }
+      }, 500);
+    }, 2000);
+    return () => {
+      clearTimeout(timeout);
+      clearInterval(interval);
+    };
   }, [canShow]);
 
   return (
@@ -156,13 +170,24 @@ export default function Login() {
               style={styles.webView}
               sharedCookiesEnabled={true}
               thirdPartyCookiesEnabled={true}
-              onLoadStart={(event) => {
+              onLoadStart={async (event) => {
                 if (
                   !ALLOWED_URLS.some((url) =>
                     event.nativeEvent.url.includes(url),
                   )
                 ) {
-                  handleLoginFinished();
+                  // Only treat navigation away from allowed URLs as a completed
+                  // login if a session cookie is actually present. Without this
+                  // check, Reddit's server-side redirect (login → dest) fires
+                  // handleLoginFinished before the user has entered credentials.
+                  // Also wait for the grace period so a not-yet-cleared previous
+                  // user's cookie doesn't trigger an immediate finish.
+                  if (
+                    cookieClearReady.current &&
+                    (await RedditCookies.hasSessionCookieBeenSet())
+                  ) {
+                    handleLoginFinished();
+                  }
                 }
               }}
               injectedJavaScript={INJECTED_JAVASCRIPT}

@@ -229,16 +229,43 @@ export default function useMediaSharing() {
   };
 
   const saveToPhotos = async (file: File) => {
-    const permissions = await MediaLibrary.requestPermissionsAsync(true);
+    let permissions: MediaLibrary.PermissionResponse;
+    try {
+      permissions = await MediaLibrary.requestPermissionsAsync(true);
+    } catch {
+      throw new Error("photos-permission-unavailable");
+    }
     if (!permissions.granted) {
       throw new Error("photos-permission-denied");
     }
-    const asset = await MediaLibrary.createAssetAsync(file.uri);
-    const existingAlbum = await MediaLibrary.getAlbumAsync(HYDRA_PHOTOS_ALBUM_NAME);
-    if (existingAlbum) {
-      await MediaLibrary.addAssetsToAlbumAsync([asset], existingAlbum, false);
-    } else {
-      await MediaLibrary.createAlbumAsync(HYDRA_PHOTOS_ALBUM_NAME, asset, false);
+    try {
+      const asset = await MediaLibrary.createAssetAsync(file.uri);
+      try {
+        const existingAlbum =
+          await MediaLibrary.getAlbumAsync(HYDRA_PHOTOS_ALBUM_NAME);
+        if (existingAlbum) {
+          await MediaLibrary.addAssetsToAlbumAsync([asset], existingAlbum, false);
+        } else {
+          await MediaLibrary.createAlbumAsync(
+            HYDRA_PHOTOS_ALBUM_NAME,
+            asset,
+            false,
+          );
+        }
+        return true;
+      } catch {
+        // In add-only photos permission mode, album queries/mutations can fail.
+        // The asset is already saved to Photos by createAssetAsync above.
+        return false;
+      }
+    } catch (assetSaveError) {
+      // Fallback path: save directly to the library if asset creation fails.
+      try {
+        await MediaLibrary.saveToLibraryAsync(file.uri);
+        return false;
+      } catch {
+        throw assetSaveError;
+      }
     }
   };
 
@@ -451,6 +478,7 @@ export default function useMediaSharing() {
     let forcedDownloadDestination = options.forceDownloadDestination;
     let downloadedFiles: File[] = [];
     let destinationFolderName: string | null = null;
+    let savedToHydraAlbum = true;
     try {
       if (!options.forceAction) {
         const selectedAction = await showLongPressMediaMenu(type, mediaUrl, options);
@@ -527,7 +555,10 @@ export default function useMediaSharing() {
           });
           break;
         } else if (resolvedDownloadDestination === "photos") {
-          await saveToPhotos(file);
+          const savedToAlbum = await saveToPhotos(file);
+          if (!savedToAlbum) {
+            savedToHydraAlbum = false;
+          }
         } else {
           destinationFolderName = await saveToFiles(
             file,
@@ -549,7 +580,9 @@ export default function useMediaSharing() {
         if (type === "image") {
           if (resolvedDownloadDestination === "photos") {
             showTopToast(
-              `Saved ${itemLabel} to ${HYDRA_PHOTOS_ALBUM_NAME}.`,
+              savedToHydraAlbum
+                ? `Saved ${itemLabel} to ${HYDRA_PHOTOS_ALBUM_NAME}.`
+                : `Saved ${itemLabel} to Photos.`,
             );
           } else {
             showTopToast(
@@ -559,7 +592,9 @@ export default function useMediaSharing() {
         } else if (resolvedDownloadDestination === "photos") {
           Alert.alert(
             "Saved to Photos",
-            `Saved ${itemLabel} to the ${HYDRA_PHOTOS_ALBUM_NAME} album.`,
+            savedToHydraAlbum
+              ? `Saved ${itemLabel} to the ${HYDRA_PHOTOS_ALBUM_NAME} album.`
+              : `Saved ${itemLabel} to Photos.`,
           );
         } else {
           Alert.alert(
@@ -575,17 +610,27 @@ export default function useMediaSharing() {
           "Photos Permission Needed",
           "Allow Hydra to add photos in iOS Settings to save to the Hydra album.",
         );
+      } else if (
+        e instanceof Error &&
+        e.message === "photos-permission-unavailable"
+      ) {
+        Alert.alert(
+          "Photos Permission Unavailable",
+          "This build is missing iOS photo permission support. Reinstall or rebuild Hydra and try again.",
+        );
       } else if (e instanceof Error && e.message === "missing-files-root") {
         Alert.alert(
           "No Folder Selected",
           "Choose a root folder in Settings > General > Downloads.",
         );
       } else {
+        const detail =
+          e instanceof Error ? e.message : String(e);
         Alert.alert(
           "Error",
           action === "share"
-            ? `Failed to download ${type}`
-            : `Failed to save ${type}`,
+            ? `Failed to download ${type}: ${detail}`
+            : `Failed to save ${type}: ${detail}`,
         );
       }
     } finally {

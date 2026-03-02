@@ -40,6 +40,11 @@ export function AccountProvider({ children }: React.PropsWithChildren) {
     try {
       if (username) {
         await RedditCookies.restoreSessionCookies(username);
+      } else {
+        // After a WebView login the cookie is in WKHTTPCookieStore but
+        // XMLHttpRequest reads from NSHTTPCookieStorage. Sync it across
+        // before making the /user/me API call.
+        await RedditCookies.syncWebViewCookieToNativeStorage();
       }
       const user = await getUser("/user/me");
       if (username && user.userName !== username) {
