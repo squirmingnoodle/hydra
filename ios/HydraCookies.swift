@@ -79,11 +79,12 @@ class HydraCookies: NSObject {
     }
   }
 
-  /// Clear all reddit.com cookies without triggering the sync-back bug.
+  /// Clear all reddit.com cookies and website data (localStorage, IndexedDB, etc.)
+  /// without triggering the sync-back bug.
   ///
-  /// Strategy: first expire the reddit_session cookie in both the HTTP store
-  /// and the WK store, then delete every reddit.com cookie from WKHTTPCookieStore
-  /// directly — bypassing the buggy clearAll(true) path entirely.
+  /// Deletes every reddit.com cookie from WKHTTPCookieStore directly, then
+  /// removes all cached website data for reddit.com so that Reddit's login page
+  /// cannot auto-login via stored credentials in localStorage or IndexedDB.
   @objc(clearSessionCookies:rejecter:)
   func clearSessionCookies(
     resolver resolve: @escaping RCTPromiseResolveBlock,
@@ -92,11 +93,25 @@ class HydraCookies: NSObject {
     redditCookies { [weak self] cookies in
       guard let self else { resolve(nil); return }
       let group = DispatchGroup()
+      // Delete all reddit.com cookies from WKHTTPCookieStore.
       for cookie in cookies {
         group.enter()
         self.cookieStore.delete(cookie) { group.leave() }
       }
-      group.notify(queue: .main) { resolve(nil) }
+      group.notify(queue: .main) {
+        // Also clear all website data (localStorage, IndexedDB, caches) for
+        // reddit.com so the login page cannot auto-login via stored credentials.
+        let dataStore = WKWebsiteDataStore.default()
+        let dataTypes = WKWebsiteDataStore.allWebsiteDataTypes()
+        dataStore.fetchDataRecords(ofTypes: dataTypes) { records in
+          let redditRecords = records.filter {
+            $0.displayName.hasSuffix("reddit.com")
+          }
+          dataStore.removeData(ofTypes: dataTypes, for: redditRecords) {
+            resolve(nil)
+          }
+        }
+      }
     }
   }
 
