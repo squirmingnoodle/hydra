@@ -234,11 +234,23 @@ export default function useMediaSharing() {
       throw new Error("photos-permission-denied");
     }
     const asset = await MediaLibrary.createAssetAsync(file.uri);
-    const existingAlbum = await MediaLibrary.getAlbumAsync(HYDRA_PHOTOS_ALBUM_NAME);
-    if (existingAlbum) {
-      await MediaLibrary.addAssetsToAlbumAsync([asset], existingAlbum, false);
-    } else {
-      await MediaLibrary.createAlbumAsync(HYDRA_PHOTOS_ALBUM_NAME, asset, false);
+    try {
+      const existingAlbum =
+        await MediaLibrary.getAlbumAsync(HYDRA_PHOTOS_ALBUM_NAME);
+      if (existingAlbum) {
+        await MediaLibrary.addAssetsToAlbumAsync([asset], existingAlbum, false);
+      } else {
+        await MediaLibrary.createAlbumAsync(
+          HYDRA_PHOTOS_ALBUM_NAME,
+          asset,
+          false,
+        );
+      }
+      return true;
+    } catch {
+      // In add-only photos permission mode, album queries/mutations can fail.
+      // The asset is already saved to Photos by createAssetAsync above.
+      return false;
     }
   };
 
@@ -451,6 +463,7 @@ export default function useMediaSharing() {
     let forcedDownloadDestination = options.forceDownloadDestination;
     let downloadedFiles: File[] = [];
     let destinationFolderName: string | null = null;
+    let savedToHydraAlbum = true;
     try {
       if (!options.forceAction) {
         const selectedAction = await showLongPressMediaMenu(type, mediaUrl, options);
@@ -527,7 +540,10 @@ export default function useMediaSharing() {
           });
           break;
         } else if (resolvedDownloadDestination === "photos") {
-          await saveToPhotos(file);
+          const savedToAlbum = await saveToPhotos(file);
+          if (!savedToAlbum) {
+            savedToHydraAlbum = false;
+          }
         } else {
           destinationFolderName = await saveToFiles(
             file,
@@ -549,7 +565,9 @@ export default function useMediaSharing() {
         if (type === "image") {
           if (resolvedDownloadDestination === "photos") {
             showTopToast(
-              `Saved ${itemLabel} to ${HYDRA_PHOTOS_ALBUM_NAME}.`,
+              savedToHydraAlbum
+                ? `Saved ${itemLabel} to ${HYDRA_PHOTOS_ALBUM_NAME}.`
+                : `Saved ${itemLabel} to Photos.`,
             );
           } else {
             showTopToast(
@@ -559,7 +577,9 @@ export default function useMediaSharing() {
         } else if (resolvedDownloadDestination === "photos") {
           Alert.alert(
             "Saved to Photos",
-            `Saved ${itemLabel} to the ${HYDRA_PHOTOS_ALBUM_NAME} album.`,
+            savedToHydraAlbum
+              ? `Saved ${itemLabel} to the ${HYDRA_PHOTOS_ALBUM_NAME} album.`
+              : `Saved ${itemLabel} to Photos.`,
           );
         } else {
           Alert.alert(
