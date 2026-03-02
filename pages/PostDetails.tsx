@@ -109,6 +109,7 @@ function PostDetails(props: PostDetailsProps) {
       setPostDetail(undefined);
     }
     const postDetail = await getPostsDetail(url);
+    if (!postDetail) return;
     setPostDetail(postDetail);
     setRefreshing(false);
 
