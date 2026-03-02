@@ -154,16 +154,18 @@ function VideoPlayer({
       ) : (
         <>
           <TouchableWithoutFeedback
-            onPress={() => {
+            onPress={(event) => {
+              event.stopPropagation();
               interactedWithPost();
               video.current?.enterFullscreen();
               player.play();
             }}
-            onLongPress={() =>
-              videoDownloadURL
+            onLongPress={(event) => {
+              event.stopPropagation();
+              return videoDownloadURL
                 ? shareMedia("video", videoDownloadURL, { subreddit })
-                : null
-            }
+                : null;
+            }}
           >
             {failedToLoadErr ? (
               <View

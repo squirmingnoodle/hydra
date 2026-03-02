@@ -65,7 +65,10 @@ export default function CompactPostMedia({ post }: CompactPostMediaProps) {
       {post.video ? (
         <TouchableOpacity
           style={styles.videoContainer}
-          onPress={() => setMediaOpen(!mediaOpen)}
+          onPress={(event) => {
+            event.stopPropagation();
+            setMediaOpen((prev) => !prev);
+          }}
         >
           <View style={styles.iconContainer}>
             <FontAwesome name="play-circle" style={styles.icon} />
@@ -94,7 +97,10 @@ export default function CompactPostMedia({ post }: CompactPostMediaProps) {
       ) : post.images.length > 0 ? (
         <TouchableOpacity
           style={styles.imgContainer}
-          onPress={() => setMediaOpen(!mediaOpen)}
+          onPress={(event) => {
+            event.stopPropagation();
+            setMediaOpen((prev) => !prev);
+          }}
         >
           <View style={styles.iconContainer}>
             {isGif && <FontAwesome name="play-circle" style={styles.icon} />}

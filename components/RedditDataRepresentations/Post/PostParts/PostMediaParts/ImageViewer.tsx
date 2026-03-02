@@ -103,19 +103,21 @@ export default function ImageViewer({
         <TouchableHighlight
           activeOpacity={1}
           key={index}
-          onPress={() => {
+          onPress={(event) => {
+            event.stopPropagation();
             setLoadLowData(false);
             initialImageIndex.current = index;
             setVisible(true);
           }}
           style={styles.touchableZone}
           underlayColor={theme.background}
-          onLongPress={() =>
-            shareMedia("image", images[index], {
+          onLongPress={(event) => {
+            event.stopPropagation();
+            return shareMedia("image", images[index], {
               subreddit,
               allMediaUrls: images,
-            })
-          }
+            });
+          }}
         >
           <Image
             style={[
