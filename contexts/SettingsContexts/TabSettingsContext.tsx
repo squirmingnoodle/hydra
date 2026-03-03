@@ -5,6 +5,8 @@ const initialValues = {
   showUsername: true,
   hideTabsOnScroll: false,
   liquidGlassEnabled: true,
+  modernAccountViewEnabled: false,
+  modernAccountViewAutoDisabled: false,
 };
 
 const initialTabSettingsContext = {
@@ -12,6 +14,8 @@ const initialTabSettingsContext = {
   toggleShowUsername: (_newValue?: boolean) => {},
   toggleHideTabsOnScroll: (_newValue?: boolean) => {},
   toggleLiquidGlassEnabled: (_newValue?: boolean) => {},
+  toggleModernAccountViewEnabled: (_newValue?: boolean) => {},
+  setModernAccountViewAutoDisabled: (_newValue?: boolean) => {},
 };
 
 export const TabSettingsContext = createContext(initialTabSettingsContext);
@@ -31,6 +35,19 @@ export function TabSettingsProvider({ children }: React.PropsWithChildren) {
   const liquidGlassEnabled =
     storedLiquidGlassEnabled ?? initialValues.liquidGlassEnabled;
 
+  const [storedModernAccountViewEnabled, setModernAccountViewEnabled] =
+    useAccountScopedMMKVBoolean("modernAccountViewEnabled");
+  const modernAccountViewEnabled =
+    storedModernAccountViewEnabled ?? initialValues.modernAccountViewEnabled;
+
+  const [
+    storedModernAccountViewAutoDisabled,
+    setModernAccountViewAutoDisabled,
+  ] = useAccountScopedMMKVBoolean("modernAccountViewAutoDisabled");
+  const modernAccountViewAutoDisabled =
+    storedModernAccountViewAutoDisabled ??
+    initialValues.modernAccountViewAutoDisabled;
+
   return (
     <TabSettingsContext.Provider
       value={{
@@ -43,6 +60,19 @@ export function TabSettingsProvider({ children }: React.PropsWithChildren) {
         liquidGlassEnabled,
         toggleLiquidGlassEnabled: (newValue = !liquidGlassEnabled) =>
           setLiquidGlassEnabled(newValue),
+        modernAccountViewEnabled,
+        toggleModernAccountViewEnabled: (
+          newValue = !modernAccountViewEnabled,
+        ) => {
+          if (newValue) {
+            setModernAccountViewAutoDisabled(false);
+          }
+          setModernAccountViewEnabled(newValue);
+        },
+        modernAccountViewAutoDisabled,
+        setModernAccountViewAutoDisabled: (
+          newValue = !modernAccountViewAutoDisabled,
+        ) => setModernAccountViewAutoDisabled(newValue),
       }}
     >
       {children}

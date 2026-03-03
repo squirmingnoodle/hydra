@@ -8,7 +8,7 @@ import {
   Ionicons,
 } from "@expo/vector-icons";
 import React, { useContext } from "react";
-import { Alert, Switch, View } from "react-native";
+import { Alert, Switch, Text, View } from "react-native";
 
 import List from "../../components/UI/List";
 import { CommentSettingsContext } from "../../contexts/SettingsContexts/CommentSettingsContext";
@@ -78,6 +78,9 @@ export default function Appearance() {
     toggleHideTabsOnScroll,
     liquidGlassEnabled,
     toggleLiquidGlassEnabled,
+    modernAccountViewEnabled,
+    modernAccountViewAutoDisabled,
+    toggleModernAccountViewEnabled,
   } = useContext(TabSettingsContext);
 
   const {
@@ -512,6 +515,28 @@ export default function Appearance() {
             onPress: () => toggleShowUsername(),
           },
           {
+            key: "modernAccountViewEnabled",
+            icon: (
+              <MaterialCommunityIcons
+                name="account-circle-outline"
+                size={24}
+                color={theme.text}
+              />
+            ),
+            rightIcon: (
+              <Switch
+                trackColor={{
+                  false: theme.iconSecondary,
+                  true: theme.iconPrimary,
+                }}
+                value={modernAccountViewEnabled}
+                onValueChange={() => toggleModernAccountViewEnabled()}
+              />
+            ),
+            text: "Use modern account view (beta)",
+            onPress: () => toggleModernAccountViewEnabled(),
+          },
+          {
             key: "hideTabsOnScroll",
             icon: <FontAwesome name="arrows-v" size={24} color={theme.text} />,
             rightIcon: (
@@ -547,6 +572,25 @@ export default function Appearance() {
           },
         ]}
       />
+      {modernAccountViewAutoDisabled && (
+        <View
+          style={{
+            marginHorizontal: 20,
+            marginTop: 8,
+          }}
+        >
+          <Text
+            style={{
+              color: theme.subtleText,
+              fontSize: 13,
+              lineHeight: 18,
+            }}
+          >
+            Automatically disabled after a runtime error; you can re-enable
+            after updating.
+          </Text>
+        </View>
+      )}
     </>
   );
 }
