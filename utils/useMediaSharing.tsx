@@ -332,12 +332,14 @@ export default function useMediaSharing() {
       return subredditFolderName;
     };
 
-    let rootUri = rootUriOverride ?? latestFilesRootUriRef.current;
+    let rootUri: string | undefined =
+      rootUriOverride ?? latestFilesRootUriRef.current;
     if (!rootUri) {
-      rootUri = await pickFilesRoot();
-      if (!rootUri) {
+      const pickedRootUri = await pickFilesRoot();
+      if (!pickedRootUri) {
         throw new Error("missing-files-root");
       }
+      rootUri = pickedRootUri;
     }
 
     try {

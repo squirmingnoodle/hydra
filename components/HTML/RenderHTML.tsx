@@ -112,7 +112,7 @@ function makeChildNodeKey(node: AnyNode, index: number): string {
  */
 function getInlineMediaLinkInParagraph(
   element: ElementNode,
-): "image" | "gif" | "video" | "none" {
+): "image" | "gif" | "video" | "giphy" | "none" {
   const child = element.children[0] as ElementNode | undefined;
   if (
     element.name === "p" &&

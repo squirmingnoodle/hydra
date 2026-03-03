@@ -20,40 +20,68 @@ type NativeHydraCookiesModule = {
 const nativeModule =
   NativeModules.HydraCookies as NativeHydraCookiesModule | undefined;
 
-function isAvailable(): nativeModule is NativeHydraCookiesModule {
-  return Platform.OS === "ios" && nativeModule !== undefined;
+function getNativeModule(): NativeHydraCookiesModule | null {
+  if (Platform.OS !== "ios") return null;
+  return nativeModule ?? null;
+}
+
+function isAvailable(): boolean {
+  return getNativeModule() !== null;
 }
 
 export const NativeCookies = {
   isAvailable,
 
   async hasSessionCookie(): Promise<boolean | null> {
-    if (!isAvailable()) return null;
-    try { return await nativeModule!.hasSessionCookie(); }
-    catch { return null; }
+    const module = getNativeModule();
+    if (!module) return null;
+    try {
+      return await module.hasSessionCookie();
+    } catch {
+      return null;
+    }
   },
 
   async persistSessionCookie(): Promise<boolean> {
-    if (!isAvailable()) return false;
-    try { await nativeModule!.persistSessionCookie(); return true; }
-    catch { return false; }
+    const module = getNativeModule();
+    if (!module) return false;
+    try {
+      await module.persistSessionCookie();
+      return true;
+    } catch {
+      return false;
+    }
   },
 
   async clearSessionCookies(): Promise<boolean> {
-    if (!isAvailable()) return false;
-    try { await nativeModule!.clearSessionCookies(); return true; }
-    catch { return false; }
+    const module = getNativeModule();
+    if (!module) return false;
+    try {
+      await module.clearSessionCookies();
+      return true;
+    } catch {
+      return false;
+    }
   },
 
   async getSessionCookieValue(): Promise<CookieDict | null> {
-    if (!isAvailable()) return null;
-    try { return await nativeModule!.getSessionCookieValue(); }
-    catch { return null; }
+    const module = getNativeModule();
+    if (!module) return null;
+    try {
+      return await module.getSessionCookieValue();
+    } catch {
+      return null;
+    }
   },
 
   async setSessionCookie(cookie: CookieDict): Promise<boolean> {
-    if (!isAvailable()) return false;
-    try { await nativeModule!.setSessionCookie(cookie); return true; }
-    catch { return false; }
+    const module = getNativeModule();
+    if (!module) return false;
+    try {
+      await module.setSessionCookie(cookie);
+      return true;
+    } catch {
+      return false;
+    }
   },
 };
