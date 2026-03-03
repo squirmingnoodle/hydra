@@ -10,30 +10,39 @@ type NativeHydraICloudKVModule = {
 const nativeModule =
   NativeModules.HydraICloudKV as NativeHydraICloudKVModule | undefined;
 
-function isAvailable(): nativeModule is NativeHydraICloudKVModule {
-  return Platform.OS === "ios" && nativeModule !== undefined;
+function getNativeModule(): NativeHydraICloudKVModule | null {
+  if (Platform.OS !== "ios") return null;
+  return nativeModule ?? null;
+}
+
+function isAvailable(): boolean {
+  return getNativeModule() !== null;
 }
 
 export const NativeICloudKV = {
   isAvailable,
 
   set(key: string, value: string): void {
-    if (!isAvailable()) return;
-    nativeModule!.set(key, value);
+    const module = getNativeModule();
+    if (!module) return;
+    module.set(key, value);
   },
 
   getString(key: string): string | null {
-    if (!isAvailable()) return null;
-    return nativeModule!.getString(key);
+    const module = getNativeModule();
+    if (!module) return null;
+    return module.getString(key);
   },
 
   remove(key: string): void {
-    if (!isAvailable()) return;
-    nativeModule!.remove(key);
+    const module = getNativeModule();
+    if (!module) return;
+    module.remove(key);
   },
 
   getAllKeys(): string[] {
-    if (!isAvailable()) return [];
-    return nativeModule!.getAllKeys();
+    const module = getNativeModule();
+    if (!module) return [];
+    return module.getAllKeys();
   },
 };

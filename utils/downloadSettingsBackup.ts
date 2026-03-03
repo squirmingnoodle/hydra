@@ -14,6 +14,10 @@ function makeDownloadSettingsBackupKey(scope: string) {
   return `${DOWNLOAD_SETTINGS_BACKUP_KEY_PREFIX}_${scope}`;
 }
 
+function makeLegacyDownloadSettingsBackupKey(scope: string) {
+  return `${DOWNLOAD_SETTINGS_BACKUP_KEY_PREFIX}:${scope}`;
+}
+
 function parseDownloadSettingsBackup(
   value?: string | null,
 ): DownloadSettingsBackup | null {
@@ -41,8 +45,20 @@ function parseDownloadSettingsBackup(
 export async function getDownloadSettingsBackup(
   scope: string,
 ): Promise<DownloadSettingsBackup | null> {
-  const value = await SecureStore.getItemAsync(makeDownloadSettingsBackupKey(scope));
-  return parseDownloadSettingsBackup(value);
+  const key = makeDownloadSettingsBackupKey(scope);
+  const value = await SecureStore.getItemAsync(key);
+  if (value) {
+    return parseDownloadSettingsBackup(value);
+  }
+
+  const legacyKey = makeLegacyDownloadSettingsBackupKey(scope);
+  const legacyValue = await SecureStore.getItemAsync(legacyKey);
+  const parsedLegacyBackup = parseDownloadSettingsBackup(legacyValue);
+  if (!parsedLegacyBackup) return null;
+
+  await SecureStore.setItemAsync(key, JSON.stringify(parsedLegacyBackup));
+  await SecureStore.deleteItemAsync(legacyKey);
+  return parsedLegacyBackup;
 }
 
 export async function setDownloadSettingsBackup(

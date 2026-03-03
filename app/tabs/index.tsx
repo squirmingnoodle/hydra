@@ -236,7 +236,7 @@ export default function Tabs() {
                   openAccountSwitchMenu();
                 }
               },
-              tabLongPress: (e) => {
+              tabLongPress: (e: { target?: string }) => {
                 const state = navigation.getState();
                 const stackItem = state.routes[state.index];
                 const isCurrentTab = stackItem.key === e.target;
