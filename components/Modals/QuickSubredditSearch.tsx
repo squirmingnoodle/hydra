@@ -92,13 +92,17 @@ export default function QuickSubredditSearch({
     } else {
       textInputRef.current?.blur();
     }
-    Animated.timing(opacity, {
+    const fade = Animated.timing(opacity, {
       toValue: show ? 1 : 0,
       duration: 150,
       useNativeDriver: true,
-    }).start(() => {
-      if (!show) setVisible(false);
     });
+    fade.start(({ finished }) => {
+      if (finished && !show) setVisible(false);
+    });
+    return () => {
+      fade.stop();
+    };
   }, [show]);
 
   return (
