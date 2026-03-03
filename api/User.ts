@@ -13,6 +13,16 @@ export type User = {
   commentKarma: number;
   postKarma: number;
   icon: string;
+  displayName?: string;
+  bio?: string;
+  bannerImage?: string;
+  avatarImage?: string;
+  profileImage?: string;
+  totalKarma?: number;
+  isGold?: boolean;
+  isMod?: boolean;
+  verifiedEmail?: boolean;
+  followersCount?: number;
   mailCount?: number;
   friends: boolean;
   isLoggedInUser: boolean;
@@ -20,6 +30,13 @@ export type User = {
   modhash?: string;
   createdAt: number;
   timeSinceCreated: string;
+};
+
+export type UserTrophy = {
+  id: string;
+  name: string;
+  icon: string | null;
+  description?: string;
 };
 
 export type UserContent = Post | Comment | PostDetail | CommentReply;
@@ -45,22 +62,95 @@ export class BannedUserError extends Error {
   }
 }
 
+function normalizeImage(url?: string): string | undefined {
+  if (typeof url !== "string" || url.length === 0) return undefined;
+  const normalized = url.trim().split("?")[0];
+  const normalizedLower = normalized.toLowerCase();
+  if (!normalized) return undefined;
+  if (
+    !normalizedLower.startsWith("https://") &&
+    !normalizedLower.startsWith("http://")
+  ) {
+    return undefined;
+  }
+  if (normalizedLower.endsWith(".svg")) {
+    return undefined;
+  }
+  return normalized;
+}
+
 export function formatUserData(child: any): User {
+  const safeChild = typeof child === "object" && child !== null ? child : {};
+  const profile =
+    typeof safeChild.subreddit === "object" && safeChild.subreddit !== null
+      ? safeChild.subreddit
+      : {};
+  const userName =
+    typeof safeChild.name === "string" && safeChild.name.length > 0
+      ? safeChild.name
+      : "unknown";
+  const postKarma =
+    typeof safeChild.link_karma === "number" &&
+    Number.isFinite(safeChild.link_karma)
+      ? safeChild.link_karma
+      : 0;
+  const commentKarma =
+    typeof safeChild.comment_karma === "number" &&
+    Number.isFinite(safeChild.comment_karma)
+      ? safeChild.comment_karma
+      : 0;
+  const createdAt =
+    typeof safeChild.created_utc === "number" &&
+    Number.isFinite(safeChild.created_utc)
+      ? safeChild.created_utc
+      : 0;
+  const id =
+    typeof safeChild.id === "string" && safeChild.id.length > 0
+      ? safeChild.id
+      : userName;
+  const totalKarma = Math.max(0, postKarma + commentKarma);
+
   return {
-    id: child.id,
+    id,
     type: "user",
-    userName: child.name,
-    commentKarma: child.comment_karma,
-    postKarma: child.link_karma,
-    icon: child.icon_img.split("?")[0],
-    mailCount: child.inbox_count,
-    friends: child.is_friend,
-    isLoggedInUser: child.inbox_count !== undefined,
-    after: child.id,
-    modhash: child.modhash,
-    createdAt: child.created_utc,
+    userName,
+    commentKarma,
+    postKarma,
+    icon: normalizeImage(safeChild.icon_img) ?? "",
+    displayName:
+      typeof profile.title === "string" && profile.title.length > 0
+        ? profile.title
+        : undefined,
+    bio:
+      typeof profile.public_description === "string" &&
+      profile.public_description.length > 0
+        ? profile.public_description
+        : undefined,
+    bannerImage: normalizeImage(profile.banner_img),
+    avatarImage: normalizeImage(profile.icon_img),
+    profileImage: normalizeImage(safeChild.snoovatar_img),
+    totalKarma,
+    isGold: safeChild.is_gold === true,
+    isMod: safeChild.is_mod === true,
+    verifiedEmail: safeChild.has_verified_email === true,
+    followersCount:
+      typeof profile.subscribers === "number" ? profile.subscribers : undefined,
+    mailCount:
+      typeof safeChild.inbox_count === "number" &&
+      Number.isFinite(safeChild.inbox_count)
+        ? safeChild.inbox_count
+        : undefined,
+    friends: safeChild.is_friend === true,
+    isLoggedInUser:
+      safeChild.inbox_count !== undefined && safeChild.inbox_count !== null,
+    after: id,
+    modhash:
+      typeof safeChild.modhash === "string" ? safeChild.modhash : undefined,
+    createdAt,
     timeSinceCreated:
-      new Time(child.created_utc * 1000).prettyTimeSince() + " old",
+      createdAt > 0
+        ? new Time(createdAt * 1000).prettyTimeSince() + " old"
+        : "Unknown age",
   };
 }
 
@@ -81,6 +171,43 @@ export async function getUser(url: string): Promise<User> {
   return formatUserData(response.data);
 }
 
+export async function getUserTrophies(username: string): Promise<UserTrophy[]> {
+  try {
+    const response = await api(
+      `https://www.reddit.com/api/v1/user/${username}/trophies`,
+    );
+    const trophies = response?.data?.trophies;
+    if (!Array.isArray(trophies)) {
+      return [];
+    }
+
+    return trophies
+      .map((trophy: any, index: number): UserTrophy | null => {
+        const data = trophy?.data;
+        if (!data || typeof data.name !== "string") {
+          return null;
+        }
+
+        return {
+          id:
+            typeof data.id === "string"
+              ? data.id
+              : `${username}-${data.name}-${index}`,
+          name: data.name,
+          icon:
+            normalizeImage(data.icon_70) ??
+            normalizeImage(data.icon_40) ??
+            null,
+          description:
+            typeof data.description === "string" ? data.description : undefined,
+        };
+      })
+      .filter((trophy): trophy is UserTrophy => trophy !== null);
+  } catch (_e) {
+    return [];
+  }
+}
+
 export async function getUserContent(
   url: string,
   options: GetUserContentOptions = {},
@@ -91,17 +218,21 @@ export async function getUserContent(
   redditURL.jsonify();
   const response = await api(redditURL.toString());
   handleBadUserResponse(response);
+  const children = Array.isArray(response?.data?.children)
+    ? response.data.children
+    : [];
   const overview = await Promise.all(
-    response.data.children.map(async (child: any) => {
+    children.map(async (child: any) => {
       if (child.kind === "t3") {
         return await formatPostData(child);
       }
       if (child.kind === "t1") {
-        return formatComments([child])[0];
+        return formatComments([child])[0] ?? null;
       }
+      return null;
     }),
   );
-  return overview;
+  return overview.filter((item): item is UserContent => !!item);
 }
 
 export async function blockUser(user: User): Promise<void> {

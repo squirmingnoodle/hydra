@@ -1,6 +1,15 @@
-import React, { useContext, useEffect, useMemo, useState } from "react";
+import * as Sentry from "@sentry/react-native";
+import React, {
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import {
   ScrollView,
+  Share,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -14,17 +23,31 @@ import {
   UserDoesNotExistError,
   getUser,
   getUserContent,
+  getUserTrophies,
+  UserTrophy,
 } from "../api/User";
 import { StackPageProps } from "../app/stack";
 import SortAndContext, {
   ContextTypes,
   SortTypes,
 } from "../components/Navbar/SortAndContext";
+import Login from "../components/Modals/Login";
 import PostComponent from "../components/RedditDataRepresentations/Post/PostComponent";
 import { CommentComponent } from "../components/RedditDataRepresentations/Post/PostParts/Comments";
+import UserProfileActions from "../components/RedditDataRepresentations/User/UserProfileActions";
+import UserProfileHero from "../components/RedditDataRepresentations/User/UserProfileHero";
+import UserProfilePrimaryTabs, {
+  UserProfilePrimaryTab,
+} from "../components/RedditDataRepresentations/User/UserProfilePrimaryTabs";
+import UserProfileSavedTypeTabs, {
+  UserSavedTypeTab,
+} from "../components/RedditDataRepresentations/User/UserProfileSavedTypeTabs";
+import UserProfileShortcuts from "../components/RedditDataRepresentations/User/UserProfileShortcuts";
 import UserDetailsComponent from "../components/RedditDataRepresentations/User/UserDetailsComponent";
 import RedditDataScroller from "../components/UI/RedditDataScroller";
 import { AccountContext } from "../contexts/AccountContext";
+import { ModalContext } from "../contexts/ModalContext";
+import { TabSettingsContext } from "../contexts/SettingsContexts/TabSettingsContext";
 import { ThemeContext } from "../contexts/SettingsContexts/ThemeContext";
 import RedditURL from "../utils/RedditURL";
 import {
@@ -40,11 +63,160 @@ import { useURLNavigation } from "../utils/navigation";
 import useRedditDataState from "../utils/useRedditDataState";
 import AccessFailureComponent from "../components/UI/AccessFailureComponent";
 
-export default function UserPage({ route }: StackPageProps<"UserPage">) {
+const MODERN_ACCOUNT_VIEW_DISABLED_WARNING =
+  "Modern account view crashed and was disabled";
+const MODERN_ACCOUNT_VIEW_INVALID_URL_WARNING =
+  "Modern account view is unavailable for this profile URL";
+
+type ParsedUserRoute = {
+  sort: string | null;
+  sortTime: string | null;
+  section?: string;
+  userNameFromURL: string;
+  savedType: string | null;
+  isSavedPostsPage: boolean;
+};
+
+function parseUserRoute(url: string): ParsedUserRoute | null {
+  try {
+    const redditURL = new RedditURL(url);
+    const [sort, sortTime] = redditURL.getSort();
+    const relativePathParts = redditURL.getRelativePath().split("/");
+    const section = relativePathParts[3];
+    const userNameFromURL = relativePathParts[2] ?? "";
+    const savedType = new URL(url).getQueryParam("type");
+    return {
+      sort,
+      sortTime,
+      section,
+      userNameFromURL,
+      savedType,
+      isSavedPostsPage: section === "saved" && savedType === "links",
+    };
+  } catch (_error) {
+    return null;
+  }
+}
+
+type ModernUserPageErrorBoundaryProps = {
+  children: React.ReactNode;
+  fallback: React.ReactNode;
+  onError: (error: Error, info: React.ErrorInfo) => void;
+};
+
+type ModernUserPageErrorBoundaryState = {
+  hasError: boolean;
+};
+
+class ModernUserPageErrorBoundary extends React.Component<
+  ModernUserPageErrorBoundaryProps,
+  ModernUserPageErrorBoundaryState
+> {
+  state: ModernUserPageErrorBoundaryState = {
+    hasError: false,
+  };
+
+  static getDerivedStateFromError() {
+    return { hasError: true };
+  }
+
+  componentDidCatch(error: Error, info: React.ErrorInfo) {
+    this.props.onError(error, info);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return this.props.fallback;
+    }
+    return this.props.children;
+  }
+}
+
+function ModernUserPageBoundary(props: StackPageProps<"UserPage">) {
+  const { toggleModernAccountViewEnabled, setModernAccountViewAutoDisabled } =
+    useContext(TabSettingsContext);
+  const crashHandledRef = useRef(false);
+  const parsedRoute = useMemo(
+    () => parseUserRoute(props.route.params.url),
+    [props.route.params.url],
+  );
+
+  const handleError = useCallback(
+    (error: Error, info: React.ErrorInfo) => {
+      Sentry.withScope((scope) => {
+        scope.setTag("screen", "UserPage");
+        scope.setTag("surface", "modernAccountView");
+        scope.setContext("modernAccountView", {
+          routeUrl: props.route.params.url,
+          username: parsedRoute?.userNameFromURL ?? "unknown",
+          section: parsedRoute?.section ?? "overview",
+          componentStack: info.componentStack,
+        });
+        Sentry.captureException(error);
+      });
+
+      if (!crashHandledRef.current) {
+        crashHandledRef.current = true;
+        setModernAccountViewAutoDisabled(true);
+        toggleModernAccountViewEnabled(false);
+      }
+    },
+    [
+      parsedRoute?.section,
+      parsedRoute?.userNameFromURL,
+      props.route.params.url,
+      setModernAccountViewAutoDisabled,
+      toggleModernAccountViewEnabled,
+    ],
+  );
+
+  return (
+    <ModernUserPageErrorBoundary
+      onError={handleError}
+      fallback={
+        <LegacyUserPageContent
+          {...props}
+          warningBannerText={MODERN_ACCOUNT_VIEW_DISABLED_WARNING}
+        />
+      }
+    >
+      <ModernUserPageContent {...props} />
+    </ModernUserPageErrorBoundary>
+  );
+}
+
+export default function UserPage(props: StackPageProps<"UserPage">) {
+  const { modernAccountViewEnabled, modernAccountViewAutoDisabled } =
+    useContext(TabSettingsContext);
+  if (modernAccountViewEnabled) {
+    return <ModernUserPageBoundary {...props} />;
+  }
+  return (
+    <LegacyUserPageContent
+      {...props}
+      warningBannerText={
+        modernAccountViewAutoDisabled
+          ? MODERN_ACCOUNT_VIEW_DISABLED_WARNING
+          : undefined
+      }
+    />
+  );
+}
+
+type LegacyUserPageContentProps = StackPageProps<"UserPage"> & {
+  warningBannerText?: string;
+};
+
+function LegacyUserPageContent({
+  route,
+  warningBannerText,
+}: LegacyUserPageContentProps) {
   const url = route.params.url;
   const [sort, sortTime] = new RedditURL(url).getSort();
 
   const navigation = useURLNavigation();
+  const parsedRoute = useMemo(() => parseUserRoute(url), [url]);
+  const contentName = parsedRoute?.userNameFromURL || "User";
 
   const section = new RedditURL(url).getRelativePath().split("/")[3];
   const savedType = new URL(url).getQueryParam("type");
@@ -114,7 +286,12 @@ export default function UserPage({ route }: StackPageProps<"UserPage">) {
     hitFilterLimit,
     accessFailure,
   } = useRedditDataState<UserContent, "userLoadingError">({
-    loadData: async (after) => await getUserContent(url, { after }),
+    loadData: async (after) => {
+      if (!parsedRoute) {
+        return [];
+      }
+      return await getUserContent(url, { after });
+    },
     filterRules: isSavedPostsPage
       ? [
           (content) =>
@@ -234,33 +411,520 @@ export default function UserPage({ route }: StackPageProps<"UserPage">) {
     >
       <AccessFailureComponent
         accessFailure={accessFailure}
-        contentName={
-          new RedditURL(url).getRelativePath().split("/")[2] ?? "User"
-        }
+        contentName={contentName}
       >
+        {!!warningBannerText && (
+          <View
+            style={[
+              styles.warningBanner,
+              {
+                backgroundColor: theme.tint,
+                borderColor: theme.divider,
+              },
+            ]}
+          >
+            <Text
+              style={[
+                styles.warningBannerText,
+                {
+                  color: theme.subtleText,
+                },
+              ]}
+            >
+              {warningBannerText}
+            </Text>
+          </View>
+        )}
         <RedditDataScroller<UserContent>
-          ListHeaderComponent={() => {
-            if (!isDeepPath && user) {
-              return (
-                <View>
-                  <UserDetailsComponent user={user} />
-                  {isSavedPostsPage && renderSavedPostCategoryFilters()}
-                </View>
-              );
-            }
-
-            if (!isSavedPostsPage) {
-              return null;
-            }
-
-            return renderSavedPostCategoryFilters();
-          }}
+          ListHeaderComponent={
+            !isDeepPath && user ? (
+              <View>
+                <UserDetailsComponent user={user} />
+                {isSavedPostsPage && renderSavedPostCategoryFilters()}
+              </View>
+            ) : isSavedPostsPage ? (
+              renderSavedPostCategoryFilters()
+            ) : null
+          }
           loadMore={loadMoreUserContent}
           refresh={refreshUserContent}
           fullyLoaded={fullyLoaded}
           hitFilterLimit={hitFilterLimit}
           data={userContent}
+          getItemType={(item) => item?.type ?? "unknown"}
           renderItem={({ item: content }) => {
+            if (!content) {
+              return null;
+            }
+            if (content.type === "post") {
+              return (
+                <PostComponent
+                  post={content}
+                  setPost={(newPost) => modifyUserContent([newPost])}
+                />
+              );
+            }
+            if (content.type === "comment") {
+              return (
+                <CommentComponent
+                  comment={content}
+                  index={0}
+                  displayInList
+                  changeComment={(newComment) =>
+                    modifyUserContent([newComment])
+                  }
+                  deleteComment={(comment) => deleteUserContent([comment])}
+                />
+              );
+            }
+            return null;
+          }}
+        />
+      </AccessFailureComponent>
+    </View>
+  );
+}
+
+type ModernUserPageHeaderProps = {
+  user: User | undefined;
+  trophies: UserTrophy[];
+  isOwnProfile: boolean;
+  selectedPrimaryTab: UserProfilePrimaryTab;
+  selectedSavedTypeTab: UserSavedTypeTab;
+  isSavedPostsPage: boolean;
+  savedPostCategoryFilters: { key: SavedPostCategoryFilter; label: string }[];
+  selectedSavedPostCategoryFilter: SavedPostCategoryFilter;
+  onEditProfile: () => void;
+  onShareProfile: () => void;
+  onAddAccount: () => void;
+  onOpenURL: (url: string) => void;
+  onSelectPrimaryTab: (tab: UserProfilePrimaryTab) => void;
+  onSelectSavedTypeTab: (tab: UserSavedTypeTab) => void;
+  onSelectSavedPostCategoryFilter: (filter: SavedPostCategoryFilter) => void;
+  userName: string;
+};
+
+function ModernUserPageHeader({
+  user,
+  trophies,
+  isOwnProfile,
+  selectedPrimaryTab,
+  selectedSavedTypeTab,
+  isSavedPostsPage,
+  savedPostCategoryFilters,
+  selectedSavedPostCategoryFilter,
+  onEditProfile,
+  onShareProfile,
+  onAddAccount,
+  onOpenURL,
+  onSelectPrimaryTab,
+  onSelectSavedTypeTab,
+  onSelectSavedPostCategoryFilter,
+  userName,
+}: ModernUserPageHeaderProps) {
+  const { theme } = useContext(ThemeContext);
+  return (
+    <View>
+      {user && <UserProfileHero user={user} trophies={trophies} />}
+      {isOwnProfile && (
+        <UserProfileActions
+          onEditProfile={onEditProfile}
+          onShareProfile={onShareProfile}
+          onAddAccount={onAddAccount}
+        />
+      )}
+      {isOwnProfile && (
+        <UserProfileShortcuts userName={userName} onOpenURL={onOpenURL} />
+      )}
+      <UserProfilePrimaryTabs
+        selectedTab={selectedPrimaryTab}
+        showSavedTab={isOwnProfile}
+        onSelectTab={onSelectPrimaryTab}
+      />
+      {selectedPrimaryTab === "saved" && isOwnProfile && (
+        <>
+          <UserProfileSavedTypeTabs
+            selectedTab={selectedSavedTypeTab}
+            onSelectTab={onSelectSavedTypeTab}
+          />
+          {isSavedPostsPage && (
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.savedCategoryFilterContainer}
+            >
+              {savedPostCategoryFilters.map((category) => {
+                const selected =
+                  category.key === selectedSavedPostCategoryFilter;
+                return (
+                  <TouchableOpacity
+                    key={category.key}
+                    activeOpacity={0.8}
+                    style={[
+                      styles.savedCategoryFilterButton,
+                      {
+                        backgroundColor: selected
+                          ? theme.iconPrimary
+                          : theme.tint,
+                        borderColor: selected
+                          ? theme.iconPrimary
+                          : theme.divider,
+                      },
+                    ]}
+                    onPress={() =>
+                      onSelectSavedPostCategoryFilter(category.key)
+                    }
+                  >
+                    <Text
+                      style={[
+                        styles.savedCategoryFilterText,
+                        {
+                          color: selected ? theme.text : theme.subtleText,
+                        },
+                      ]}
+                    >
+                      {category.label}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </ScrollView>
+          )}
+        </>
+      )}
+    </View>
+  );
+}
+
+function getPrimaryTabFromSection(section?: string): UserProfilePrimaryTab {
+  if (section === "submitted") return "posts";
+  if (section === "comments") return "comments";
+  if (section === "saved") return "saved";
+  return "overview";
+}
+
+function getSavedTypeTab(savedType?: string | null): UserSavedTypeTab {
+  return savedType === "comments" ? "comments" : "posts";
+}
+
+function ModernUserPageContent(props: StackPageProps<"UserPage">) {
+  const { route } = props;
+  const url = route.params.url;
+  const parsedRoute = useMemo(() => parseUserRoute(url), [url]);
+  const invalidRouteReportedRef = useRef(false);
+  const sort = parsedRoute?.sort ?? "new";
+  const sortTime = parsedRoute?.sortTime ?? null;
+  const section = parsedRoute?.section;
+  const userNameFromURL = parsedRoute?.userNameFromURL ?? "";
+  const savedType = parsedRoute?.savedType ?? null;
+  const isSavedPostsPage = parsedRoute?.isSavedPostsPage ?? false;
+
+  const navigation = useURLNavigation();
+  const { theme } = useContext(ThemeContext);
+  const { currentUser } = useContext(AccountContext);
+  const { setModal } = useContext(ModalContext);
+
+  const [user, setUser] = useState<User>();
+  const [trophies, setTrophies] = useState<UserTrophy[]>([]);
+  const [savedPostCategoryMap] = useSavedPostCategoryMap();
+  const [selectedSavedPostCategoryFilter, setSelectedSavedPostCategoryFilter] =
+    useState<SavedPostCategoryFilter>(SAVED_POST_CATEGORY_ALL);
+
+  const isOwnProfile =
+    !!currentUser?.userName &&
+    currentUser.userName.toLowerCase() === userNameFromURL.toLowerCase();
+  const resolvedPrimaryTab = getPrimaryTabFromSection(section);
+  const selectedPrimaryTab =
+    resolvedPrimaryTab === "saved" && !isOwnProfile
+      ? "overview"
+      : resolvedPrimaryTab;
+  const selectedSavedTypeTab = getSavedTypeTab(savedType);
+
+  const savedPostCategories = useMemo(
+    () => getAllCategoriesFromMap(savedPostCategoryMap),
+    [savedPostCategoryMap],
+  );
+  const savedPostCategoryFilters = useMemo(
+    () => [
+      {
+        key: SAVED_POST_CATEGORY_ALL,
+        label: "All",
+      },
+      {
+        key: SAVED_POST_CATEGORY_UNCATEGORIZED,
+        label: "Uncategorized",
+      },
+      ...savedPostCategories.map((category) => ({
+        key: category,
+        label: category,
+      })),
+    ],
+    [savedPostCategories],
+  );
+
+  useEffect(() => {
+    if (!isSavedPostsPage) {
+      setSelectedSavedPostCategoryFilter(SAVED_POST_CATEGORY_ALL);
+      return;
+    }
+
+    if (
+      selectedSavedPostCategoryFilter === SAVED_POST_CATEGORY_ALL ||
+      selectedSavedPostCategoryFilter === SAVED_POST_CATEGORY_UNCATEGORIZED
+    ) {
+      return;
+    }
+
+    const filterStillExists = savedPostCategories.some(
+      (category) =>
+        category.toLowerCase() ===
+        selectedSavedPostCategoryFilter.toLowerCase(),
+    );
+
+    if (!filterStillExists) {
+      setSelectedSavedPostCategoryFilter(SAVED_POST_CATEGORY_ALL);
+    }
+  }, [isSavedPostsPage, selectedSavedPostCategoryFilter, savedPostCategories]);
+
+  const {
+    data: userContent,
+    loadMoreData: loadMoreUserContent,
+    refreshData: refreshUserContent,
+    modifyData: modifyUserContent,
+    deleteData: deleteUserContent,
+    fullyLoaded,
+    hitFilterLimit,
+    accessFailure,
+  } = useRedditDataState<UserContent, "userLoadingError">({
+    loadData: async (after) => {
+      if (!parsedRoute) {
+        return [];
+      }
+      return await getUserContent(url, { after });
+    },
+    filterRules: isSavedPostsPage
+      ? [
+          (content) =>
+            content.filter(
+              (item) =>
+                item.type !== "post" ||
+                matchesFilter(
+                  item.name,
+                  selectedSavedPostCategoryFilter,
+                  savedPostCategoryMap,
+                ),
+            ),
+        ]
+      : [],
+    refreshDependencies: [
+      sort,
+      sortTime,
+      isSavedPostsPage ? selectedSavedPostCategoryFilter : null,
+      isSavedPostsPage ? savedPostCategoryMap : null,
+    ],
+  });
+
+  useEffect(() => {
+    const loadUser = async () => {
+      if (!userNameFromURL) {
+        setUser(undefined);
+        return;
+      }
+
+      try {
+        const userData = await getUser(
+          `https://www.reddit.com/user/${userNameFromURL}`,
+        );
+        setUser(userData);
+      } catch (e) {
+        if (
+          e instanceof BannedUserError ||
+          e instanceof UserDoesNotExistError
+        ) {
+          return;
+        }
+        throw e;
+      }
+    };
+
+    loadUser();
+  }, [userNameFromURL]);
+
+  useEffect(() => {
+    let canceled = false;
+
+    (async () => {
+      if (!userNameFromURL) {
+        setTrophies([]);
+        return;
+      }
+      const result = await getUserTrophies(userNameFromURL);
+      if (!canceled) {
+        setTrophies(result);
+      }
+    })();
+
+    return () => {
+      canceled = true;
+    };
+  }, [userNameFromURL]);
+
+  useEffect(() => {
+    const contextOptions: ContextTypes[] = ["Block", "Share"];
+    if (!isOwnProfile) {
+      contextOptions.unshift("Message");
+    }
+
+    const sortOptions: SortTypes[] | undefined =
+      section === "submitted" || section === "comments"
+        ? ["New", "Hot", "Top"]
+        : undefined;
+
+    navigation.setOptions({
+      headerRight: () => (
+        <SortAndContext
+          route={route}
+          navigation={navigation}
+          sortOptions={sortOptions}
+          contextOptions={contextOptions}
+          pageData={user}
+        />
+      ),
+    });
+  }, [isOwnProfile, navigation, route, section, sort, sortTime, user]);
+
+  const goToPrimaryTab = useCallback(
+    (tab: UserProfilePrimaryTab) => {
+      if (!userNameFromURL) return;
+
+      let nextUrl = `https://www.reddit.com/user/${userNameFromURL}`;
+      if (tab === "posts") {
+        nextUrl = `${nextUrl}/submitted`;
+      } else if (tab === "comments") {
+        nextUrl = `${nextUrl}/comments`;
+      } else if (tab === "saved") {
+        nextUrl = `${nextUrl}/saved?type=links`;
+      }
+      navigation.replaceURL(nextUrl);
+    },
+    [userNameFromURL, navigation],
+  );
+
+  const goToSavedTypeTab = useCallback(
+    (tab: UserSavedTypeTab) => {
+      if (!userNameFromURL) return;
+      const type = tab === "comments" ? "comments" : "links";
+      navigation.replaceURL(
+        `https://www.reddit.com/user/${userNameFromURL}/saved?type=${type}`,
+      );
+    },
+    [userNameFromURL, navigation],
+  );
+
+  const shareProfile = useCallback(() => {
+    if (!userNameFromURL) return;
+    Share.share({
+      url: `https://www.reddit.com/user/${userNameFromURL}`,
+    });
+  }, [userNameFromURL]);
+
+  const openEditProfile = useCallback(() => {
+    navigation.pushURL(
+      "hydra://webview?url=https://www.reddit.com/settings/profile",
+    );
+  }, [navigation]);
+
+  useEffect(() => {
+    if (parsedRoute || invalidRouteReportedRef.current) {
+      return;
+    }
+    invalidRouteReportedRef.current = true;
+
+    Sentry.withScope((scope) => {
+      scope.setTag("screen", "UserPage");
+      scope.setTag("surface", "modernAccountView");
+      scope.setContext("modernAccountView", {
+        routeUrl: url,
+      });
+      Sentry.captureMessage("Modern account view fallback: invalid route URL");
+    });
+    console.warn("Modern account view fallback: invalid route URL", url);
+  }, [parsedRoute, url]);
+
+  const renderHeader = useCallback(
+    () => (
+      <ModernUserPageHeader
+        user={user}
+        trophies={trophies}
+        isOwnProfile={isOwnProfile}
+        selectedPrimaryTab={selectedPrimaryTab}
+        selectedSavedTypeTab={selectedSavedTypeTab}
+        isSavedPostsPage={isSavedPostsPage}
+        savedPostCategoryFilters={savedPostCategoryFilters}
+        selectedSavedPostCategoryFilter={selectedSavedPostCategoryFilter}
+        onEditProfile={openEditProfile}
+        onShareProfile={shareProfile}
+        onAddAccount={() => setModal(<Login />)}
+        onOpenURL={(shortcutUrl) => navigation.replaceURL(shortcutUrl)}
+        onSelectPrimaryTab={goToPrimaryTab}
+        onSelectSavedTypeTab={goToSavedTypeTab}
+        onSelectSavedPostCategoryFilter={setSelectedSavedPostCategoryFilter}
+        userName={userNameFromURL}
+      />
+    ),
+    [
+      user,
+      trophies,
+      isOwnProfile,
+      selectedPrimaryTab,
+      selectedSavedTypeTab,
+      isSavedPostsPage,
+      savedPostCategoryFilters,
+      selectedSavedPostCategoryFilter,
+      openEditProfile,
+      shareProfile,
+      goToPrimaryTab,
+      goToSavedTypeTab,
+      userNameFromURL,
+      setModal,
+      navigation,
+    ],
+  );
+
+  if (!parsedRoute) {
+    return (
+      <LegacyUserPageContent
+        {...props}
+        warningBannerText={MODERN_ACCOUNT_VIEW_INVALID_URL_WARNING}
+      />
+    );
+  }
+
+  return (
+    <View
+      style={[
+        styles.userContainer,
+        {
+          backgroundColor: theme.background,
+        },
+      ]}
+    >
+      <AccessFailureComponent
+        accessFailure={accessFailure}
+        contentName={userNameFromURL || "User"}
+      >
+        <RedditDataScroller<UserContent>
+          ListHeaderComponent={renderHeader}
+          loadMore={loadMoreUserContent}
+          refresh={refreshUserContent}
+          fullyLoaded={fullyLoaded}
+          hitFilterLimit={hitFilterLimit}
+          data={userContent}
+          getItemType={(item) => item?.type ?? "unknown"}
+          renderItem={({ item: content }) => {
+            if (!content) {
+              return null;
+            }
             if (content.type === "post") {
               return (
                 <PostComponent
@@ -314,6 +978,19 @@ const styles = StyleSheet.create({
   },
   savedCategoryFilterText: {
     fontSize: 14,
+    fontWeight: "500",
+  },
+  warningBanner: {
+    marginHorizontal: 12,
+    marginTop: 10,
+    marginBottom: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    borderRadius: 8,
+    borderWidth: 1,
+  },
+  warningBannerText: {
+    fontSize: 12,
     fontWeight: "500",
   },
 });
