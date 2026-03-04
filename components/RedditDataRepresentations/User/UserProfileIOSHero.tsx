@@ -78,6 +78,7 @@ export default function UserProfileIOSHero({
     !bannerLoadError && isSupportedImageURI(user.bannerImage)
       ? user.bannerImage
       : undefined;
+  const hasBannerImage = !!bannerURI;
   const resolvedAvatarURI =
     !avatarLoadError && isSupportedImageURI(avatarURI) ? avatarURI : undefined;
   const safeTrophies = Array.isArray(trophies) ? trophies : [];
@@ -136,7 +137,12 @@ export default function UserProfileIOSHero({
   return (
     <View style={styles.container}>
       <View style={styles.hero}>
-        <View style={styles.heroTopBlue}>
+        <View
+          style={[
+            styles.heroTopBlue,
+            !hasBannerImage && styles.heroTopBlueNoBanner,
+          ]}
+        >
           {!!bannerURI && (
             <Image
               source={bannerURI}
@@ -291,6 +297,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     overflow: "hidden",
   },
+  heroTopBlueNoBanner: {
+    minHeight: 170,
+  },
   bannerImage: {
     position: "absolute",
     width: "100%",
@@ -336,12 +345,12 @@ const styles = StyleSheet.create({
     paddingBottom: 14,
   },
   avatarContainer: {
-    marginTop: -14,
+    marginTop: -52,
     marginBottom: 8,
   },
   avatar: {
-    width: 120,
-    height: 120,
+    width: 112,
+    height: 112,
     borderRadius: 8,
   },
   avatarFallback: {
@@ -367,13 +376,13 @@ const styles = StyleSheet.create({
   },
   editText: {
     color: "#ffffff",
-    fontSize: 19 / 2,
+    fontSize: 16,
     fontWeight: "600",
   },
   secondaryLine: {
     marginTop: 7,
     color: "#e2e4ea",
-    fontSize: 18 / 2,
+    fontSize: 15,
     fontWeight: "500",
   },
   achievementRow: {
@@ -397,7 +406,7 @@ const styles = StyleSheet.create({
   },
   achievementText: {
     color: "#e3e5ea",
-    fontSize: 18 / 2,
+    fontSize: 14,
     fontWeight: "600",
   },
   statsContainer: {
@@ -422,7 +431,7 @@ const styles = StyleSheet.create({
   },
   statLabel: {
     color: "#c4c7cf",
-    fontSize: 14 / 2,
+    fontSize: 12,
     fontWeight: "500",
     marginTop: 3,
   },
