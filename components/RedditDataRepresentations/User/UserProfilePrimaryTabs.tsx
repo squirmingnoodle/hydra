@@ -52,7 +52,7 @@ export default function UserProfilePrimaryTabs({
               style={[
                 styles.tabText,
                 {
-                  color: isSelected ? theme.text : theme.verySubtleText,
+                  color: isSelected ? "#1c1c1e" : "#7a7a80",
                 },
               ]}
             >
