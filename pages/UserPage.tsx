@@ -16,6 +16,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import {
   BannedUserError,
@@ -214,6 +215,7 @@ function LegacyUserPageContent({
   route,
   warningBannerText,
 }: LegacyUserPageContentProps) {
+  const insets = useSafeAreaInsets();
   const url = route.params.url;
   const [sort, sortTime] = new RedditURL(url).getSort();
 
@@ -421,6 +423,7 @@ function LegacyUserPageContent({
             style={[
               styles.warningBanner,
               {
+                marginTop: Math.max(10, insets.top + 6),
                 backgroundColor: theme.tint,
                 borderColor: theme.divider,
               },
