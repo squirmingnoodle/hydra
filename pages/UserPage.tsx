@@ -1,4 +1,5 @@
 import * as Sentry from "@sentry/react-native";
+import { Feather, MaterialIcons } from "@expo/vector-icons";
 import React, {
   useCallback,
   useContext,
@@ -34,15 +35,13 @@ import SortAndContext, {
 import Login from "../components/Modals/Login";
 import PostComponent from "../components/RedditDataRepresentations/Post/PostComponent";
 import { CommentComponent } from "../components/RedditDataRepresentations/Post/PostParts/Comments";
-import UserProfileActions from "../components/RedditDataRepresentations/User/UserProfileActions";
-import UserProfileHero from "../components/RedditDataRepresentations/User/UserProfileHero";
+import UserProfileIOSHero from "../components/RedditDataRepresentations/User/UserProfileIOSHero";
 import UserProfilePrimaryTabs, {
   UserProfilePrimaryTab,
 } from "../components/RedditDataRepresentations/User/UserProfilePrimaryTabs";
 import UserProfileSavedTypeTabs, {
   UserSavedTypeTab,
 } from "../components/RedditDataRepresentations/User/UserProfileSavedTypeTabs";
-import UserProfileShortcuts from "../components/RedditDataRepresentations/User/UserProfileShortcuts";
 import UserDetailsComponent from "../components/RedditDataRepresentations/User/UserDetailsComponent";
 import RedditDataScroller from "../components/UI/RedditDataScroller";
 import { AccountContext } from "../contexts/AccountContext";
@@ -73,6 +72,7 @@ type ParsedUserRoute = {
   sortTime: string | null;
   section?: string;
   userNameFromURL: string;
+  view: string | null;
   savedType: string | null;
   isSavedPostsPage: boolean;
 };
@@ -84,12 +84,14 @@ function parseUserRoute(url: string): ParsedUserRoute | null {
     const relativePathParts = redditURL.getRelativePath().split("/");
     const section = relativePathParts[3];
     const userNameFromURL = relativePathParts[2] ?? "";
+    const view = new URL(url).getQueryParam("view");
     const savedType = new URL(url).getQueryParam("type");
     return {
       sort,
       sortTime,
       section,
       userNameFromURL,
+      view,
       savedType,
       isSavedPostsPage: section === "saved" && savedType === "links",
     };
@@ -497,11 +499,10 @@ type ModernUserPageHeaderProps = {
   onEditProfile: () => void;
   onShareProfile: () => void;
   onAddAccount: () => void;
-  onOpenURL: (url: string) => void;
+  onGoBack: () => void;
   onSelectPrimaryTab: (tab: UserProfilePrimaryTab) => void;
   onSelectSavedTypeTab: (tab: UserSavedTypeTab) => void;
   onSelectSavedPostCategoryFilter: (filter: SavedPostCategoryFilter) => void;
-  userName: string;
 };
 
 function ModernUserPageHeader({
@@ -516,31 +517,82 @@ function ModernUserPageHeader({
   onEditProfile,
   onShareProfile,
   onAddAccount,
-  onOpenURL,
+  onGoBack,
   onSelectPrimaryTab,
   onSelectSavedTypeTab,
   onSelectSavedPostCategoryFilter,
-  userName,
 }: ModernUserPageHeaderProps) {
   const { theme } = useContext(ThemeContext);
   return (
     <View>
-      {user && <UserProfileHero user={user} trophies={trophies} />}
-      {isOwnProfile && (
-        <UserProfileActions
+      {user && (
+        <UserProfileIOSHero
+          user={user}
+          trophies={trophies}
+          isOwnProfile={isOwnProfile}
           onEditProfile={onEditProfile}
           onShareProfile={onShareProfile}
           onAddAccount={onAddAccount}
+          onGoBack={onGoBack}
         />
-      )}
-      {isOwnProfile && (
-        <UserProfileShortcuts userName={userName} onOpenURL={onOpenURL} />
       )}
       <UserProfilePrimaryTabs
         selectedTab={selectedPrimaryTab}
         showSavedTab={isOwnProfile}
         onSelectTab={onSelectPrimaryTab}
       />
+      {selectedPrimaryTab === "posts" && isOwnProfile && (
+        <View style={styles.feedControlsSection}>
+          <View
+            style={[
+              styles.feedOptionsPill,
+              {
+                borderColor: theme.divider,
+              },
+            ]}
+          >
+            <Feather name="sliders" size={16} color={theme.subtleText} />
+            <Text
+              style={[
+                styles.feedOptionsText,
+                {
+                  color: theme.subtleText,
+                },
+              ]}
+            >
+              Feed options
+            </Text>
+          </View>
+          <View
+            style={[
+              styles.hiddenPostsCard,
+              {
+                backgroundColor: theme.tint,
+                borderColor: theme.divider,
+              },
+            ]}
+          >
+            <View style={styles.hiddenPostsTextRow}>
+              <Feather name="eye-off" size={20} color={theme.subtleText} />
+              <Text
+                style={[
+                  styles.hiddenPostsText,
+                  {
+                    color: theme.subtleText,
+                  },
+                ]}
+              >
+                Hiding all posts
+              </Text>
+            </View>
+            <MaterialIcons
+              name="keyboard-arrow-right"
+              size={22}
+              color={theme.verySubtleText}
+            />
+          </View>
+        </View>
+      )}
       {selectedPrimaryTab === "saved" && isOwnProfile && (
         <>
           <UserProfileSavedTypeTabs
@@ -596,11 +648,15 @@ function ModernUserPageHeader({
   );
 }
 
-function getPrimaryTabFromSection(section?: string): UserProfilePrimaryTab {
+function getPrimaryTabFromSection(
+  section?: string,
+  view?: string | null,
+): UserProfilePrimaryTab {
   if (section === "submitted") return "posts";
   if (section === "comments") return "comments";
   if (section === "saved") return "saved";
-  return "overview";
+  if (view === "about") return "overview";
+  return "posts";
 }
 
 function getSavedTypeTab(savedType?: string | null): UserSavedTypeTab {
@@ -616,6 +672,7 @@ function ModernUserPageContent(props: StackPageProps<"UserPage">) {
   const sortTime = parsedRoute?.sortTime ?? null;
   const section = parsedRoute?.section;
   const userNameFromURL = parsedRoute?.userNameFromURL ?? "";
+  const view = parsedRoute?.view ?? null;
   const savedType = parsedRoute?.savedType ?? null;
   const isSavedPostsPage = parsedRoute?.isSavedPostsPage ?? false;
 
@@ -633,12 +690,21 @@ function ModernUserPageContent(props: StackPageProps<"UserPage">) {
   const isOwnProfile =
     !!currentUser?.userName &&
     currentUser.userName.toLowerCase() === userNameFromURL.toLowerCase();
-  const resolvedPrimaryTab = getPrimaryTabFromSection(section);
+  const resolvedPrimaryTab = getPrimaryTabFromSection(section, view);
   const selectedPrimaryTab =
     resolvedPrimaryTab === "saved" && !isOwnProfile
       ? "overview"
       : resolvedPrimaryTab;
   const selectedSavedTypeTab = getSavedTypeTab(savedType);
+  const contentURL = useMemo(() => {
+    if (!userNameFromURL) {
+      return url;
+    }
+    if (section || view === "about") {
+      return url;
+    }
+    return `https://www.reddit.com/user/${userNameFromURL}/submitted`;
+  }, [section, url, userNameFromURL, view]);
 
   const savedPostCategories = useMemo(
     () => getAllCategoriesFromMap(savedPostCategoryMap),
@@ -700,7 +766,7 @@ function ModernUserPageContent(props: StackPageProps<"UserPage">) {
       if (!parsedRoute) {
         return [];
       }
-      return await getUserContent(url, { after });
+      return await getUserContent(contentURL, { after });
     },
     filterRules: isSavedPostsPage
       ? [
@@ -719,6 +785,7 @@ function ModernUserPageContent(props: StackPageProps<"UserPage">) {
     refreshDependencies: [
       sort,
       sortTime,
+      contentURL,
       isSavedPostsPage ? selectedSavedPostCategoryFilter : null,
       isSavedPostsPage ? savedPostCategoryMap : null,
     ],
@@ -776,7 +843,7 @@ function ModernUserPageContent(props: StackPageProps<"UserPage">) {
     }
 
     const sortOptions: SortTypes[] | undefined =
-      section === "submitted" || section === "comments"
+      selectedPrimaryTab === "posts" || selectedPrimaryTab === "comments"
         ? ["New", "Hot", "Top"]
         : undefined;
 
@@ -791,7 +858,15 @@ function ModernUserPageContent(props: StackPageProps<"UserPage">) {
         />
       ),
     });
-  }, [isOwnProfile, navigation, route, section, sort, sortTime, user]);
+  }, [
+    isOwnProfile,
+    navigation,
+    route,
+    selectedPrimaryTab,
+    sort,
+    sortTime,
+    user,
+  ]);
 
   const goToPrimaryTab = useCallback(
     (tab: UserProfilePrimaryTab) => {
@@ -804,6 +879,8 @@ function ModernUserPageContent(props: StackPageProps<"UserPage">) {
         nextUrl = `${nextUrl}/comments`;
       } else if (tab === "saved") {
         nextUrl = `${nextUrl}/saved?type=links`;
+      } else if (tab === "overview") {
+        nextUrl = `${nextUrl}?view=about`;
       }
       navigation.replaceURL(nextUrl);
     },
@@ -832,6 +909,12 @@ function ModernUserPageContent(props: StackPageProps<"UserPage">) {
     navigation.pushURL(
       "hydra://webview?url=https://www.reddit.com/settings/profile",
     );
+  }, [navigation]);
+
+  const goBackFromHero = useCallback(() => {
+    if (navigation.canGoBack()) {
+      navigation.goBack();
+    }
   }, [navigation]);
 
   useEffect(() => {
@@ -865,11 +948,10 @@ function ModernUserPageContent(props: StackPageProps<"UserPage">) {
         onEditProfile={openEditProfile}
         onShareProfile={shareProfile}
         onAddAccount={() => setModal(<Login />)}
-        onOpenURL={(shortcutUrl) => navigation.replaceURL(shortcutUrl)}
+        onGoBack={goBackFromHero}
         onSelectPrimaryTab={goToPrimaryTab}
         onSelectSavedTypeTab={goToSavedTypeTab}
         onSelectSavedPostCategoryFilter={setSelectedSavedPostCategoryFilter}
-        userName={userNameFromURL}
       />
     ),
     [
@@ -883,11 +965,10 @@ function ModernUserPageContent(props: StackPageProps<"UserPage">) {
       selectedSavedPostCategoryFilter,
       openEditProfile,
       shareProfile,
+      goBackFromHero,
       goToPrimaryTab,
       goToSavedTypeTab,
-      userNameFromURL,
       setModal,
-      navigation,
     ],
   );
 
@@ -978,6 +1059,45 @@ const styles = StyleSheet.create({
   },
   savedCategoryFilterText: {
     fontSize: 14,
+    fontWeight: "500",
+  },
+  feedControlsSection: {
+    backgroundColor: "#f3f4f5",
+    paddingHorizontal: 12,
+    paddingTop: 10,
+    paddingBottom: 14,
+  },
+  feedOptionsPill: {
+    alignSelf: "flex-start",
+    borderRadius: 999,
+    borderWidth: 1,
+    paddingHorizontal: 14,
+    paddingVertical: 9,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  feedOptionsText: {
+    fontSize: 17,
+    fontWeight: "600",
+  },
+  hiddenPostsCard: {
+    marginTop: 12,
+    borderRadius: 15,
+    borderWidth: 1,
+    paddingHorizontal: 14,
+    paddingVertical: 15,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  hiddenPostsTextRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 11,
+  },
+  hiddenPostsText: {
+    fontSize: 17,
     fontWeight: "500",
   },
   warningBanner: {
