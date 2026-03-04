@@ -18,14 +18,41 @@ type StatChipProps = {
   value: string;
 };
 
-function isSupportedImageURI(uri?: string | null): uri is string {
-  if (typeof uri !== "string" || uri.length === 0) return false;
-  const normalized = uri.trim().toLowerCase();
-  if (!normalized) return false;
-  if (!normalized.startsWith("https://") && !normalized.startsWith("http://")) {
+function sanitizeImageURI(uri?: string | null): string | undefined {
+  if (typeof uri !== "string" || uri.length === 0) return undefined;
+  const normalized = uri.trim().replace(/&amp;/g, "&");
+  if (!normalized) return undefined;
+  try {
+    const parsed = new URL(normalized);
+    if (parsed.protocol !== "https:" && parsed.protocol !== "http:") {
+      return undefined;
+    }
+    if (parsed.pathname.toLowerCase().endsWith(".svg")) {
+      return undefined;
+    }
+    return parsed.toString();
+  } catch (_error) {
+    return undefined;
+  }
+}
+
+function isAnimatedImageURI(uri?: string): boolean {
+  if (!uri) return false;
+  try {
+    const parsed = new URL(uri);
+    const pathname = parsed.pathname.toLowerCase();
+    const search = parsed.search.toLowerCase();
+    return (
+      /\.(gif|webp|apng)$/.test(pathname) ||
+      pathname.endsWith(".gifv") ||
+      search.includes("format=gif") ||
+      search.includes("format=webp") ||
+      search.includes("animated=true") ||
+      search.includes("is_animated=true")
+    );
+  } catch (_error) {
     return false;
   }
-  return !normalized.endsWith(".svg");
 }
 
 function StatChip({ label, value }: StatChipProps) {
@@ -70,19 +97,26 @@ export default function UserProfileHero({
 }: UserProfileHeroProps) {
   const { theme } = useContext(ThemeContext);
   const displayName = user.displayName?.trim() || user.userName;
-  const avatarUri = user.avatarImage ?? user.profileImage ?? user.icon;
+  const avatarCandidates = [
+    sanitizeImageURI(user.avatarImage),
+    sanitizeImageURI(user.profileImage),
+    sanitizeImageURI(user.icon),
+  ].filter((candidate): candidate is string => !!candidate);
+  const animatedAvatarURI = avatarCandidates.find((candidate) =>
+    isAnimatedImageURI(candidate),
+  );
+  const preferredAvatarURI = animatedAvatarURI ?? avatarCandidates[0];
   const [bannerLoadError, setBannerLoadError] = useState(false);
   const [avatarLoadError, setAvatarLoadError] = useState(false);
   const [trophyLoadErrors, setTrophyLoadErrors] = useState<
     Record<string, true>
   >({});
 
-  const resolvedBannerImage =
-    !bannerLoadError && isSupportedImageURI(user.bannerImage)
-      ? user.bannerImage
-      : undefined;
-  const resolvedAvatarImage =
-    !avatarLoadError && isSupportedImageURI(avatarUri) ? avatarUri : undefined;
+  const resolvedBannerImage = !bannerLoadError
+    ? sanitizeImageURI(user.bannerImage)
+    : undefined;
+  const resolvedAvatarImage = !avatarLoadError ? preferredAvatarURI : undefined;
+  const shouldAnimateAvatar = isAnimatedImageURI(resolvedAvatarImage);
 
   useEffect(() => {
     setBannerLoadError(false);
@@ -90,7 +124,7 @@ export default function UserProfileHero({
 
   useEffect(() => {
     setAvatarLoadError(false);
-  }, [avatarUri]);
+  }, [preferredAvatarURI]);
 
   useEffect(() => {
     setTrophyLoadErrors({});
@@ -130,6 +164,8 @@ export default function UserProfileHero({
           <Image
             source={resolvedBannerImage}
             style={styles.bannerImage}
+            contentFit="cover"
+            contentPosition="center"
             onError={() => setBannerLoadError(true)}
           />
         )}
@@ -139,6 +175,7 @@ export default function UserProfileHero({
           <Image
             source={resolvedAvatarImage}
             style={styles.avatar}
+            autoplay={shouldAnimateAvatar}
             onError={() => setAvatarLoadError(true)}
           />
         ) : (
@@ -261,10 +298,10 @@ export default function UserProfileHero({
               ]}
             >
               {trophy.icon &&
-              isSupportedImageURI(trophy.icon) &&
+              sanitizeImageURI(trophy.icon) &&
               !trophyLoadErrors[trophy.id] ? (
                 <Image
-                  source={trophy.icon}
+                  source={sanitizeImageURI(trophy.icon)}
                   style={styles.trophyIcon}
                   onError={() =>
                     setTrophyLoadErrors((current) => ({

@@ -41,7 +41,9 @@ function getGiphyId(url: string): string | null {
     if (directMatch) return directMatch[1];
 
     // Share URL: last path segment after the final hyphen is the ID
-    const shareMatch = url.match(/giphy\.com\/gifs\/(?:[^/?#]+-)?([a-zA-Z0-9]+)(?:[/?#]|$)/);
+    const shareMatch = url.match(
+      /giphy\.com\/gifs\/(?:[^/?#]+-)?([a-zA-Z0-9]+)(?:[/?#]|$)/,
+    );
     if (shareMatch) return shareMatch[1];
   } catch {}
   return null;
@@ -65,11 +67,13 @@ function getInlineMediaType(
     if (
       url.startsWith("https://i.redd.it") ||
       url.startsWith("https://preview.redd.it")
-    ) return "image";
+    )
+      return "image";
     if (
       url.includes("imgur.com") &&
       (lower.endsWith(".gifv") || lower.endsWith(".gif"))
-    ) return "gif";
+    )
+      return "gif";
   } catch {}
   return "none";
 }
@@ -85,6 +89,7 @@ type ElementProps = {
   element: ElementNode;
   index: number;
   inheritedStyles: InheritedStyles;
+  subreddit?: string;
 };
 
 function makeChildNodeKey(node: AnyNode, index: number): string {
@@ -127,7 +132,12 @@ function getInlineMediaLinkInParagraph(
   return "none";
 }
 
-export function Element({ element, index, inheritedStyles }: ElementProps) {
+export function Element({
+  element,
+  index,
+  inheritedStyles,
+  subreddit,
+}: ElementProps) {
   const { theme } = useContext(ThemeContext);
   const { pushURL } = useURLNavigation();
 
@@ -167,12 +177,24 @@ export function Element({ element, index, inheritedStyles }: ElementProps) {
     const mediaType = getInlineMediaLinkInParagraph(element);
     if (mediaType === "video") {
       Wrapper = () => (
-        <VideoPlayer source={mediaURL} thumbnail="" aspectRatio={16 / 9} />
+        <VideoPlayer
+          source={mediaURL}
+          thumbnail=""
+          aspectRatio={16 / 9}
+          videoDownloadURL={mediaURL}
+          subreddit={subreddit}
+        />
       );
     } else if (mediaType === "giphy") {
       const mp4 = giphyMp4Url(getGiphyId(mediaURL)!);
       Wrapper = () => (
-        <VideoPlayer source={mp4} thumbnail="" aspectRatio={16 / 9} />
+        <VideoPlayer
+          source={mp4}
+          thumbnail=""
+          aspectRatio={16 / 9}
+          videoDownloadURL={mp4}
+          subreddit={subreddit}
+        />
       );
     } else {
       // image or gif — ImageViewer handles both
@@ -182,7 +204,11 @@ export function Element({ element, index, inheritedStyles }: ElementProps) {
           : mediaURL;
       Wrapper = () => (
         <View style={styles.imageContainer}>
-          <ImageViewer images={[gifUrl]} aspectRatio={16 / 9} />
+          <ImageViewer
+            images={[gifUrl]}
+            aspectRatio={16 / 9}
+            subreddit={subreddit}
+          />
         </View>
       );
     }
@@ -280,12 +306,24 @@ export function Element({ element, index, inheritedStyles }: ElementProps) {
     const mediaType = getInlineMediaType(mediaURL);
     if (mediaType === "video") {
       Wrapper = () => (
-        <VideoPlayer source={mediaURL} thumbnail="" aspectRatio={16 / 9} />
+        <VideoPlayer
+          source={mediaURL}
+          thumbnail=""
+          aspectRatio={16 / 9}
+          videoDownloadURL={mediaURL}
+          subreddit={subreddit}
+        />
       );
     } else if (mediaType === "giphy") {
       const mp4 = giphyMp4Url(getGiphyId(mediaURL)!);
       Wrapper = () => (
-        <VideoPlayer source={mp4} thumbnail="" aspectRatio={16 / 9} />
+        <VideoPlayer
+          source={mp4}
+          thumbnail=""
+          aspectRatio={16 / 9}
+          videoDownloadURL={mp4}
+          subreddit={subreddit}
+        />
       );
     } else {
       const gifUrl =
@@ -294,7 +332,11 @@ export function Element({ element, index, inheritedStyles }: ElementProps) {
           : mediaURL;
       Wrapper = () => (
         <View style={styles.imageContainer}>
-          <ImageViewer images={[gifUrl]} aspectRatio={16 / 9} />
+          <ImageViewer
+            images={[gifUrl]}
+            aspectRatio={16 / 9}
+            subreddit={subreddit}
+          />
         </View>
       );
     }
@@ -351,7 +393,7 @@ export function Element({ element, index, inheritedStyles }: ElementProps) {
     Wrapper = (props) => (
       <View onStartShouldSetResponder={() => true}>
         <View style={styles.imageContainer}>
-          <ImageViewer images={[element.attribs.src]} />
+          <ImageViewer images={[element.attribs.src]} subreddit={subreddit} />
         </View>
         <View>{props.children}</View>
       </View>
@@ -383,6 +425,7 @@ export function Element({ element, index, inheritedStyles }: ElementProps) {
             node: c,
             index: i,
             inheritedStyles: inheritedStyles,
+            subreddit,
           }),
         )}
     </Wrapper>
@@ -475,9 +518,16 @@ type NodeProps = {
   node: AnyNode;
   index: number;
   inheritedStyles: InheritedStyles;
+  subreddit?: string;
 };
 
-export function getNode({ key, node, index, inheritedStyles }: NodeProps) {
+export function getNode({
+  key,
+  node,
+  index,
+  inheritedStyles,
+  subreddit,
+}: NodeProps) {
   switch (node.type) {
     case ElementType.Text:
       return (
@@ -495,13 +545,20 @@ export function getNode({ key, node, index, inheritedStyles }: NodeProps) {
           element={node}
           index={index}
           inheritedStyles={{ ...inheritedStyles }}
+          subreddit={subreddit}
         />
       );
   }
   return null;
 }
 
-export default function RenderHtml({ html }: { html: string }) {
+export default function RenderHtml({
+  html,
+  subreddit,
+}: {
+  html: string;
+  subreddit?: string;
+}) {
   const document = parseDocument(html);
   return (
     <View style={{ width: "100%" }}>
@@ -511,6 +568,7 @@ export default function RenderHtml({ html }: { html: string }) {
           node: c,
           index: i,
           inheritedStyles: {},
+          subreddit,
         }),
       )}
     </View>

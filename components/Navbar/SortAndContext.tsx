@@ -19,7 +19,7 @@ import {
 } from "react-native";
 
 import { deleteUserContent, PostDetail } from "../../api/PostDetail";
-import { blockUser, User } from "../../api/User";
+import { blockUser, followUser, unfollowUser, User } from "../../api/User";
 import { StackParamsList, URLRoutes } from "../../app/stack";
 import {
   makeCommentSubredditSortKey,
@@ -75,7 +75,9 @@ export type ContextTypes =
   | "Hide Seen Posts"
   | "Sidebar"
   | "Wiki"
-  | "Open in Gallery Mode";
+  | "Open in Gallery Mode"
+  | "Follow"
+  | "Unfollow";
 
 type SortAndContextProps = {
   route: RouteProp<StackParamsList, URLRoutes> | string;
@@ -83,6 +85,7 @@ type SortAndContextProps = {
   sortOptions?: SortTypes[];
   contextOptions?: ContextTypes[];
   pageData?: PostDetail | User;
+  onContextActionSuccess?: (action: ContextTypes) => void;
 };
 
 export default function SortAndContext({
@@ -91,6 +94,7 @@ export default function SortAndContext({
   sortOptions,
   contextOptions,
   pageData,
+  onContextActionSuccess,
 }: SortAndContextProps) {
   const { theme } = useContext(ThemeContext);
   const { setModal } = useContext(ModalContext);
@@ -122,7 +126,10 @@ export default function SortAndContext({
       pageType === PageType.SUBREDDIT &&
       getAccountScopedBoolean(REMEMBER_POST_SUBREDDIT_SORT_KEY)
     ) {
-      setAccountScopedValue(makePostSubredditSortKey(subreddit), sort.toLowerCase());
+      setAccountScopedValue(
+        makePostSubredditSortKey(subreddit),
+        sort.toLowerCase(),
+      );
       if (sort === "top" && time) {
         setAccountScopedValue(
           makePostSubredditSortTopKey(subreddit),
@@ -361,6 +368,20 @@ export default function SortAndContext({
                   },
                 ],
               );
+            } else if (result === "Follow" && pageData?.type === "user") {
+              try {
+                await followUser(pageData.userName);
+                onContextActionSuccess?.("Follow");
+              } catch (_error) {
+                Alert.alert("Failed to Follow", "Please try again.");
+              }
+            } else if (result === "Unfollow" && pageData?.type === "user") {
+              try {
+                await unfollowUser(pageData.userName);
+                onContextActionSuccess?.("Unfollow");
+              } catch (_error) {
+                Alert.alert("Failed to Unfollow", "Please try again.");
+              }
             } else if (result === "Report") {
               pushURL("hydra://webview/?url=https://www.reddit.com/report");
             } else if (
