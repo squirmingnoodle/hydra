@@ -908,7 +908,7 @@ function ModernUserPageContent(props: StackPageProps<"UserPage">) {
                 scope.setTag("screen", "UserPage");
                 scope.setTag("surface", "modernAccountHeaderRight");
                 scope.setContext("modernAccountView", {
-                  routeUrl: route.params.url,
+                  routeUrl: url,
                   username: userNameFromURL,
                   section: section ?? "overview",
                   componentStack: info.componentStack,
@@ -919,7 +919,7 @@ function ModernUserPageContent(props: StackPageProps<"UserPage">) {
             fallback={null}
           >
             <SortAndContext
-              route={route}
+              route={url}
               navigation={navigation}
               sortOptions={sortOptions}
               contextOptions={contextOptions}
@@ -932,11 +932,9 @@ function ModernUserPageContent(props: StackPageProps<"UserPage">) {
   }, [
     isOwnProfile,
     navigation,
-    route,
     section,
     selectedPrimaryTab,
-    sort,
-    sortTime,
+    url,
     userNameFromURL,
     user,
   ]);
