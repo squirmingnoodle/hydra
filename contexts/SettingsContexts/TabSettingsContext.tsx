@@ -1,5 +1,8 @@
 import { createContext } from "react";
-import { useAccountScopedMMKVBoolean } from "../../utils/accountScopedSettings";
+import {
+  useAccountScopedMMKVBoolean,
+  useAccountScopedMMKVString,
+} from "../../utils/accountScopedSettings";
 
 const initialValues = {
   showUsername: true,
@@ -7,6 +10,7 @@ const initialValues = {
   liquidGlassEnabled: true,
   modernAccountViewEnabled: false,
   modernAccountViewAutoDisabled: false,
+  modernAccountViewLastCrashReason: "",
 };
 
 const initialTabSettingsContext = {
@@ -16,6 +20,7 @@ const initialTabSettingsContext = {
   toggleLiquidGlassEnabled: (_newValue?: boolean) => {},
   toggleModernAccountViewEnabled: (_newValue?: boolean) => {},
   setModernAccountViewAutoDisabled: (_newValue?: boolean) => {},
+  setModernAccountViewLastCrashReason: (_newValue?: string) => {},
 };
 
 export const TabSettingsContext = createContext(initialTabSettingsContext);
@@ -48,6 +53,14 @@ export function TabSettingsProvider({ children }: React.PropsWithChildren) {
     storedModernAccountViewAutoDisabled ??
     initialValues.modernAccountViewAutoDisabled;
 
+  const [
+    storedModernAccountViewLastCrashReason,
+    setModernAccountViewLastCrashReason,
+  ] = useAccountScopedMMKVString("modernAccountViewLastCrashReason");
+  const modernAccountViewLastCrashReason =
+    storedModernAccountViewLastCrashReason ??
+    initialValues.modernAccountViewLastCrashReason;
+
   return (
     <TabSettingsContext.Provider
       value={{
@@ -66,6 +79,7 @@ export function TabSettingsProvider({ children }: React.PropsWithChildren) {
         ) => {
           if (newValue) {
             setModernAccountViewAutoDisabled(false);
+            setModernAccountViewLastCrashReason("");
           }
           setModernAccountViewEnabled(newValue);
         },
@@ -73,6 +87,9 @@ export function TabSettingsProvider({ children }: React.PropsWithChildren) {
         setModernAccountViewAutoDisabled: (
           newValue = !modernAccountViewAutoDisabled,
         ) => setModernAccountViewAutoDisabled(newValue),
+        modernAccountViewLastCrashReason,
+        setModernAccountViewLastCrashReason: (newValue = "") =>
+          setModernAccountViewLastCrashReason(newValue),
       }}
     >
       {children}
