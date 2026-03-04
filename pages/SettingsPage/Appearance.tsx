@@ -80,6 +80,7 @@ export default function Appearance() {
     toggleLiquidGlassEnabled,
     modernAccountViewEnabled,
     modernAccountViewAutoDisabled,
+    modernAccountViewLastCrashReason,
     toggleModernAccountViewEnabled,
   } = useContext(TabSettingsContext);
 
@@ -589,6 +590,19 @@ export default function Appearance() {
             Automatically disabled after a runtime error; you can re-enable
             after updating.
           </Text>
+          {!!modernAccountViewLastCrashReason && (
+            <Text
+              style={{
+                color: theme.verySubtleText,
+                fontSize: 12,
+                lineHeight: 16,
+                marginTop: 6,
+              }}
+              numberOfLines={2}
+            >
+              {modernAccountViewLastCrashReason}
+            </Text>
+          )}
         </View>
       )}
     </>

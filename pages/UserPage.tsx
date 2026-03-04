@@ -137,8 +137,11 @@ class ModernUserPageErrorBoundary extends React.Component<
 }
 
 function ModernUserPageBoundary(props: StackPageProps<"UserPage">) {
-  const { toggleModernAccountViewEnabled, setModernAccountViewAutoDisabled } =
-    useContext(TabSettingsContext);
+  const {
+    toggleModernAccountViewEnabled,
+    setModernAccountViewAutoDisabled,
+    setModernAccountViewLastCrashReason,
+  } = useContext(TabSettingsContext);
   const crashHandledRef = useRef(false);
   const parsedRoute = useMemo(
     () => parseUserRoute(props.route.params.url),
@@ -147,6 +150,17 @@ function ModernUserPageBoundary(props: StackPageProps<"UserPage">) {
 
   const handleError = useCallback(
     (error: Error, info: React.ErrorInfo) => {
+      const componentStackLine = info.componentStack
+        ?.split("\n")
+        .map((line) => line.trim())
+        .find((line) => line.length > 0);
+      const crashReason = [
+        `${error.name || "Error"}: ${error.message || "Unknown"}`,
+        componentStackLine ? `at ${componentStackLine}` : null,
+      ]
+        .filter(Boolean)
+        .join(" ");
+
       Sentry.withScope((scope) => {
         scope.setTag("screen", "UserPage");
         scope.setTag("surface", "modernAccountView");
@@ -154,6 +168,7 @@ function ModernUserPageBoundary(props: StackPageProps<"UserPage">) {
           routeUrl: props.route.params.url,
           username: parsedRoute?.userNameFromURL ?? "unknown",
           section: parsedRoute?.section ?? "overview",
+          reason: crashReason,
           componentStack: info.componentStack,
         });
         Sentry.captureException(error);
@@ -161,6 +176,7 @@ function ModernUserPageBoundary(props: StackPageProps<"UserPage">) {
 
       if (!crashHandledRef.current) {
         crashHandledRef.current = true;
+        setModernAccountViewLastCrashReason(crashReason.slice(0, 280));
         setModernAccountViewAutoDisabled(true);
         toggleModernAccountViewEnabled(false);
       }
@@ -170,6 +186,7 @@ function ModernUserPageBoundary(props: StackPageProps<"UserPage">) {
       parsedRoute?.userNameFromURL,
       props.route.params.url,
       setModernAccountViewAutoDisabled,
+      setModernAccountViewLastCrashReason,
       toggleModernAccountViewEnabled,
     ],
   );
@@ -190,20 +207,27 @@ function ModernUserPageBoundary(props: StackPageProps<"UserPage">) {
 }
 
 export default function UserPage(props: StackPageProps<"UserPage">) {
-  const { modernAccountViewEnabled, modernAccountViewAutoDisabled } =
-    useContext(TabSettingsContext);
+  const {
+    modernAccountViewEnabled,
+    modernAccountViewAutoDisabled,
+    modernAccountViewLastCrashReason,
+  } = useContext(TabSettingsContext);
+
+  const warningBannerText = useMemo(() => {
+    if (!modernAccountViewAutoDisabled) {
+      return undefined;
+    }
+    if (!modernAccountViewLastCrashReason) {
+      return MODERN_ACCOUNT_VIEW_DISABLED_WARNING;
+    }
+    return `${MODERN_ACCOUNT_VIEW_DISABLED_WARNING}\n${modernAccountViewLastCrashReason}`;
+  }, [modernAccountViewAutoDisabled, modernAccountViewLastCrashReason]);
+
   if (modernAccountViewEnabled) {
     return <ModernUserPageBoundary {...props} />;
   }
   return (
-    <LegacyUserPageContent
-      {...props}
-      warningBannerText={
-        modernAccountViewAutoDisabled
-          ? MODERN_ACCOUNT_VIEW_DISABLED_WARNING
-          : undefined
-      }
-    />
+    <LegacyUserPageContent {...props} warningBannerText={warningBannerText} />
   );
 }
 
