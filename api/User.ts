@@ -64,16 +64,27 @@ export class BannedUserError extends Error {
 
 function normalizeImage(url?: string): string | undefined {
   if (typeof url !== "string" || url.length === 0) return undefined;
-  const normalized = url.trim().split("?")[0];
-  const normalizedLower = normalized.toLowerCase();
+  const normalized = url.trim().replace(/&amp;/g, "&");
   if (!normalized) return undefined;
-  if (
-    !normalizedLower.startsWith("https://") &&
-    !normalizedLower.startsWith("http://")
-  ) {
-    return undefined;
+  try {
+    const parsed = new URL(normalized);
+    if (parsed.protocol !== "https:" && parsed.protocol !== "http:") {
+      return undefined;
+    }
+    if (parsed.pathname.toLowerCase().endsWith(".svg")) {
+      return undefined;
+    }
+    return parsed.toString();
+  } catch (_error) {
+    const normalizedLower = normalized.toLowerCase();
+    if (
+      !normalizedLower.startsWith("https://") &&
+      !normalizedLower.startsWith("http://")
+    ) {
+      return undefined;
+    }
   }
-  if (normalizedLower.endsWith(".svg")) {
+  if (normalized.toLowerCase().split("?")[0].endsWith(".svg")) {
     return undefined;
   }
   return normalized;
@@ -248,6 +259,43 @@ export async function blockUser(user: User): Promise<void> {
     },
     {
       requireAuth: true,
+    },
+  );
+}
+
+function normalizeUserNameForFollow(userName: string) {
+  return userName.trim().replace(/^u\//i, "");
+}
+
+export async function followUser(userName: string): Promise<void> {
+  await api(
+    "https://www.reddit.com/api/friend",
+    {
+      method: "POST",
+    },
+    {
+      requireAuth: true,
+      body: {
+        name: normalizeUserNameForFollow(userName),
+        type: "friend",
+        api_type: "json",
+      },
+    },
+  );
+}
+
+export async function unfollowUser(userName: string): Promise<void> {
+  await api(
+    "https://www.reddit.com/api/unfriend",
+    {
+      method: "POST",
+    },
+    {
+      requireAuth: true,
+      body: {
+        name: normalizeUserNameForFollow(userName),
+        type: "friend",
+      },
     },
   );
 }

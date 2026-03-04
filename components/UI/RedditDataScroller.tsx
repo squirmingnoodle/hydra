@@ -107,7 +107,6 @@ function RedditDataScroller<T extends RedditDataObject>(
       indicatorStyle={theme.systemModeStyle === "dark" ? "white" : "black"}
       refreshControl={
         <RefreshControl
-          style={{ backgroundColor: "red" }}
           tintColor={refreshControlColor}
           refreshing={refreshing}
           onRefresh={() => {

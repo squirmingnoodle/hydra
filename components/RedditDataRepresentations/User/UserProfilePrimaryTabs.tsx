@@ -29,7 +29,7 @@ export default function UserProfilePrimaryTabs({
       style={[
         styles.tabsContainer,
         {
-          backgroundColor: "#f8f8f8",
+          backgroundColor: theme.background,
           borderColor: theme.divider,
         },
       ]}
@@ -52,7 +52,7 @@ export default function UserProfilePrimaryTabs({
               style={[
                 styles.tabText,
                 {
-                  color: isSelected ? "#1c1c1e" : "#7a7a80",
+                  color: isSelected ? theme.text : theme.verySubtleText,
                 },
               ]}
             >
@@ -89,7 +89,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   tabText: {
-    fontSize: 19,
+    fontSize: 17,
     fontWeight: "600",
   },
   selectedIndicator: {

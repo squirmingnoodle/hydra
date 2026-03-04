@@ -514,7 +514,10 @@ export function CommentComponent({
                   </View>
                   {!comment.collapsed ? (
                     <View style={styles.textContainer}>
-                      <RenderHtml html={comment.html} />
+                      <RenderHtml
+                        html={comment.html}
+                        subreddit={comment.subreddit}
+                      />
                     </View>
                   ) : null}
                   {displayInList && (

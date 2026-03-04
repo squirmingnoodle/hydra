@@ -23,9 +23,11 @@ import {
   User,
   UserContent,
   UserDoesNotExistError,
+  followUser,
   getUser,
   getUserContent,
   getUserTrophies,
+  unfollowUser,
   UserTrophy,
 } from "../api/User";
 import { StackPageProps } from "../app/stack";
@@ -519,6 +521,9 @@ type ModernUserPageHeaderProps = {
   user: User | undefined;
   trophies: UserTrophy[];
   isOwnProfile: boolean;
+  showFollowAction: boolean;
+  isFollowing: boolean;
+  followLoading: boolean;
   selectedPrimaryTab: UserProfilePrimaryTab;
   selectedSavedTypeTab: UserSavedTypeTab;
   isSavedPostsPage: boolean;
@@ -527,7 +532,7 @@ type ModernUserPageHeaderProps = {
   onEditProfile: () => void;
   onShareProfile: () => void;
   onAddAccount: () => void;
-  onGoBack: () => void;
+  onToggleFollow: () => void;
   onSelectPrimaryTab: (tab: UserProfilePrimaryTab) => void;
   onSelectSavedTypeTab: (tab: UserSavedTypeTab) => void;
   onSelectSavedPostCategoryFilter: (filter: SavedPostCategoryFilter) => void;
@@ -537,6 +542,9 @@ function ModernUserPageHeader({
   user,
   trophies,
   isOwnProfile,
+  showFollowAction,
+  isFollowing,
+  followLoading,
   selectedPrimaryTab,
   selectedSavedTypeTab,
   isSavedPostsPage,
@@ -545,7 +553,7 @@ function ModernUserPageHeader({
   onEditProfile,
   onShareProfile,
   onAddAccount,
-  onGoBack,
+  onToggleFollow,
   onSelectPrimaryTab,
   onSelectSavedTypeTab,
   onSelectSavedPostCategoryFilter,
@@ -574,7 +582,10 @@ function ModernUserPageHeader({
             onEditProfile={onEditProfile}
             onShareProfile={onShareProfile}
             onAddAccount={onAddAccount}
-            onGoBack={onGoBack}
+            showFollowAction={showFollowAction}
+            isFollowing={isFollowing}
+            followLoading={followLoading}
+            onToggleFollow={onToggleFollow}
           />
         </ModernUserPageErrorBoundary>
       )}
@@ -584,7 +595,14 @@ function ModernUserPageHeader({
         onSelectTab={onSelectPrimaryTab}
       />
       {selectedPrimaryTab === "posts" && isOwnProfile && (
-        <View style={styles.feedControlsSection}>
+        <View
+          style={[
+            styles.feedControlsSection,
+            {
+              backgroundColor: theme.tint,
+            },
+          ]}
+        >
           <View
             style={[
               styles.feedOptionsPill,
@@ -726,6 +744,7 @@ function ModernUserPageContent(props: StackPageProps<"UserPage">) {
 
   const [user, setUser] = useState<User>();
   const [trophies, setTrophies] = useState<UserTrophy[]>([]);
+  const [isFollowLoading, setIsFollowLoading] = useState(false);
   const [savedPostCategoryMap] = useSavedPostCategoryMap();
   const [selectedSavedPostCategoryFilter, setSelectedSavedPostCategoryFilter] =
     useState<SavedPostCategoryFilter>(SAVED_POST_CATEGORY_ALL);
@@ -771,6 +790,31 @@ function ModernUserPageContent(props: StackPageProps<"UserPage">) {
     [savedPostCategories],
   );
 
+  const setFollowState = useCallback((nextFollowing: boolean) => {
+    setUser((previousUser) => {
+      if (!previousUser) {
+        return previousUser;
+      }
+      const wasFollowing = previousUser.friends;
+      let nextFollowersCount = previousUser.followersCount;
+      if (
+        typeof nextFollowersCount === "number" &&
+        Number.isFinite(nextFollowersCount) &&
+        wasFollowing !== nextFollowing
+      ) {
+        nextFollowersCount = Math.max(
+          0,
+          nextFollowersCount + (nextFollowing ? 1 : -1),
+        );
+      }
+      return {
+        ...previousUser,
+        friends: nextFollowing,
+        followersCount: nextFollowersCount,
+      };
+    });
+  }, []);
+
   useEffect(() => {
     if (!isSavedPostsPage) {
       setSelectedSavedPostCategoryFilter(SAVED_POST_CATEGORY_ALL);
@@ -794,6 +838,10 @@ function ModernUserPageContent(props: StackPageProps<"UserPage">) {
       setSelectedSavedPostCategoryFilter(SAVED_POST_CATEGORY_ALL);
     }
   }, [isSavedPostsPage, selectedSavedPostCategoryFilter, savedPostCategories]);
+
+  useEffect(() => {
+    setIsFollowLoading(false);
+  }, [userNameFromURL]);
 
   const {
     data: userContent,
@@ -889,9 +937,23 @@ function ModernUserPageContent(props: StackPageProps<"UserPage">) {
     };
   }, [userNameFromURL]);
 
+  const handleContextActionSuccess = useCallback(
+    (action: ContextTypes) => {
+      if (action === "Follow") {
+        setFollowState(true);
+      } else if (action === "Unfollow") {
+        setFollowState(false);
+      }
+    },
+    [setFollowState],
+  );
+
   useEffect(() => {
     const contextOptions: ContextTypes[] = ["Block", "Share"];
     if (!isOwnProfile) {
+      if (user) {
+        contextOptions.unshift(user.friends ? "Unfollow" : "Follow");
+      }
       contextOptions.unshift("Message");
     }
 
@@ -940,12 +1002,21 @@ function ModernUserPageContent(props: StackPageProps<"UserPage">) {
               sortOptions={sortOptions}
               contextOptions={contextOptions}
               pageData={user}
+              onContextActionSuccess={handleContextActionSuccess}
             />
           </ModernUserPageErrorBoundary>
         );
       },
     });
-  }, [isOwnProfile, section, selectedPrimaryTab, url, userNameFromURL, user]);
+  }, [
+    handleContextActionSuccess,
+    isOwnProfile,
+    section,
+    selectedPrimaryTab,
+    url,
+    userNameFromURL,
+    user,
+  ]);
 
   const goToPrimaryTab = useCallback(
     (tab: UserProfilePrimaryTab) => {
@@ -961,7 +1032,7 @@ function ModernUserPageContent(props: StackPageProps<"UserPage">) {
       } else if (tab === "overview") {
         nextUrl = `${nextUrl}?view=about`;
       }
-      navigation.replaceURL(nextUrl);
+      navigation.setParams({ url: nextUrl });
     },
     [userNameFromURL, navigation],
   );
@@ -970,9 +1041,9 @@ function ModernUserPageContent(props: StackPageProps<"UserPage">) {
     (tab: UserSavedTypeTab) => {
       if (!userNameFromURL) return;
       const type = tab === "comments" ? "comments" : "links";
-      navigation.replaceURL(
-        `https://www.reddit.com/user/${userNameFromURL}/saved?type=${type}`,
-      );
+      navigation.setParams({
+        url: `https://www.reddit.com/user/${userNameFromURL}/saved?type=${type}`,
+      });
     },
     [userNameFromURL, navigation],
   );
@@ -990,11 +1061,42 @@ function ModernUserPageContent(props: StackPageProps<"UserPage">) {
     );
   }, [navigation]);
 
-  const goBackFromHero = useCallback(() => {
-    if (navigation.canGoBack()) {
-      navigation.goBack();
+  const toggleFollow = useCallback(async () => {
+    if (!user || isOwnProfile || isFollowLoading) {
+      return;
     }
-  }, [navigation]);
+    if (!currentUser) {
+      setModal(<Login />);
+      return;
+    }
+
+    const targetFollowState = !user.friends;
+    setFollowState(targetFollowState);
+    setIsFollowLoading(true);
+    try {
+      if (targetFollowState) {
+        await followUser(user.userName);
+      } else {
+        await unfollowUser(user.userName);
+      }
+    } catch (_error) {
+      setFollowState(!targetFollowState);
+      alert(
+        targetFollowState
+          ? "Failed to follow user. Please try again."
+          : "Failed to unfollow user. Please try again.",
+      );
+    } finally {
+      setIsFollowLoading(false);
+    }
+  }, [
+    currentUser,
+    isFollowLoading,
+    isOwnProfile,
+    setModal,
+    setFollowState,
+    user,
+  ]);
 
   useEffect(() => {
     if (parsedRoute || invalidRouteReportedRef.current) {
@@ -1019,6 +1121,9 @@ function ModernUserPageContent(props: StackPageProps<"UserPage">) {
         user={user}
         trophies={trophies}
         isOwnProfile={isOwnProfile}
+        showFollowAction={!isOwnProfile}
+        isFollowing={user?.friends === true}
+        followLoading={isFollowLoading}
         selectedPrimaryTab={selectedPrimaryTab}
         selectedSavedTypeTab={selectedSavedTypeTab}
         isSavedPostsPage={isSavedPostsPage}
@@ -1027,7 +1132,7 @@ function ModernUserPageContent(props: StackPageProps<"UserPage">) {
         onEditProfile={openEditProfile}
         onShareProfile={shareProfile}
         onAddAccount={() => setModal(<Login />)}
-        onGoBack={goBackFromHero}
+        onToggleFollow={toggleFollow}
         onSelectPrimaryTab={goToPrimaryTab}
         onSelectSavedTypeTab={goToSavedTypeTab}
         onSelectSavedPostCategoryFilter={setSelectedSavedPostCategoryFilter}
@@ -1042,9 +1147,10 @@ function ModernUserPageContent(props: StackPageProps<"UserPage">) {
       isSavedPostsPage,
       savedPostCategoryFilters,
       selectedSavedPostCategoryFilter,
+      isFollowLoading,
       openEditProfile,
       shareProfile,
-      goBackFromHero,
+      toggleFollow,
       goToPrimaryTab,
       goToSavedTypeTab,
       setModal,
@@ -1164,7 +1270,6 @@ const styles = StyleSheet.create({
     fontWeight: "500",
   },
   feedControlsSection: {
-    backgroundColor: "#f3f4f5",
     paddingHorizontal: 12,
     paddingTop: 10,
     paddingBottom: 14,

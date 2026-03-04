@@ -1,7 +1,13 @@
 import { Feather, MaterialCommunityIcons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import React, { useContext, useEffect, useMemo, useState } from "react";
-import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import {
+  ActivityIndicator,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 
 import { User, UserTrophy } from "../../../api/User";
 import { ThemeContext } from "../../../contexts/SettingsContexts/ThemeContext";
@@ -15,41 +21,48 @@ type UserProfileIOSHeroProps = {
   onEditProfile: () => void;
   onShareProfile: () => void;
   onAddAccount: () => void;
-  onGoBack: () => void;
+  onGoBack?: () => void;
+  showFollowAction?: boolean;
+  isFollowing?: boolean;
+  followLoading?: boolean;
+  onToggleFollow?: () => void;
 };
 
-function isSupportedImageURI(uri?: string | null): uri is string {
-  if (typeof uri !== "string" || uri.length === 0) return false;
-  const normalized = uri.trim().toLowerCase();
-  if (!normalized) return false;
-  if (!normalized.startsWith("https://") && !normalized.startsWith("http://")) {
-    return false;
+function sanitizeImageURI(uri?: string | null): string | undefined {
+  if (typeof uri !== "string" || uri.length === 0) return undefined;
+  const normalized = uri.trim().replace(/&amp;/g, "&");
+  if (!normalized) return undefined;
+  try {
+    const parsed = new URL(normalized);
+    if (parsed.protocol !== "https:" && parsed.protocol !== "http:") {
+      return undefined;
+    }
+    if (parsed.pathname.toLowerCase().endsWith(".svg")) {
+      return undefined;
+    }
+    return parsed.toString();
+  } catch (_error) {
+    return undefined;
   }
-  return !normalized.endsWith(".svg");
 }
 
-type HeroActionButtonProps = {
-  icon: React.ReactNode;
-  accessibilityLabel: string;
-  onPress: () => void;
-};
-
-function HeroActionButton({
-  icon,
-  accessibilityLabel,
-  onPress,
-}: HeroActionButtonProps) {
-  return (
-    <TouchableOpacity
-      accessibilityRole="button"
-      accessibilityLabel={accessibilityLabel}
-      activeOpacity={0.8}
-      onPress={onPress}
-      style={styles.heroActionButton}
-    >
-      {icon}
-    </TouchableOpacity>
-  );
+function isAnimatedImageURI(uri?: string): boolean {
+  if (!uri) return false;
+  try {
+    const parsed = new URL(uri);
+    const pathname = parsed.pathname.toLowerCase();
+    const search = parsed.search.toLowerCase();
+    return (
+      /\.(gif|webp|apng)$/.test(pathname) ||
+      pathname.endsWith(".gifv") ||
+      search.includes("format=gif") ||
+      search.includes("format=webp") ||
+      search.includes("animated=true") ||
+      search.includes("is_animated=true")
+    );
+  } catch (_error) {
+    return false;
+  }
 }
 
 export default function UserProfileIOSHero({
@@ -59,7 +72,10 @@ export default function UserProfileIOSHero({
   onEditProfile,
   onShareProfile,
   onAddAccount,
-  onGoBack,
+  showFollowAction = false,
+  isFollowing = false,
+  followLoading = false,
+  onToggleFollow,
 }: UserProfileIOSHeroProps) {
   const { theme } = useContext(ThemeContext);
   const [bannerLoadError, setBannerLoadError] = useState(false);
@@ -73,14 +89,20 @@ export default function UserProfileIOSHero({
     typeof user.displayName === "string" && user.displayName.trim().length > 0
       ? user.displayName.trim()
       : userName;
-  const avatarURI = user.avatarImage ?? user.profileImage ?? user.icon;
-  const bannerURI =
-    !bannerLoadError && isSupportedImageURI(user.bannerImage)
-      ? user.bannerImage
-      : undefined;
+  const bannerURI = !bannerLoadError
+    ? sanitizeImageURI(user.bannerImage)
+    : undefined;
   const hasBannerImage = !!bannerURI;
-  const resolvedAvatarURI =
-    !avatarLoadError && isSupportedImageURI(avatarURI) ? avatarURI : undefined;
+  const avatarCandidates = [
+    sanitizeImageURI(user.avatarImage),
+    sanitizeImageURI(user.profileImage),
+    sanitizeImageURI(user.icon),
+  ].filter((candidate): candidate is string => !!candidate);
+  const animatedAvatarURI = avatarCandidates.find((candidate) =>
+    isAnimatedImageURI(candidate),
+  );
+  const preferredAvatarURI = animatedAvatarURI ?? avatarCandidates[0];
+  const resolvedAvatarURI = !avatarLoadError ? preferredAvatarURI : undefined;
   const safeTrophies = Array.isArray(trophies) ? trophies : [];
 
   useEffect(() => {
@@ -89,7 +111,7 @@ export default function UserProfileIOSHero({
 
   useEffect(() => {
     setAvatarLoadError(false);
-  }, [avatarURI]);
+  }, [preferredAvatarURI]);
 
   const achievementsCount = safeTrophies.length;
   const totalKarma =
@@ -105,10 +127,20 @@ export default function UserProfileIOSHero({
   const achievementPreviewIcons = useMemo(
     () =>
       safeTrophies
-        .map((trophy) => trophy.icon)
-        .filter((icon): icon is string => isSupportedImageURI(icon))
+        .map((trophy) => sanitizeImageURI(trophy.icon))
+        .filter((icon): icon is string => !!icon)
         .slice(0, 3),
     [safeTrophies],
+  );
+
+  const profileBadges = useMemo(
+    () =>
+      [
+        user.isGold ? "Premium" : null,
+        user.isMod ? "Mod" : null,
+        user.verifiedEmail ? "Verified" : null,
+      ].filter((badge): badge is string => !!badge),
+    [user.isGold, user.isMod, user.verifiedEmail],
   );
 
   const stats = [
@@ -118,9 +150,9 @@ export default function UserProfileIOSHero({
       label: "Karma",
     },
     {
-      key: "contributions",
+      key: "trophies",
       value: achievementsCount.toString(),
-      label: "Contributions",
+      label: "Trophies",
     },
     {
       key: "accountAge",
@@ -128,64 +160,94 @@ export default function UserProfileIOSHero({
       label: "Account Age",
     },
     {
-      key: "activeIn",
-      value: user.isMod ? "1" : "0",
-      label: "Active In",
+      key: "followers",
+      value: new Numbers(followers).prettyNum().toString(),
+      label: "Followers",
     },
   ];
 
   return (
-    <View style={styles.container}>
-      <View style={styles.hero}>
-        <View
-          style={[
-            styles.heroTopBlue,
-            !hasBannerImage && styles.heroTopBlueNoBanner,
-          ]}
-        >
-          {!!bannerURI && (
+    <View
+      style={[
+        styles.container,
+        {
+          backgroundColor: theme.background,
+        },
+      ]}
+    >
+      <View
+        style={[
+          styles.hero,
+          {
+            backgroundColor: theme.background,
+            borderBottomColor: theme.divider,
+          },
+        ]}
+      >
+        {hasBannerImage && bannerURI && (
+          <View
+            style={[
+              styles.heroTop,
+              {
+                backgroundColor: theme.background,
+              },
+            ]}
+          >
             <Image
               source={bannerURI}
               style={styles.bannerImage}
+              contentFit="cover"
+              contentPosition="center"
               onError={() => setBannerLoadError(true)}
             />
-          )}
-          <View style={styles.topControlsRow}>
-            <HeroActionButton
-              accessibilityLabel="Go back"
-              onPress={onGoBack}
-              icon={<Feather name="arrow-left" size={22} color="#ffffff" />}
-            />
-            <View style={styles.usernamePill}>
-              <Text numberOfLines={1} style={styles.usernamePillText}>
-                {`u/${userName}`}
-              </Text>
-              <Feather name="chevron-down" size={16} color="#ffffff" />
+            <View style={styles.usernamePillContainer}>
+              <View
+                style={[
+                  styles.usernamePill,
+                  {
+                    backgroundColor: theme.background,
+                    borderColor: theme.divider,
+                  },
+                ]}
+              >
+                <Text
+                  numberOfLines={1}
+                  style={[
+                    styles.usernamePillText,
+                    {
+                      color: theme.text,
+                    },
+                  ]}
+                >
+                  {`u/${userName}`}
+                </Text>
+              </View>
             </View>
-            <View style={styles.topControlsSpacer} />
-            <HeroActionButton
-              accessibilityLabel="Search profile"
-              onPress={onAddAccount}
-              icon={<Feather name="search" size={20} color="#ffffff" />}
-            />
-            <HeroActionButton
-              accessibilityLabel="Share profile"
-              onPress={onShareProfile}
-              icon={<Feather name="send" size={18} color="#ffffff" />}
-            />
-            <HeroActionButton
-              accessibilityLabel="Profile menu"
-              onPress={onAddAccount}
-              icon={<Feather name="menu" size={20} color="#ffffff" />}
-            />
           </View>
-        </View>
-        <View style={styles.heroBottomBlack}>
-          <View style={styles.avatarContainer}>
+        )}
+        <View
+          style={[
+            styles.heroBottom,
+            {
+              backgroundColor: theme.background,
+            },
+          ]}
+        >
+          <View
+            style={[
+              styles.avatarContainer,
+              hasBannerImage
+                ? styles.avatarContainerWithBanner
+                : styles.avatarContainerNoBanner,
+            ]}
+          >
             {resolvedAvatarURI ? (
               <Image
                 source={resolvedAvatarURI}
                 style={styles.avatar}
+                contentFit="cover"
+                contentPosition="center"
+                autoplay
                 onError={() => setAvatarLoadError(true)}
               />
             ) : (
@@ -213,13 +275,22 @@ export default function UserProfileIOSHero({
             )}
           </View>
           <View style={styles.identityRow}>
-            <Text style={styles.displayName}>{displayName}</Text>
+            <Text
+              style={[
+                styles.displayName,
+                {
+                  color: theme.text,
+                },
+              ]}
+            >
+              {displayName}
+            </Text>
             {isOwnProfile && (
               <>
                 <Feather
                   name="shield"
                   size={17}
-                  color="#ff5f15"
+                  color={theme.iconPrimary}
                   style={styles.shieldIcon}
                 />
                 <TouchableOpacity
@@ -228,25 +299,230 @@ export default function UserProfileIOSHero({
                   onPress={onEditProfile}
                   activeOpacity={0.8}
                 >
-                  <Text style={styles.editText}>Edit</Text>
+                  <Text
+                    style={[
+                      styles.editText,
+                      {
+                        color: theme.text,
+                      },
+                    ]}
+                  >
+                    Edit
+                  </Text>
                 </TouchableOpacity>
               </>
             )}
           </View>
-          <Text style={styles.secondaryLine}>
-            {`u/${userName} \u2022 ${new Numbers(followers).prettyNum()} followers \u203a`}
+          <Text
+            style={[
+              styles.secondaryLine,
+              {
+                color: theme.subtleText,
+              },
+            ]}
+          >
+            {`u/${userName} \u2022 ${new Numbers(followers).prettyNum()} followers`}
           </Text>
+          {!!user.bio && (
+            <Text
+              numberOfLines={3}
+              style={[
+                styles.bio,
+                {
+                  color: theme.subtleText,
+                },
+              ]}
+            >
+              {user.bio}
+            </Text>
+          )}
+          {profileBadges.length > 0 && (
+            <View style={styles.badgesRow}>
+              {profileBadges.map((badge) => (
+                <View
+                  key={badge}
+                  style={[
+                    styles.badge,
+                    {
+                      backgroundColor: theme.tint,
+                      borderColor: theme.divider,
+                    },
+                  ]}
+                >
+                  <Text
+                    style={[
+                      styles.badgeText,
+                      {
+                        color: theme.text,
+                      },
+                    ]}
+                  >
+                    {badge}
+                  </Text>
+                </View>
+              ))}
+            </View>
+          )}
+          {isOwnProfile ? (
+            <View style={styles.actionRow}>
+              <TouchableOpacity
+                accessibilityRole="button"
+                accessibilityLabel="Edit profile"
+                activeOpacity={0.8}
+                onPress={onEditProfile}
+                style={[
+                  styles.actionButton,
+                  {
+                    backgroundColor: theme.tint,
+                    borderColor: theme.divider,
+                  },
+                ]}
+              >
+                <Feather name="edit-2" size={14} color={theme.text} />
+                <Text
+                  style={[
+                    styles.actionButtonText,
+                    {
+                      color: theme.text,
+                    },
+                  ]}
+                >
+                  Edit Profile
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                accessibilityRole="button"
+                accessibilityLabel="Share profile"
+                activeOpacity={0.8}
+                onPress={onShareProfile}
+                style={[
+                  styles.actionButton,
+                  {
+                    backgroundColor: theme.tint,
+                    borderColor: theme.divider,
+                  },
+                ]}
+              >
+                <Feather name="share-2" size={14} color={theme.text} />
+                <Text
+                  style={[
+                    styles.actionButtonText,
+                    {
+                      color: theme.text,
+                    },
+                  ]}
+                >
+                  Share
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                accessibilityRole="button"
+                accessibilityLabel="Add account"
+                activeOpacity={0.8}
+                onPress={onAddAccount}
+                style={[
+                  styles.actionButton,
+                  {
+                    backgroundColor: theme.tint,
+                    borderColor: theme.divider,
+                  },
+                ]}
+              >
+                <Feather name="user-plus" size={14} color={theme.text} />
+                <Text
+                  style={[
+                    styles.actionButtonText,
+                    {
+                      color: theme.text,
+                    },
+                  ]}
+                >
+                  Add Account
+                </Text>
+              </TouchableOpacity>
+            </View>
+          ) : (
+            showFollowAction && (
+              <View style={styles.actionRow}>
+                <TouchableOpacity
+                  accessibilityRole="button"
+                  accessibilityLabel={
+                    isFollowing ? "Unfollow user" : "Follow user"
+                  }
+                  activeOpacity={0.8}
+                  onPress={() => onToggleFollow?.()}
+                  disabled={followLoading}
+                  style={[
+                    styles.actionButton,
+                    styles.primaryActionButton,
+                    {
+                      backgroundColor: theme.buttonBg,
+                      borderColor: theme.buttonBg,
+                      opacity: followLoading ? 0.75 : 1,
+                    },
+                  ]}
+                >
+                  {followLoading ? (
+                    <ActivityIndicator
+                      size="small"
+                      color={theme.buttonText}
+                      style={styles.followSpinner}
+                    />
+                  ) : (
+                    <Feather
+                      name={isFollowing ? "user-check" : "user-plus"}
+                      size={14}
+                      color={theme.buttonText}
+                    />
+                  )}
+                  <Text
+                    style={[
+                      styles.actionButtonText,
+                      styles.primaryActionButtonText,
+                      {
+                        color: theme.buttonText,
+                      },
+                    ]}
+                  >
+                    {isFollowing ? "Following" : "Follow"}
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  accessibilityRole="button"
+                  accessibilityLabel="Share profile"
+                  activeOpacity={0.8}
+                  onPress={onShareProfile}
+                  style={[
+                    styles.actionButton,
+                    {
+                      backgroundColor: theme.tint,
+                      borderColor: theme.divider,
+                    },
+                  ]}
+                >
+                  <Feather name="share-2" size={14} color={theme.text} />
+                  <Text
+                    style={[
+                      styles.actionButtonText,
+                      {
+                        color: theme.text,
+                      },
+                    ]}
+                  >
+                    Share
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            )
+          )}
           {isOwnProfile && (
             <View style={styles.achievementRow}>
-              <Text style={styles.achievementText}>
-                {`Add Social Link \u203A`}
-              </Text>
               <View style={styles.achievementIcons}>
                 {achievementPreviewIcons.length === 0 ? (
                   <MaterialCommunityIcons
                     name="trophy-outline"
                     size={17}
-                    color="#d9d9dd"
+                    color={theme.subtleText}
                   />
                 ) : (
                   achievementPreviewIcons.map((icon, index) => (
@@ -258,22 +534,59 @@ export default function UserProfileIOSHero({
                   ))
                 )}
               </View>
-              <Text style={styles.achievementText}>
+              <Text
+                style={[
+                  styles.achievementText,
+                  {
+                    color: theme.subtleText,
+                  },
+                ]}
+              >
                 {`${achievementsCount} achievements \u203a`}
               </Text>
             </View>
           )}
-          <View style={styles.statsContainer}>
+          <View
+            style={[
+              styles.statsContainer,
+              {
+                borderTopColor: theme.divider,
+              },
+            ]}
+          >
             {stats.map((stat, index) => (
               <View
                 key={stat.key}
                 style={[
                   styles.statItem,
                   index > 0 && styles.statItemWithBorder,
+                  index > 0
+                    ? {
+                        borderLeftColor: theme.divider,
+                      }
+                    : undefined,
                 ]}
               >
-                <Text style={styles.statValue}>{stat.value}</Text>
-                <Text style={styles.statLabel}>{stat.label}</Text>
+                <Text
+                  style={[
+                    styles.statValue,
+                    {
+                      color: theme.text,
+                    },
+                  ]}
+                >
+                  {stat.value}
+                </Text>
+                <Text
+                  style={[
+                    styles.statLabel,
+                    {
+                      color: theme.subtleText,
+                    },
+                  ]}
+                >
+                  {stat.label}
+                </Text>
               </View>
             ))}
           </View>
@@ -288,65 +601,49 @@ const styles = StyleSheet.create({
     marginBottom: 0,
   },
   hero: {
-    backgroundColor: "#000000",
+    borderBottomWidth: StyleSheet.hairlineWidth,
   },
-  heroTopBlue: {
-    minHeight: 218,
-    backgroundColor: "#2f65ae",
-    paddingTop: 8,
-    paddingHorizontal: 12,
+  heroTop: {
+    height: 176,
+    justifyContent: "flex-start",
+    paddingTop: 10,
+    paddingBottom: 0,
     overflow: "hidden",
-  },
-  heroTopBlueNoBanner: {
-    minHeight: 170,
   },
   bannerImage: {
     position: "absolute",
     width: "100%",
     height: "100%",
   },
-  topControlsRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginTop: 4,
-    gap: 8,
-  },
-  heroActionButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: "rgba(7, 26, 56, 0.92)",
-    alignItems: "center",
-    justifyContent: "center",
+  usernamePillContainer: {
+    paddingHorizontal: 12,
   },
   usernamePill: {
-    maxWidth: 175,
+    maxWidth: 210,
     minWidth: 110,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: "rgba(7, 26, 56, 0.92)",
+    borderRadius: 999,
+    borderWidth: 1,
     paddingHorizontal: 14,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 7,
+    paddingVertical: 8,
+    alignSelf: "flex-start",
   },
   usernamePillText: {
-    color: "#ffffff",
-    fontSize: 19,
-    fontWeight: "700",
+    fontSize: 17,
+    fontWeight: "600",
     flexShrink: 1,
   },
-  topControlsSpacer: {
-    flex: 1,
-  },
-  heroBottomBlack: {
-    backgroundColor: "#000000",
+  heroBottom: {
     paddingHorizontal: 14,
     paddingBottom: 14,
   },
   avatarContainer: {
-    marginTop: -52,
     marginBottom: 8,
+  },
+  avatarContainerWithBanner: {
+    marginTop: -50,
+  },
+  avatarContainerNoBanner: {
+    marginTop: 20,
   },
   avatar: {
     width: 112,
@@ -367,7 +664,6 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   displayName: {
-    color: "#ffffff",
     fontSize: 47 / 2,
     fontWeight: "700",
   },
@@ -375,15 +671,63 @@ const styles = StyleSheet.create({
     marginTop: 3,
   },
   editText: {
-    color: "#ffffff",
     fontSize: 16,
     fontWeight: "600",
   },
   secondaryLine: {
     marginTop: 7,
-    color: "#e2e4ea",
     fontSize: 15,
     fontWeight: "500",
+  },
+  bio: {
+    marginTop: 6,
+    fontSize: 14,
+    lineHeight: 20,
+  },
+  badgesRow: {
+    marginTop: 8,
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 6,
+  },
+  badge: {
+    borderRadius: 999,
+    borderWidth: 1,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+  },
+  badgeText: {
+    fontSize: 11,
+    fontWeight: "700",
+  },
+  actionRow: {
+    marginTop: 10,
+    flexDirection: "row",
+    gap: 8,
+  },
+  actionButton: {
+    flex: 1,
+    borderWidth: 1,
+    borderRadius: 10,
+    paddingVertical: 9,
+    paddingHorizontal: 10,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 7,
+  },
+  primaryActionButton: {
+    flex: 1.3,
+  },
+  actionButtonText: {
+    fontSize: 13,
+    fontWeight: "600",
+  },
+  primaryActionButtonText: {
+    fontWeight: "700",
+  },
+  followSpinner: {
+    marginVertical: -1,
   },
   achievementRow: {
     marginTop: 9,
@@ -401,18 +745,14 @@ const styles = StyleSheet.create({
     height: 22,
     borderRadius: 11,
     marginLeft: -6,
-    borderWidth: 1,
-    borderColor: "#000000",
   },
   achievementText: {
-    color: "#e3e5ea",
     fontSize: 14,
     fontWeight: "600",
   },
   statsContainer: {
     marginTop: 12,
     borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: "#2b2c31",
     flexDirection: "row",
   },
   statItem: {
@@ -422,15 +762,12 @@ const styles = StyleSheet.create({
   },
   statItemWithBorder: {
     borderLeftWidth: StyleSheet.hairlineWidth,
-    borderLeftColor: "#2b2c31",
   },
   statValue: {
-    color: "#ffffff",
     fontSize: 36 / 2,
     fontWeight: "700",
   },
   statLabel: {
-    color: "#c4c7cf",
     fontSize: 12,
     fontWeight: "500",
     marginTop: 3,
