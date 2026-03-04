@@ -825,12 +825,22 @@ function ModernUserPageContent(props: StackPageProps<"UserPage">) {
         ) {
           return;
         }
-        throw e;
+        Sentry.withScope((scope) => {
+          scope.setTag("screen", "UserPage");
+          scope.setTag("surface", "modernAccountView");
+          scope.setContext("modernAccountView", {
+            routeUrl: url,
+            username: userNameFromURL,
+            stage: "loadUser",
+          });
+          Sentry.captureException(e);
+        });
+        setUser(undefined);
       }
     };
 
     loadUser();
-  }, [userNameFromURL]);
+  }, [url, userNameFromURL]);
 
   useEffect(() => {
     let canceled = false;
@@ -863,23 +873,44 @@ function ModernUserPageContent(props: StackPageProps<"UserPage">) {
         : undefined;
 
     navigation.setOptions({
-      headerRight: () => (
-        <SortAndContext
-          route={route}
-          navigation={navigation}
-          sortOptions={sortOptions}
-          contextOptions={contextOptions}
-          pageData={user}
-        />
-      ),
+      headerRight: () => {
+        return (
+          <ModernUserPageErrorBoundary
+            onError={(error, info) => {
+              Sentry.withScope((scope) => {
+                scope.setTag("screen", "UserPage");
+                scope.setTag("surface", "modernAccountHeaderRight");
+                scope.setContext("modernAccountView", {
+                  routeUrl: route.params.url,
+                  username: userNameFromURL,
+                  section: section ?? "overview",
+                  componentStack: info.componentStack,
+                });
+                Sentry.captureException(error);
+              });
+            }}
+            fallback={null}
+          >
+            <SortAndContext
+              route={route}
+              navigation={navigation}
+              sortOptions={sortOptions}
+              contextOptions={contextOptions}
+              pageData={user}
+            />
+          </ModernUserPageErrorBoundary>
+        );
+      },
     });
   }, [
     isOwnProfile,
     navigation,
     route,
+    section,
     selectedPrimaryTab,
     sort,
     sortTime,
+    userNameFromURL,
     user,
   ]);
 
@@ -987,6 +1018,55 @@ function ModernUserPageContent(props: StackPageProps<"UserPage">) {
     ],
   );
 
+  const renderModernContentItem = useCallback(
+    ({ item: content }: { item: UserContent | undefined }) => {
+      if (!content) {
+        return null;
+      }
+      if (content.type !== "post" && content.type !== "comment") {
+        return null;
+      }
+
+      const contentKey = content.type === "post" ? content.name : content.id;
+      return (
+        <ModernUserPageErrorBoundary
+          onError={(error, info) => {
+            Sentry.withScope((scope) => {
+              scope.setTag("screen", "UserPage");
+              scope.setTag("surface", "modernAccountContentItem");
+              scope.setContext("modernAccountView", {
+                routeUrl: url,
+                username: userNameFromURL,
+                section: section ?? "overview",
+                contentType: content.type,
+                contentKey,
+                componentStack: info.componentStack,
+              });
+              Sentry.captureException(error);
+            });
+          }}
+          fallback={null}
+        >
+          {content.type === "post" ? (
+            <PostComponent
+              post={content}
+              setPost={(newPost) => modifyUserContent([newPost])}
+            />
+          ) : (
+            <CommentComponent
+              comment={content}
+              index={0}
+              displayInList
+              changeComment={(newComment) => modifyUserContent([newComment])}
+              deleteComment={(comment) => deleteUserContent([comment])}
+            />
+          )}
+        </ModernUserPageErrorBoundary>
+      );
+    },
+    [deleteUserContent, modifyUserContent, section, url, userNameFromURL],
+  );
+
   if (!parsedRoute) {
     return (
       <LegacyUserPageContent
@@ -1017,33 +1097,7 @@ function ModernUserPageContent(props: StackPageProps<"UserPage">) {
           hitFilterLimit={hitFilterLimit}
           data={userContent}
           getItemType={(item) => item?.type ?? "unknown"}
-          renderItem={({ item: content }) => {
-            if (!content) {
-              return null;
-            }
-            if (content.type === "post") {
-              return (
-                <PostComponent
-                  post={content}
-                  setPost={(newPost) => modifyUserContent([newPost])}
-                />
-              );
-            }
-            if (content.type === "comment") {
-              return (
-                <CommentComponent
-                  comment={content}
-                  index={0}
-                  displayInList
-                  changeComment={(newComment) =>
-                    modifyUserContent([newComment])
-                  }
-                  deleteComment={(comment) => deleteUserContent([comment])}
-                />
-              );
-            }
-            return null;
-          }}
+          renderItem={renderModernContentItem}
         />
       </AccessFailureComponent>
     </View>
