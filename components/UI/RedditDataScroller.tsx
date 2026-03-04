@@ -132,7 +132,11 @@ function RedditDataScroller<T extends RedditDataObject>(
         loadMoreData();
       }}
       data={props.data}
-      keyExtractor={(item) => `${item.type}-${item.id}`}
+      keyExtractor={(item, index) => {
+        const keyType = (item as Partial<RedditDataObject> | undefined)?.type;
+        const keyId = (item as Partial<RedditDataObject> | undefined)?.id;
+        return `${keyType ?? "unknown"}-${keyId ?? index}`;
+      }}
       ListFooterComponent={
         <View style={styles.endOfListContainer}>
           {isLoadingMore && <ActivityIndicator size="small" />}
