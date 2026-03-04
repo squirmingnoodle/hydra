@@ -18,9 +18,9 @@ export default function UserProfilePrimaryTabs({
 }: UserProfilePrimaryTabsProps) {
   const { theme } = useContext(ThemeContext);
   const tabs: { key: UserProfilePrimaryTab; label: string }[] = [
-    { key: "overview", label: "Overview" },
     { key: "posts", label: "Posts" },
     { key: "comments", label: "Comments" },
+    { key: "overview", label: "About" },
     ...(showSavedTab ? [{ key: "saved" as const, label: "Saved" }] : []),
   ];
 
@@ -29,7 +29,7 @@ export default function UserProfilePrimaryTabs({
       style={[
         styles.tabsContainer,
         {
-          backgroundColor: theme.tint,
+          backgroundColor: "#f8f8f8",
           borderColor: theme.divider,
         },
       ]}
@@ -45,24 +45,29 @@ export default function UserProfilePrimaryTabs({
             accessibilityState={{ selected: isSelected }}
             accessibilityLabel={`Open ${tab.label} tab`}
             activeOpacity={0.8}
-            style={[
-              styles.tabButton,
-              {
-                backgroundColor: isSelected ? theme.iconPrimary : "transparent",
-              },
-            ]}
+            style={styles.tabButton}
             onPress={() => onSelectTab(tab.key)}
           >
             <Text
               style={[
                 styles.tabText,
                 {
-                  color: isSelected ? theme.text : theme.subtleText,
+                  color: isSelected ? theme.text : theme.verySubtleText,
                 },
               ]}
             >
               {tab.label}
             </Text>
+            {isSelected && (
+              <View
+                style={[
+                  styles.selectedIndicator,
+                  {
+                    backgroundColor: theme.iconPrimary,
+                  },
+                ]}
+              />
+            )}
           </TouchableOpacity>
         );
       })}
@@ -72,23 +77,27 @@ export default function UserProfilePrimaryTabs({
 
 const styles = StyleSheet.create({
   tabsContainer: {
-    marginHorizontal: 12,
-    marginBottom: 10,
-    padding: 4,
-    borderRadius: 12,
-    borderWidth: 1,
+    borderBottomWidth: 1,
     flexDirection: "row",
     alignItems: "center",
   },
   tabButton: {
     flex: 1,
-    borderRadius: 10,
-    paddingVertical: 8,
+    paddingTop: 13,
+    paddingBottom: 12,
     alignItems: "center",
     justifyContent: "center",
   },
   tabText: {
-    fontSize: 14,
+    fontSize: 19,
     fontWeight: "600",
+  },
+  selectedIndicator: {
+    position: "absolute",
+    left: "26%",
+    right: "26%",
+    bottom: 0,
+    height: 3,
+    borderRadius: 2,
   },
 });
