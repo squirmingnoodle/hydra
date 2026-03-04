@@ -232,7 +232,9 @@ export default function UserProfileIOSHero({
           </Text>
           {isOwnProfile && (
             <View style={styles.achievementRow}>
-              <Text style={styles.achievementText}>Add Social Link \u203a</Text>
+              <Text style={styles.achievementText}>
+                {`Add Social Link \u203A`}
+              </Text>
               <View style={styles.achievementIcons}>
                 {achievementPreviewIcons.length === 0 ? (
                   <MaterialCommunityIcons
