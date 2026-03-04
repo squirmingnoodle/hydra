@@ -710,6 +710,7 @@ function ModernUserPageContent(props: StackPageProps<"UserPage">) {
   const url = route.params.url;
   const parsedRoute = useMemo(() => parseUserRoute(url), [url]);
   const invalidRouteReportedRef = useRef(false);
+  const headerOptionsSignatureRef = useRef<string>("");
   const sort = parsedRoute?.sort ?? "new";
   const sortTime = parsedRoute?.sortTime ?? null;
   const section = parsedRoute?.section;
@@ -899,6 +900,21 @@ function ModernUserPageContent(props: StackPageProps<"UserPage">) {
         ? ["New", "Hot", "Top"]
         : undefined;
 
+    const nextSignature = [
+      url,
+      userNameFromURL,
+      section ?? "overview",
+      selectedPrimaryTab,
+      isOwnProfile ? "own" : "other",
+      user?.id ?? "no-user",
+      sortOptions?.join(",") ?? "no-sort",
+      contextOptions.join(","),
+    ].join("|");
+    if (headerOptionsSignatureRef.current === nextSignature) {
+      return;
+    }
+    headerOptionsSignatureRef.current = nextSignature;
+
     navigation.setOptions({
       headerRight: () => {
         return (
@@ -929,15 +945,7 @@ function ModernUserPageContent(props: StackPageProps<"UserPage">) {
         );
       },
     });
-  }, [
-    isOwnProfile,
-    navigation,
-    section,
-    selectedPrimaryTab,
-    url,
-    userNameFromURL,
-    user,
-  ]);
+  }, [isOwnProfile, section, selectedPrimaryTab, url, userNameFromURL, user]);
 
   const goToPrimaryTab = useCallback(
     (tab: UserProfilePrimaryTab) => {
