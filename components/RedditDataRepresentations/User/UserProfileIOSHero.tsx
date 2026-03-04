@@ -1,8 +1,4 @@
-import {
-  Feather,
-  FontAwesome6,
-  MaterialCommunityIcons,
-} from "@expo/vector-icons";
+import { Feather, MaterialCommunityIcons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import React, { useContext, useEffect, useMemo, useState } from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
@@ -69,6 +65,14 @@ export default function UserProfileIOSHero({
   const [bannerLoadError, setBannerLoadError] = useState(false);
   const [avatarLoadError, setAvatarLoadError] = useState(false);
 
+  const userName =
+    typeof user.userName === "string" && user.userName.trim().length > 0
+      ? user.userName.trim()
+      : "unknown";
+  const displayName =
+    typeof user.displayName === "string" && user.displayName.trim().length > 0
+      ? user.displayName.trim()
+      : userName;
   const avatarURI = user.avatarImage ?? user.profileImage ?? user.icon;
   const bannerURI =
     !bannerLoadError && isSupportedImageURI(user.bannerImage)
@@ -76,6 +80,7 @@ export default function UserProfileIOSHero({
       : undefined;
   const resolvedAvatarURI =
     !avatarLoadError && isSupportedImageURI(avatarURI) ? avatarURI : undefined;
+  const safeTrophies = Array.isArray(trophies) ? trophies : [];
 
   useEffect(() => {
     setBannerLoadError(false);
@@ -85,19 +90,24 @@ export default function UserProfileIOSHero({
     setAvatarLoadError(false);
   }, [avatarURI]);
 
-  const achievementsCount = trophies.length;
+  const achievementsCount = safeTrophies.length;
   const totalKarma =
-    user.totalKarma ?? Math.max(0, user.commentKarma + user.postKarma);
+    typeof user.totalKarma === "number" && Number.isFinite(user.totalKarma)
+      ? user.totalKarma
+      : Math.max(0, user.commentKarma + user.postKarma);
   const followers = user.followersCount ?? 0;
-  const accountAge = new Time(user.createdAt * 1000).shortPrettyTimeSince();
+  const accountAge =
+    typeof user.createdAt === "number" && Number.isFinite(user.createdAt)
+      ? new Time(user.createdAt * 1000).shortPrettyTimeSince()
+      : "0y";
 
   const achievementPreviewIcons = useMemo(
     () =>
-      trophies
+      safeTrophies
         .map((trophy) => trophy.icon)
         .filter((icon): icon is string => isSupportedImageURI(icon))
         .slice(0, 3),
-    [trophies],
+    [safeTrophies],
   );
 
   const stats = [
@@ -142,7 +152,7 @@ export default function UserProfileIOSHero({
             />
             <View style={styles.usernamePill}>
               <Text numberOfLines={1} style={styles.usernamePillText}>
-                {`u/${user.userName}`}
+                {`u/${userName}`}
               </Text>
               <Feather name="chevron-down" size={16} color="#ffffff" />
             </View>
@@ -191,19 +201,17 @@ export default function UserProfileIOSHero({
                     },
                   ]}
                 >
-                  {user.userName[0]?.toUpperCase() ?? "U"}
+                  {userName[0]?.toUpperCase() ?? "U"}
                 </Text>
               </View>
             )}
           </View>
           <View style={styles.identityRow}>
-            <Text style={styles.displayName}>
-              {user.displayName || user.userName}
-            </Text>
+            <Text style={styles.displayName}>{displayName}</Text>
             {isOwnProfile && (
               <>
-                <FontAwesome6
-                  name="shield-halved"
+                <Feather
+                  name="shield"
                   size={17}
                   color="#ff5f15"
                   style={styles.shieldIcon}
@@ -220,7 +228,7 @@ export default function UserProfileIOSHero({
             )}
           </View>
           <Text style={styles.secondaryLine}>
-            {`u/${user.userName} \u2022 ${new Numbers(followers).prettyNum()} followers \u203a`}
+            {`u/${userName} \u2022 ${new Numbers(followers).prettyNum()} followers \u203a`}
           </Text>
           {isOwnProfile && (
             <View style={styles.achievementRow}>

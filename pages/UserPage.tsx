@@ -35,6 +35,7 @@ import SortAndContext, {
 import Login from "../components/Modals/Login";
 import PostComponent from "../components/RedditDataRepresentations/Post/PostComponent";
 import { CommentComponent } from "../components/RedditDataRepresentations/Post/PostParts/Comments";
+import UserProfileHero from "../components/RedditDataRepresentations/User/UserProfileHero";
 import UserProfileIOSHero from "../components/RedditDataRepresentations/User/UserProfileIOSHero";
 import UserProfilePrimaryTabs, {
   UserProfilePrimaryTab,
@@ -526,15 +527,29 @@ function ModernUserPageHeader({
   return (
     <View>
       {user && (
-        <UserProfileIOSHero
-          user={user}
-          trophies={trophies}
-          isOwnProfile={isOwnProfile}
-          onEditProfile={onEditProfile}
-          onShareProfile={onShareProfile}
-          onAddAccount={onAddAccount}
-          onGoBack={onGoBack}
-        />
+        <ModernUserPageErrorBoundary
+          onError={(error) => {
+            Sentry.withScope((scope) => {
+              scope.setTag("screen", "UserPage");
+              scope.setTag("surface", "modernAccountViewHero");
+              scope.setContext("modernAccountView", {
+                username: user.userName,
+              });
+              Sentry.captureException(error);
+            });
+          }}
+          fallback={<UserProfileHero user={user} trophies={trophies} />}
+        >
+          <UserProfileIOSHero
+            user={user}
+            trophies={trophies}
+            isOwnProfile={isOwnProfile}
+            onEditProfile={onEditProfile}
+            onShareProfile={onShareProfile}
+            onAddAccount={onAddAccount}
+            onGoBack={onGoBack}
+          />
+        </ModernUserPageErrorBoundary>
       )}
       <UserProfilePrimaryTabs
         selectedTab={selectedPrimaryTab}
