@@ -703,7 +703,7 @@ function ModernUserPageContent(props: StackPageProps<"UserPage">) {
     useState<SavedPostCategoryFilter>(SAVED_POST_CATEGORY_ALL);
 
   const isOwnProfile =
-    !!currentUser?.userName &&
+    typeof currentUser?.userName === "string" &&
     currentUser.userName.toLowerCase() === userNameFromURL.toLowerCase();
   const resolvedPrimaryTab = getPrimaryTabFromSection(section, view);
   const selectedPrimaryTab =
