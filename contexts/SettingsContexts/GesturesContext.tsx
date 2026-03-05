@@ -1,4 +1,4 @@
-import { createContext } from "react";
+import { createContext, useMemo } from "react";
 import {
   useAccountScopedMMKVBoolean,
   useAccountScopedMMKVObject,
@@ -181,9 +181,8 @@ export function GesturesProvider({ children }: React.PropsWithChildren) {
     });
   };
 
-  return (
-    <GesturesContext.Provider
-      value={{
+  const value = useMemo(
+    () => ({
         swipeAnywhereToNavigate,
         toggleSwipeAnywhereToNavigate: (newValue = !swipeAnywhereToNavigate) =>
           setSwipeAnywhereToNavigate(newValue),
@@ -191,8 +190,12 @@ export function GesturesProvider({ children }: React.PropsWithChildren) {
         setPostSwipeOption,
         commentSwipeOptions,
         setCommentSwipeOption,
-      }}
-    >
+    }),
+    [swipeAnywhereToNavigate, postSwipeOptions, commentSwipeOptions],
+  );
+
+  return (
+    <GesturesContext.Provider value={value}>
       {children}
     </GesturesContext.Provider>
   );

@@ -1,4 +1,4 @@
-import { createContext } from "react";
+import { createContext, useMemo } from "react";
 import { useAccountScopedMMKVBoolean } from "../../utils/accountScopedSettings";
 
 const initialValues = {
@@ -58,9 +58,8 @@ export function CommentSettingsProvider({ children }: React.PropsWithChildren) {
     );
   };
 
-  return (
-    <CommentSettingsContext.Provider
-      value={{
+  const value = useMemo(
+    () => ({
         voteIndicator: voteIndicator ?? initialValues.voteIndicator,
         toggleVoteIndicator,
 
@@ -79,8 +78,18 @@ export function CommentSettingsProvider({ children }: React.PropsWithChildren) {
         tapToCollapseComment:
           tapToCollapseComment ?? initialValues.tapToCollapseComment,
         toggleTapToCollapseComment,
-      }}
-    >
+    }),
+    [
+      voteIndicator,
+      collapseAutoModerator,
+      commentFlairs,
+      showCommentSummary,
+      tapToCollapseComment,
+    ],
+  );
+
+  return (
+    <CommentSettingsContext.Provider value={value}>
       {children}
     </CommentSettingsContext.Provider>
   );

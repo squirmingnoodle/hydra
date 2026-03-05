@@ -4,6 +4,7 @@ import React, {
   PropsWithChildren,
   SetStateAction,
   useEffect,
+  useMemo,
   useState,
 } from "react";
 import UpdateInfo, {
@@ -63,8 +64,13 @@ export function StartupModalProvider({ children }: PropsWithChildren) {
     showTopPriorityModal();
   }, []);
 
+  const value = useMemo(
+    () => ({ startupModal, setStartupModal }),
+    [startupModal],
+  );
+
   return (
-    <StartupModalContext.Provider value={{ startupModal, setStartupModal }}>
+    <StartupModalContext.Provider value={value}>
       {startupModal === "updateInfo" && (
         <UpdateInfo onExit={() => setStartupModal(null)} />
       )}

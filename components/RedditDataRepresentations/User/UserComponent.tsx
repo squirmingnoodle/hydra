@@ -7,7 +7,7 @@ import { ThemeContext } from "../../../contexts/SettingsContexts/ThemeContext";
 import Numbers from "../../../utils/Numbers";
 import { useURLNavigation } from "../../../utils/navigation";
 
-export default function UserComponent({ user }: { user: User }) {
+export default React.memo(function UserComponent({ user }: { user: User }) {
   const { pushURL } = useURLNavigation();
   const { theme } = useContext(ThemeContext);
 
@@ -95,7 +95,7 @@ export default function UserComponent({ user }: { user: User }) {
       />
     </View>
   );
-}
+});
 
 const styles = StyleSheet.create({
   userContainer: {

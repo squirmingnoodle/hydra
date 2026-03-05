@@ -2,7 +2,7 @@ import NetInfo, {
   NetInfoState,
   NetInfoStateType,
 } from "@react-native-community/netinfo";
-import { createContext, useEffect, useState } from "react";
+import { createContext, useEffect, useMemo, useState } from "react";
 import { useAccountScopedMMKVObject } from "../../utils/accountScopedSettings";
 
 export type DataMode = "normal" | "lowData";
@@ -66,14 +66,17 @@ export function DataModeProvider({ children }: React.PropsWithChildren) {
     return () => unsubscribe();
   }, []);
 
+  const value = useMemo(
+    () => ({
+      currentDataMode,
+      dataModeSettings,
+      changeDataModeSetting,
+    }),
+    [currentDataMode, dataModeSettings],
+  );
+
   return (
-    <DataModeContext.Provider
-      value={{
-        currentDataMode,
-        dataModeSettings,
-        changeDataModeSetting,
-      }}
-    >
+    <DataModeContext.Provider value={value}>
       {children}
     </DataModeContext.Provider>
   );

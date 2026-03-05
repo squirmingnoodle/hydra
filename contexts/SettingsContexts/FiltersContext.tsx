@@ -124,9 +124,8 @@ export function FiltersProvider({ children }: React.PropsWithChildren) {
     });
   };
 
-  return (
-    <FiltersContext.Provider
-      value={{
+  const value = useMemo(
+    () => ({
         filterSeenPosts,
         toggleFilterSeenPosts: (newValue = !filterSeenPosts) =>
           setFilterSeenPosts(newValue),
@@ -183,8 +182,22 @@ export function FiltersProvider({ children }: React.PropsWithChildren) {
         doesCommentPassTextFilter,
 
         filterPostsByAI,
-      }}
-    >
+    }),
+    [
+      filterSeenPosts,
+      hideSeenURLs,
+      hideFilteredSubreddits,
+      autoMarkAsSeen,
+      filterText,
+      aiFilterText,
+      textFilterMap,
+      isPro,
+      customerId,
+    ],
+  );
+
+  return (
+    <FiltersContext.Provider value={value}>
       {children}
     </FiltersContext.Provider>
   );

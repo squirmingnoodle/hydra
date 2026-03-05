@@ -31,7 +31,7 @@ type CompactPostMediaProps = {
 
 const MEDIA_SQUARE_SIZE = 60;
 
-export default function CompactPostMedia({ post }: CompactPostMediaProps) {
+export default React.memo(function CompactPostMedia({ post }: CompactPostMediaProps) {
   const { theme } = useContext(ThemeContext);
   const { currentDataMode } = useContext(DataModeContext);
   const { interactedWithPost } = useContext(PostInteractionContext);
@@ -230,7 +230,7 @@ export default function CompactPostMedia({ post }: CompactPostMediaProps) {
       )}
     </View>
   );
-}
+});
 
 const styles = StyleSheet.create({
   container: {

@@ -1,4 +1,4 @@
-import { createContext } from "react";
+import { createContext, useMemo } from "react";
 import {
   useAccountScopedMMKVBoolean,
   useAccountScopedMMKVString,
@@ -61,9 +61,8 @@ export function TabSettingsProvider({ children }: React.PropsWithChildren) {
     storedModernAccountViewLastCrashReason ??
     initialValues.modernAccountViewLastCrashReason;
 
-  return (
-    <TabSettingsContext.Provider
-      value={{
+  const value = useMemo(
+    () => ({
         showUsername: showUsername ?? initialValues.showUsername,
         toggleShowUsername: (newValue = !showUsername) =>
           setShowUsername(newValue),
@@ -90,8 +89,19 @@ export function TabSettingsProvider({ children }: React.PropsWithChildren) {
         modernAccountViewLastCrashReason,
         setModernAccountViewLastCrashReason: (newValue = "") =>
           setModernAccountViewLastCrashReason(newValue),
-      }}
-    >
+    }),
+    [
+      showUsername,
+      hideTabsOnScroll,
+      liquidGlassEnabled,
+      modernAccountViewEnabled,
+      modernAccountViewAutoDisabled,
+      modernAccountViewLastCrashReason,
+    ],
+  );
+
+  return (
+    <TabSettingsContext.Provider value={value}>
       {children}
     </TabSettingsContext.Provider>
   );
