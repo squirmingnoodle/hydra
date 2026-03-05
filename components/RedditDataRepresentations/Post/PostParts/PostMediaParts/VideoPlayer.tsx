@@ -97,8 +97,7 @@ function VideoPlayer({
 
   const videoRatio = aspectRatio ?? 1;
   const heightIfFullSize = width / videoRatio;
-  const maxVideoHeight = videoRatio < 1 ? height * 0.9 : height * 0.6;
-  const videoHeight = Math.min(maxVideoHeight, heightIfFullSize);
+  const videoHeight = Math.min(height * 0.6, heightIfFullSize);
 
   const video = useRef<VideoView>(null);
   const progress = useRef(new Animated.Value(0)).current;
@@ -154,14 +153,12 @@ function VideoPlayer({
       ) : (
         <>
           <TouchableWithoutFeedback
-            onPress={(event) => {
-              event.stopPropagation();
+            onPress={() => {
               interactedWithPost();
               video.current?.enterFullscreen();
               player.play();
             }}
-            onLongPress={(event) => {
-              event.stopPropagation();
+            onLongPress={() => {
               return videoDownloadURL
                 ? shareMedia("video", videoDownloadURL, { subreddit })
                 : null;

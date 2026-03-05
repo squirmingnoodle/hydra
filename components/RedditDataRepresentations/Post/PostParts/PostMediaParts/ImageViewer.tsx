@@ -26,8 +26,8 @@ export default function ImageViewer({
   subreddit?: string;
 }) {
   const { currentDataMode } = useContext(DataModeContext);
-  const shareMedia = useMediaSharing();
   const { width, height } = useWindowDimensions();
+  const shareMedia = useMediaSharing();
 
   const [loadLowData, setLoadLowData] = useState(currentDataMode === "lowData");
   const [visible, setVisible] = useState(false);
@@ -103,17 +103,18 @@ export default function ImageViewer({
         <TouchableHighlight
           activeOpacity={1}
           key={index}
-          onPress={(event) => {
-            event.stopPropagation();
+          onPress={() => {
             setLoadLowData(false);
             initialImageIndex.current = index;
             setVisible(true);
           }}
           style={styles.touchableZone}
           underlayColor={theme.background}
-          onLongPress={(event) => {
-            event.stopPropagation();
-            return shareMedia("image", images[index], {
+          delayLongPress={250}
+          onLongPress={async () => {
+            const imageUrl = images[index];
+            if (!imageUrl) return;
+            await shareMedia("image", imageUrl, {
               subreddit,
               allMediaUrls: images,
             });
@@ -201,13 +202,6 @@ const styles = StyleSheet.create({
   },
   imageCountText: {
     padding: 5,
-  },
-  gifContainer: {
-    flex: 1,
-    margin: 5,
-    left: 0,
-    bottom: 0,
-    opacity: 0.6,
   },
   isGifContainer: {
     position: "absolute",

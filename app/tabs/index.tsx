@@ -71,7 +71,8 @@ export default function Tabs() {
   const isSwitchingAccount = useRef(false);
 
   const showLiquidGlassTabBar = Platform.OS === "ios" && liquidGlassEnabled;
-  const useNativeLiquidTabs = showLiquidGlassTabBar;
+  // TODO: Re-enable native liquid tabs after post video fullscreen stability is verified.
+  const useNativeLiquidTabs = false;
   const tabBarGlassTint =
     theme.systemModeStyle === "dark"
       ? "systemChromeMaterialDark"

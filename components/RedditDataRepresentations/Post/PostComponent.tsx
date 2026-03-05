@@ -283,7 +283,9 @@ export default function PostComponent({
        */
       onPostInteraction={useMemo(
         () => () => {
-          setSeenValue(true);
+          if (!isPostSeen(post)) {
+            void markPostSeen(post);
+          }
         },
         [post.id],
       )}
