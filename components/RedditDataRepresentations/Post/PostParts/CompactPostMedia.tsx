@@ -1,13 +1,13 @@
 import { Entypo, FontAwesome, FontAwesome5 } from "@expo/vector-icons";
 import { BlurView } from "expo-blur";
+import { Image } from "expo-image";
 import { openExternalLink } from "../../../../utils/openExternalLink";
-import React, { useContext, useState } from "react";
+import React, { useContext, useRef, useState } from "react";
 import {
   Text,
   StyleSheet,
   View,
   TouchableOpacity,
-  Image,
   ActivityIndicator,
 } from "react-native";
 
@@ -42,6 +42,13 @@ export default function CompactPostMedia({ post }: CompactPostMediaProps) {
     (blurNSFW && post.isNSFW) || (blurSpoilers && post.isSpoiler);
   const [blur, setBlur] = useState(isBlurable);
 
+  const lastLoadedPost = useRef(post.id);
+  if (lastLoadedPost.current !== post.id) {
+    // Component was recycled by FlashList. Need to reset state.
+    lastLoadedPost.current = post.id;
+    setBlur(isBlurable);
+  }
+
   const shareMedia = useMediaSharing();
 
   const [mediaOpen, setMediaOpen] = useState(false);
@@ -71,7 +78,11 @@ export default function CompactPostMedia({ post }: CompactPostMediaProps) {
             <FontAwesome name="play-circle" style={styles.icon} />
           </View>
           {post.imageThumbnail && (
-            <Image src={post.imageThumbnail} style={styles.image} />
+            <Image
+              source={{ uri: post.imageThumbnail }}
+              recyclingKey={post.imageThumbnail}
+              style={styles.image}
+            />
           )}
           {!post.imageThumbnail && !mediaOpen && (
             <FontAwesome5
@@ -103,7 +114,11 @@ export default function CompactPostMedia({ post }: CompactPostMediaProps) {
             )}
           </View>
           {post.imageThumbnail && (
-            <Image src={post.imageThumbnail} style={styles.image} />
+            <Image
+              source={{ uri: post.imageThumbnail }}
+              recyclingKey={post.imageThumbnail}
+              style={styles.image}
+            />
           )}
           {!post.imageThumbnail && (
             <FontAwesome5
@@ -172,7 +187,8 @@ export default function CompactPostMedia({ post }: CompactPostMediaProps) {
           {post.openGraphData && currentDataMode !== "lowData" && (
             <Image
               source={{ uri: post.openGraphData.image }}
-              resizeMode="cover"
+              contentFit="cover"
+              recyclingKey={post.openGraphData.image}
               style={styles.image}
             />
           )}

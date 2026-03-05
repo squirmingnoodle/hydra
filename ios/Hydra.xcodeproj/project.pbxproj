@@ -407,9 +407,9 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_ALTERNATE_APPICON_NAMES = "cerberus hail_hydra hail_hydra_dark";
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-					CLANG_ENABLE_MODULES = YES;
-					CLANG_WARN_NULLABILITY_COMPLETENESS = NO;
-					CODE_SIGN_ENTITLEMENTS = Hydra/Hydra.entitlements;
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_WARN_NULLABILITY_COMPLETENESS = NO;
+				CODE_SIGN_ENTITLEMENTS = Hydra/Hydra.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
@@ -451,9 +451,9 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_ALTERNATE_APPICON_NAMES = "cerberus hail_hydra hail_hydra_dark";
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-					CLANG_ENABLE_MODULES = YES;
-					CLANG_WARN_NULLABILITY_COMPLETENESS = NO;
-					CODE_SIGN_ENTITLEMENTS = Hydra/HydraRelease.entitlements;
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_WARN_NULLABILITY_COMPLETENESS = NO;
+				CODE_SIGN_ENTITLEMENTS = Hydra/HydraRelease.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
@@ -539,7 +539,7 @@
 				LIBRARY_SEARCH_PATHS = "$(SDKROOT)/usr/lib/swift\"$(inherited)\"";
 				MTL_ENABLE_DEBUG_INFO = YES;
 				ONLY_ACTIVE_ARCH = YES;
-				REACT_NATIVE_PATH = "${PODS_ROOT}/../../node_modules/react-native";
+				REACT_NATIVE_PATH = "${PODS_ROOT}/../../../../../node_modules/react-native";
 				SDKROOT = iphoneos;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "$(inherited) DEBUG";
 				SWIFT_ENABLE_EXPLICIT_MODULES = NO;
@@ -595,7 +595,7 @@
 				);
 				LIBRARY_SEARCH_PATHS = "$(SDKROOT)/usr/lib/swift\"$(inherited)\"";
 				MTL_ENABLE_DEBUG_INFO = NO;
-				REACT_NATIVE_PATH = "${PODS_ROOT}/../../node_modules/react-native";
+				REACT_NATIVE_PATH = "${PODS_ROOT}/../../../../../node_modules/react-native";
 				SDKROOT = iphoneos;
 				SWIFT_ENABLE_EXPLICIT_MODULES = NO;
 				USE_HERMES = true;

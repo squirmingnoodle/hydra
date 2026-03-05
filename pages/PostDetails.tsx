@@ -377,7 +377,10 @@ function PostDetails(props: PostDetailsProps) {
 }
 
 export default (props: PostDetailsProps) => {
-  modifyStat(Stat.POSTS_VIEWED, 1);
+  useEffect(() => {
+    modifyStat(Stat.POSTS_VIEWED, 1);
+  }, []);
+
   return (
     <ScrollToNextButtonProvider>
       <ScrollerProvider>
