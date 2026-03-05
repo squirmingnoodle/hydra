@@ -1,4 +1,4 @@
-import { createContext, useState } from "react";
+import { createContext, useMemo, useState } from "react";
 
 const initialScrollerContext = {
   scrollDisabled: false,
@@ -12,13 +12,16 @@ export function ScrollerProvider({ children }: React.PropsWithChildren) {
     initialScrollerContext.scrollDisabled,
   );
 
+  const value = useMemo(
+    () => ({
+      scrollDisabled,
+      setScrollDisabled,
+    }),
+    [scrollDisabled],
+  );
+
   return (
-    <ScrollerContext.Provider
-      value={{
-        scrollDisabled,
-        setScrollDisabled,
-      }}
-    >
+    <ScrollerContext.Provider value={value}>
       {children}
     </ScrollerContext.Provider>
   );

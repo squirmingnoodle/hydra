@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useContext, useEffect, useMemo, useState } from "react";
 import { Alert } from "react-native";
 
 import { AccountContext } from "./AccountContext";
@@ -209,19 +209,22 @@ export function SubredditProvider({ children }: React.PropsWithChildren) {
     loadData();
   }, [currentUser]);
 
+  const value = useMemo(
+    () => ({
+      isLoadingSubreddits,
+      subreddits,
+      multis,
+      subscribe,
+      unsubscribe,
+      toggleFavorite,
+      addSubToMulti,
+      deleteSubFromMulti,
+    }),
+    [isLoadingSubreddits, subreddits, multis],
+  );
+
   return (
-    <SubredditContext.Provider
-      value={{
-        isLoadingSubreddits,
-        subreddits,
-        multis,
-        subscribe,
-        unsubscribe,
-        toggleFavorite,
-        addSubToMulti,
-        deleteSubFromMulti,
-      }}
-    >
+    <SubredditContext.Provider value={value}>
       {children}
     </SubredditContext.Provider>
   );

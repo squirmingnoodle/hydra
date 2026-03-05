@@ -1,5 +1,5 @@
 import * as Notifications from "expo-notifications";
-import { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useContext, useEffect, useMemo, useState } from "react";
 
 import { AccountContext } from "./AccountContext";
 import { getInboxItems } from "../api/Messages";
@@ -50,14 +50,17 @@ export function InboxProvider({ children }: React.PropsWithChildren) {
     Notifications.setBadgeCountAsync(inboxCount);
   }, [inboxCount]);
 
+  const value = useMemo(
+    () => ({
+      inboxCount,
+      setInboxCount,
+      checkForMessages,
+    }),
+    [inboxCount, checkForMessages],
+  );
+
   return (
-    <InboxContext.Provider
-      value={{
-        inboxCount,
-        setInboxCount,
-        checkForMessages,
-      }}
-    >
+    <InboxContext.Provider value={value}>
       {children}
     </InboxContext.Provider>
   );

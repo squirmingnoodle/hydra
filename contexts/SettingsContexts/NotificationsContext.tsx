@@ -1,5 +1,5 @@
 import * as Notifications from "expo-notifications";
-import { createContext, useContext, useEffect } from "react";
+import { createContext, useContext, useEffect, useMemo } from "react";
 
 import { registerNotifications } from "../../api/Notifications";
 import RedditCookies from "../../utils/RedditCookies";
@@ -82,13 +82,16 @@ export function NotificationsProvider({ children }: React.PropsWithChildren) {
     }
   }, [isPro, notificationsEnabled, accounts]);
 
+  const value = useMemo(
+    () => ({
+      notificationsEnabled,
+      toggleNotifications,
+    }),
+    [notificationsEnabled, isPro],
+  );
+
   return (
-    <NotificationsContext.Provider
-      value={{
-        notificationsEnabled,
-        toggleNotifications,
-      }}
-    >
+    <NotificationsContext.Provider value={value}>
       {children}
     </NotificationsContext.Provider>
   );

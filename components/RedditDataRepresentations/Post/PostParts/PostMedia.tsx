@@ -23,7 +23,7 @@ type PostMediaProps = {
   maxLines?: number;
 };
 
-export default function PostMedia({
+export default React.memo(function PostMedia({
   post,
   renderHTML = true,
   maxLines,
@@ -136,7 +136,7 @@ export default function PostMedia({
       )}
     </>
   );
-}
+});
 
 const styles = StyleSheet.create({
   crossPostContainer: {
