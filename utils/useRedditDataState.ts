@@ -103,7 +103,7 @@ export default function useRedditDataState<
       }
     }
     if (newData.length > 0) {
-      setData([...data, ...newData]);
+      setData((prevData) => [...prevData, ...newData]);
     } else {
       setHitFilterLimit(true);
     }

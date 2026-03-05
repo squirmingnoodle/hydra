@@ -15,6 +15,8 @@ type ApiOptions = {
   dontJsonifyResponse?: boolean;
 };
 
+let cookiesPersisted = false;
+
 export async function api(
   url: string,
   fetchOptions: SafeFetchOptions = {},
@@ -45,8 +47,12 @@ export async function api(
    * when the session ends. iOS automatically clears cookies without an expiration
    * date on app launch. We want sessions to persist between app closes,
    * so we set an expiration date of 10,000 days in the future.
+   * Only needs to run once per session since the cookies are set on first response.
    */
-  await RedditCookies.persistSessionCookies();
+  if (!cookiesPersisted) {
+    cookiesPersisted = true;
+    RedditCookies.persistSessionCookies();
+  }
 
   if (apiOptions.dontJsonifyResponse) {
     return await res.text();
