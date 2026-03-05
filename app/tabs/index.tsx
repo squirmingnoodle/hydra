@@ -118,7 +118,7 @@ export default function Tabs() {
     : 0;
   const tabBarFloatingBottom = showLiquidGlassTabBar
     ? Math.max(14, insets.bottom - 10)
-    : -TAB_BAR_REMOVED_PADDING_BOTTOM;
+    : 0;
 
   useHandleIncomingURLs();
 
@@ -331,8 +331,8 @@ export default function Tabs() {
                 right: tabBarRightInset,
                 bottom: tabBarFloatingBottom,
                 height: showLiquidGlassTabBar ? 66 : undefined,
-                paddingTop: showLiquidGlassTabBar ? 2 : 0,
-                paddingBottom: showLiquidGlassTabBar ? 2 : 0,
+                paddingTop: showLiquidGlassTabBar ? 2 : 4,
+                paddingBottom: showLiquidGlassTabBar ? 2 : 4,
                 backgroundColor: showLiquidGlassTabBar
                   ? FULLY_TRANSPARENT_COLOR
                   : theme.background,
