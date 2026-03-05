@@ -1,5 +1,5 @@
 import { useIsFocused } from "@react-navigation/native";
-import React, { useContext, useEffect } from "react";
+import React, { useCallback, useContext, useEffect, useRef } from "react";
 import { StyleSheet, View } from "react-native";
 
 import { getInboxItems, InboxItem } from "../api/Messages";
@@ -32,6 +32,25 @@ export default function InboxPage() {
     },
   });
 
+  const modifyMessagesRef = useRef(modifyMessages);
+  modifyMessagesRef.current = modifyMessages;
+
+  const renderInboxItem = useCallback(
+    ({ item }: { item: InboxItem }) =>
+      item.type === "message" ? (
+        <MessageComponent
+          message={item}
+          setMessage={(newMessage) => modifyMessagesRef.current([newMessage])}
+        />
+      ) : (
+        <CommentReplyComponent
+          commentReply={item}
+          setMessage={(newMessage) => modifyMessagesRef.current([newMessage])}
+        />
+      ),
+    [],
+  );
+
   useEffect(() => {
     if (!isFocused) return;
     refreshMessages();
@@ -52,19 +71,7 @@ export default function InboxPage() {
         fullyLoaded={fullyLoaded}
         hitFilterLimit={hitFilterLimit}
         data={messages}
-        renderItem={({ item }) =>
-          item.type === "message" ? (
-            <MessageComponent
-              message={item}
-              setMessage={(newMessage) => modifyMessages([newMessage])}
-            />
-          ) : (
-            <CommentReplyComponent
-              commentReply={item}
-              setMessage={(newMessage) => modifyMessages([newMessage])}
-            />
-          )
-        }
+        renderItem={renderInboxItem}
       />
     </View>
   );

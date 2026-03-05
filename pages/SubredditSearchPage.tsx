@@ -1,4 +1,4 @@
-import React, { useContext, useEffect } from "react";
+import React, { useCallback, useContext, useEffect, useRef } from "react";
 import { StyleSheet, View } from "react-native";
 import { Post, searchSubredditPosts } from "../api/Posts";
 
@@ -38,6 +38,21 @@ export default function SubredditSearchPage({
       }),
     refreshDependencies: [searchText, sort, sortTime],
   });
+
+  const modifyPostsRef = useRef(modifyPosts);
+  modifyPostsRef.current = modifyPosts;
+
+  const renderPostItem = useCallback(
+    ({ item }: { item: Post }) => (
+      <PostComponent
+        post={item}
+        setPost={(newPost) => {
+          modifyPostsRef.current([newPost]);
+        }}
+      />
+    ),
+    [],
+  );
 
   useEffect(() => {
     navigation.setOptions({
@@ -79,14 +94,7 @@ export default function SubredditSearchPage({
         fullyLoaded={fullyLoaded}
         hitFilterLimit={hitFilterLimit}
         data={posts}
-        renderItem={({ item }) => (
-          <PostComponent
-            post={item}
-            setPost={(newPost) => {
-              modifyPosts([newPost]);
-            }}
-          />
-        )}
+        renderItem={renderPostItem}
       />
     </View>
   );
