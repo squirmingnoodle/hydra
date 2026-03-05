@@ -1,4 +1,4 @@
-import React, { useContext, useEffect, useState } from "react";
+import React, { useCallback, useContext, useEffect, useRef, useState } from "react";
 import { StyleSheet, View } from "react-native";
 import { getPosts, Post } from "../api/Posts";
 
@@ -86,12 +86,58 @@ export default function PostsPage({
 
   useOfferGalleryMode({ url, posts });
 
-  const handleScrolledPastPost = async (post: Post) => {
+  const handleScrolledPastPostRef = useRef<(post: Post) => void>(undefined);
+  handleScrolledPastPostRef.current = async (post: Post) => {
     if (autoMarkAsSeen) {
       await markPostSeen(post);
       rerender((prev) => prev + 1);
     }
   };
+
+  const onViewableItemsChanged = useCallback(
+    (data: { viewableItems: Array<{ index: number | null }>; changed: Array<{ isViewable: boolean; index: number | null; item: unknown }> }) => {
+      const maxVisibleItem =
+        data.viewableItems[data.viewableItems.length - 1]?.index ?? -1;
+      data.changed
+        .filter(
+          (item) =>
+            !item.isViewable && (item?.index ?? 0) < maxVisibleItem,
+        )
+        .forEach((viewToken) => {
+          handleScrolledPastPostRef.current?.(viewToken.item as Post);
+        });
+    },
+    [],
+  );
+
+  const modifyPostsRef = useRef(modifyPosts);
+  modifyPostsRef.current = modifyPosts;
+  const deletePostsRef = useRef(deletePosts);
+  deletePostsRef.current = deletePosts;
+  const showSplitViewRef = useRef(showSplitView);
+  showSplitViewRef.current = showSplitView;
+
+  const renderItem = useCallback(
+    ({ item }: { item: Post }) => (
+      <PostComponent
+        post={item}
+        setPost={(newPost) => {
+          modifyPostsRef.current([newPost]);
+        }}
+        deletePost={() => {
+          deletePostsRef.current([item]);
+        }}
+        onPostOpen={
+          showSplitViewRef.current
+            ? (url) => {
+                setPostDetailsURL(url);
+              }
+            : undefined
+        }
+      />
+    ),
+    [],
+  );
 
   useEffect(() => {
     if (subreddit && !isCombinedSubredditFeed) {
@@ -180,38 +226,8 @@ export default function PostsPage({
           hitFilterLimit={hitFilterLimit}
           data={posts}
           extraData={rerenderCount} // This triggers a rerender of the visible list items
-          renderItem={({ item }) => (
-            <PostComponent
-              post={item}
-              setPost={(newPost) => {
-                modifyPosts([newPost]);
-              }}
-              deletePost={() => {
-                deletePosts([item]);
-              }}
-              onPostOpen={
-                showSplitView
-                  ? (url) => {
-                      setPostDetailsURL(url);
-                    }
-                  : undefined
-              }
-            />
-          )}
-          onViewableItemsChanged={(data) => {
-            const maxVisibleItem =
-              data.viewableItems[data.viewableItems.length - 1]?.index ?? -1;
-            const changedItems = data.changed;
-            changedItems
-              .filter(
-                (item) =>
-                  !item.isViewable && (item?.index ?? 0) < maxVisibleItem,
-              )
-              .forEach((viewToken) => {
-                const post = viewToken.item as Post;
-                handleScrolledPastPost(post);
-              });
-          }}
+          renderItem={renderItem}
+          onViewableItemsChanged={onViewableItemsChanged}
         />
         {postDetailsURL && showSplitView && (
           <>

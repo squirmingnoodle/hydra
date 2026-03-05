@@ -72,8 +72,6 @@ export default function PostComponent({
   const { toggleFilterSubreddit } = useContext(FiltersContext);
   const showContextMenu = useContextMenu();
 
-  const openContextMenu = useContextMenu();
-
   const isOnMultiSubredditPage =
     params && "url" in params && params.url
       ? new RedditURL(params.url).isCombinedSubredditFeed()
@@ -179,7 +177,7 @@ export default function PostComponent({
       label: "Filter Subreddit",
       isAllowed: !!deletePost,
       handle: async () => {
-        const result = await openContextMenu({
+        const result = await showContextMenu({
           options: [
             "Filter for a day",
             "Filter for a week",
