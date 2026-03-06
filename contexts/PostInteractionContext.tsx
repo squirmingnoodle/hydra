@@ -1,4 +1,4 @@
-import { createContext } from "react";
+import { createContext, useMemo } from "react";
 
 const initialMediaViewerContext = {
   interactedWithPost: () => {},
@@ -12,12 +12,15 @@ export function PostInteractionProvider({
 }: React.PropsWithChildren<{
   onPostInteraction: () => void;
 }>) {
+  const value = useMemo(
+    () => ({
+      interactedWithPost: onPostInteraction,
+    }),
+    [onPostInteraction],
+  );
+
   return (
-    <PostInteractionContext.Provider
-      value={{
-        interactedWithPost: onPostInteraction,
-      }}
-    >
+    <PostInteractionContext.Provider value={value}>
       {children}
     </PostInteractionContext.Provider>
   );

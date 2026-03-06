@@ -324,7 +324,7 @@ function PostDetails(props: PostDetailsProps) {
             />
           }
           scrollEnabled={!scrollDisabled}
-          onScroll={(e) => handleScrollForTabBar(e)}
+          onScroll={handleScrollForTabBar}
           contentContainerStyle={{
             paddingBottom: 100,
           }}
@@ -343,9 +343,9 @@ function PostDetails(props: PostDetailsProps) {
               loadMoreComments={loadMoreCommentsFunc}
               postDetail={deferredPostDetail}
               scrollChange={scrollChange}
-              changeComment={(comment: Comment) => changeComment(comment)}
-              deleteComment={(comment: Comment) => deleteComment(comment)}
-              collapseThread={(comment: Comment) => collapseThread(comment)}
+              changeComment={changeComment}
+              deleteComment={deleteComment}
+              collapseThread={collapseThread}
             />
           ) : postDetail !== deferredPostDetail ? (
             <View
@@ -377,7 +377,10 @@ function PostDetails(props: PostDetailsProps) {
 }
 
 export default (props: PostDetailsProps) => {
-  modifyStat(Stat.POSTS_VIEWED, 1);
+  useEffect(() => {
+    modifyStat(Stat.POSTS_VIEWED, 1);
+  }, []);
+
   return (
     <ScrollToNextButtonProvider>
       <ScrollerProvider>

@@ -1,5 +1,5 @@
 import { AntDesign, Feather, FontAwesome } from "@expo/vector-icons";
-import React, { useContext, useMemo, useState } from "react";
+import React, { useContext, useMemo, useRef, useState } from "react";
 import {
   StyleSheet,
   View,
@@ -49,7 +49,7 @@ type PostComponentProps = {
   onPostOpen?: (url: string) => void;
 };
 
-export default function PostComponent({
+export default React.memo(function PostComponent({
   post,
   setPost,
   deletePost,
@@ -72,16 +72,17 @@ export default function PostComponent({
   const { toggleFilterSubreddit } = useContext(FiltersContext);
   const showContextMenu = useContextMenu();
 
-  const openContextMenu = useContextMenu();
-
   const isOnMultiSubredditPage =
     params && "url" in params && params.url
       ? new RedditURL(params.url).isCombinedSubredditFeed()
       : true;
 
-  const seen = isPostSeen(post);
-
-  const [_, rerender] = useState(0);
+  const [seen, setSeen] = useState(() => isPostSeen(post));
+  const lastSeenPostId = useRef(post.id);
+  if (lastSeenPostId.current !== post.id) {
+    lastSeenPostId.current = post.id;
+    setSeen(isPostSeen(post));
+  }
 
   const openSavedPostCategoryPicker = async ({
     showClearOption = true,
@@ -179,7 +180,7 @@ export default function PostComponent({
       label: "Filter Subreddit",
       isAllowed: !!deletePost,
       handle: async () => {
-        const result = await openContextMenu({
+        const result = await showContextMenu({
           options: [
             "Filter for a day",
             "Filter for a week",
@@ -241,7 +242,7 @@ export default function PostComponent({
     } else {
       await markPostUnseen(post);
     }
-    rerender((prev) => prev + 1);
+    setSeen(value);
   };
 
   const voteOnPost = async (voteOption: VoteOption) => {
@@ -285,6 +286,7 @@ export default function PostComponent({
         () => () => {
           if (!isPostSeen(post)) {
             void markPostSeen(post);
+            setSeen(true);
           }
         },
         [post.id],
@@ -575,7 +577,7 @@ export default function PostComponent({
       </Slideable>
     </PostInteractionProvider>
   );
-}
+});
 
 const styles = StyleSheet.create({
   postContainer: {

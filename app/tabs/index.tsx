@@ -98,7 +98,7 @@ export default function Tabs() {
     : 0;
   const tabBarFloatingBottom = showLiquidGlassTabBar
     ? Math.max(14, insets.bottom - 10)
-    : -TAB_BAR_REMOVED_PADDING_BOTTOM;
+    : 0;
 
   useHandleIncomingURLs();
 

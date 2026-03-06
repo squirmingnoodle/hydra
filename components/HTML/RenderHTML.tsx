@@ -476,7 +476,11 @@ export function TextNodeElem({
 }: TextNodeProps) {
   const { theme } = useContext(ThemeContext);
 
-  const { customThemes, remainingText } = extractThemeFromText(textNode.data);
+  const { customThemes, remainingText } = textNode.data.includes(
+    "::hydra-theme-import::",
+  )
+    ? extractThemeFromText(textNode.data)
+    : { customThemes: [], remainingText: textNode.data };
 
   const TextComponment = (
     <Text

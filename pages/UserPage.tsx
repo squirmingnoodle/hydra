@@ -345,6 +345,44 @@ function LegacyUserPageContent({
     ],
   });
 
+  const modifyUserContentRef = useRef(modifyUserContent);
+  modifyUserContentRef.current = modifyUserContent;
+  const deleteUserContentRef = useRef(deleteUserContent);
+  deleteUserContentRef.current = deleteUserContent;
+
+  const renderUserContentItem = useCallback(
+    ({ item: content }: { item: UserContent }) => {
+      if (!content) {
+        return null;
+      }
+      if (content.type === "post") {
+        return (
+          <PostComponent
+            post={content}
+            setPost={(newPost) => modifyUserContentRef.current([newPost])}
+          />
+        );
+      }
+      if (content.type === "comment") {
+        return (
+          <CommentComponent
+            comment={content}
+            index={0}
+            displayInList
+            changeComment={(newComment) =>
+              modifyUserContentRef.current([newComment])
+            }
+            deleteComment={(comment) =>
+              deleteUserContentRef.current([comment])
+            }
+          />
+        );
+      }
+      return null;
+    },
+    [],
+  );
+
   const isDeepPath = !!new URL(url).getBasePath().split("/")[5]; // More than just /user/username like /user/username/comments
 
   const loadUser = async () => {
@@ -488,33 +526,7 @@ function LegacyUserPageContent({
           hitFilterLimit={hitFilterLimit}
           data={userContent}
           getItemType={(item) => item?.type ?? "unknown"}
-          renderItem={({ item: content }) => {
-            if (!content) {
-              return null;
-            }
-            if (content.type === "post") {
-              return (
-                <PostComponent
-                  post={content}
-                  setPost={(newPost) => modifyUserContent([newPost])}
-                />
-              );
-            }
-            if (content.type === "comment") {
-              return (
-                <CommentComponent
-                  comment={content}
-                  index={0}
-                  displayInList
-                  changeComment={(newComment) =>
-                    modifyUserContent([newComment])
-                  }
-                  deleteComment={(comment) => deleteUserContent([comment])}
-                />
-              );
-            }
-            return null;
-          }}
+          renderItem={renderUserContentItem}
         />
       </AccessFailureComponent>
     </View>

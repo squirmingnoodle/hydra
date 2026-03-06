@@ -14,6 +14,7 @@ import {
   MutableRefObject,
   PropsWithChildren,
   useEffect,
+  useMemo,
   useRef,
 } from "react";
 import { Animated, useWindowDimensions } from "react-native";
@@ -60,12 +61,15 @@ export function StackFutureProvider({
     };
   }, [navigation]);
 
+  const value = useMemo(
+    () => ({
+      clearFuture: () => (futureRoutes.current = []),
+    }),
+    [],
+  );
+
   return (
-    <StackFutureContext.Provider
-      value={{
-        clearFuture: () => (futureRoutes.current = []),
-      }}
-    >
+    <StackFutureContext.Provider value={value}>
       <Animated.View
         style={{
           width: "100%",

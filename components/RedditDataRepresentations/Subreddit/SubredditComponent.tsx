@@ -7,7 +7,7 @@ import { ThemeContext } from "../../../contexts/SettingsContexts/ThemeContext";
 import Numbers from "../../../utils/Numbers";
 import { useURLNavigation } from "../../../utils/navigation";
 
-export default function SubredditComponent({
+export default React.memo(function SubredditComponent({
   subreddit,
 }: {
   subreddit: Subreddit;
@@ -109,7 +109,7 @@ export default function SubredditComponent({
       />
     </View>
   );
-}
+});
 
 const styles = StyleSheet.create({
   subredditContainer: {

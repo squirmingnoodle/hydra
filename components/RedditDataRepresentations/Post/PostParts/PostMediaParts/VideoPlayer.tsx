@@ -69,6 +69,10 @@ function VideoPlayer({
 
   useEventListener(player, "sourceChange", () => {
     player.volume = 0;
+    // Component was recycled by FlashList. Need to reset state.
+    // https://shopify.github.io/flash-list/docs/recycling
+    setDontRenderYet(currentDataMode === "lowData");
+    setFailedToLoadErr(null);
   });
 
   useEventListener(player, "timeUpdate", (e) => {
@@ -86,13 +90,6 @@ function VideoPlayer({
         player.play();
       }
     }
-  });
-
-  useEventListener(player, "sourceChange", () => {
-    // Component was recycled by FlashList. Need to reset state.
-    // https://shopify.github.io/flash-list/docs/recycling
-    setDontRenderYet(currentDataMode === "lowData");
-    setFailedToLoadErr(null);
   });
 
   const videoRatio = aspectRatio ?? 1;

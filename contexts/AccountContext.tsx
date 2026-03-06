@@ -1,5 +1,5 @@
 import * as Sentry from "@sentry/react-native";
-import { createContext, useEffect, useState } from "react";
+import { createContext, useEffect, useMemo, useState } from "react";
 
 import { UserAuth } from "../api/Authentication";
 import { User, getUser } from "../api/User";
@@ -143,18 +143,21 @@ export function AccountProvider({ children }: React.PropsWithChildren) {
     loadSavedData();
   }, []);
 
+  const value = useMemo(
+    () => ({
+      loginInitialized,
+      currentUser,
+      accounts,
+      logIn: logInContext,
+      logOut: logOutContext,
+      removeUser,
+      doWithTempLogout,
+    }),
+    [loginInitialized, currentUser, accounts],
+  );
+
   return (
-    <AccountContext.Provider
-      value={{
-        loginInitialized,
-        currentUser,
-        accounts,
-        logIn: logInContext,
-        logOut: logOutContext,
-        removeUser,
-        doWithTempLogout,
-      }}
-    >
+    <AccountContext.Provider value={value}>
       {children}
     </AccountContext.Provider>
   );

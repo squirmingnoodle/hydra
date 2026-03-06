@@ -42,7 +42,7 @@ export default function ScrollToNextButtonProvider({
   const [containerVerticalOffset, setContainerVerticalOffset] = useState(0);
   const [containerHorizontalOffset, setContainerHorizontalOffset] = useState(0);
 
-  const LOCKED_POSITIONS = {
+  const LOCKED_POSITIONS = useMemo(() => ({
     "bottom-right": {
       x: containerWidth - BUTTON_SIZE - EDGE_PADDING,
       y: containerHeight - BUTTON_SIZE - EDGE_PADDING,
@@ -83,7 +83,7 @@ export default function ScrollToNextButtonProvider({
       x: containerWidth - BUTTON_SIZE - EDGE_PADDING,
       y: (containerHeight * 3) / 4 - BUTTON_SIZE,
     },
-  };
+  }), [containerWidth, containerHeight]);
 
   const [storedButtonPosition, setButtonPosition] = useAccountScopedMMKVString(
     "scrollToNextButtonPosition",

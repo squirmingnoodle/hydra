@@ -1,4 +1,4 @@
-import { createContext } from "react";
+import { createContext, useMemo } from "react";
 import { deviceSupportsSplitView } from "../../utils/useSplitViewSupport";
 import {
   useAccountScopedMMKVBoolean,
@@ -100,9 +100,8 @@ export function PostSettingsProvider({ children }: React.PropsWithChildren) {
   const tapToCollapsePost =
     storedTapToCollapsePost ?? initialValues.tapToCollapsePost;
 
-  return (
-    <PostSettingsContext.Provider
-      value={{
+  const value = useMemo(
+    () => ({
         postCompactMode: postCompactMode ?? initialValues.postCompactMode,
         togglePostCompactMode: (newValue = !postCompactMode) =>
           setPostCompactMode(newValue),
@@ -154,8 +153,26 @@ export function PostSettingsProvider({ children }: React.PropsWithChildren) {
         tapToCollapsePost: tapToCollapsePost ?? initialValues.tapToCollapsePost,
         toggleTapToCollapsePost: (newValue = !tapToCollapsePost) =>
           setTapToCollapsePost(newValue),
-      }}
-    >
+    }),
+    [
+      postCompactMode,
+      subredditAtTop,
+      showSubredditIcon,
+      postTitleLength,
+      postTextLength,
+      linkDescriptionLength,
+      showPostFlair,
+      blurSpoilers,
+      blurNSFW,
+      showPostSummary,
+      autoPlayVideos,
+      liveTextInteraction,
+      tapToCollapsePost,
+    ],
+  );
+
+  return (
+    <PostSettingsContext.Provider value={value}>
       {children}
     </PostSettingsContext.Provider>
   );

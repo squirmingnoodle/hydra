@@ -1,5 +1,5 @@
 import { setStatusBarStyle } from "expo-status-bar";
-import { createContext, useContext, useEffect, useRef, useState } from "react";
+import { createContext, useContext, useEffect, useMemo, useRef, useState } from "react";
 
 import Themes, {
   DEFAULT_THEME,
@@ -147,9 +147,8 @@ export function ThemeProvider({ children }: React.PropsWithChildren) {
     }
   }, [purchasesInitialized, isPro]);
 
-  return (
-    <ThemeContext.Provider
-      value={{
+  const value = useMemo(
+    () => ({
         systemColorScheme,
         lightTheme,
         darkTheme,
@@ -162,8 +161,21 @@ export function ThemeProvider({ children }: React.PropsWithChildren) {
         cantUseTheme,
         customThemeData,
         setCustomThemeData,
-      }}
-    >
+    }),
+    [
+      systemColorScheme,
+      lightTheme,
+      darkTheme,
+      currentTheme,
+      useDifferentDarkTheme,
+      customThemeData,
+      purchasesInitialized,
+      isPro,
+    ],
+  );
+
+  return (
+    <ThemeContext.Provider value={value}>
       {children}
     </ThemeContext.Provider>
   );

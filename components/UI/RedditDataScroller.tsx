@@ -1,6 +1,6 @@
 import { FlashList, FlashListProps } from "@shopify/flash-list";
 import * as Haptics from "expo-haptics";
-import { useContext, useEffect, useRef, useState } from "react";
+import { useCallback, useContext, useEffect, useRef, useState } from "react";
 import {
   StyleSheet,
   RefreshControl,
@@ -66,6 +66,22 @@ function RedditDataScroller<T extends RedditDataObject>(
   );
 
   const lastScrollPosition = useRef(0);
+  const accumulatedScroll = useRef(0);
+  const flushTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
+
+  const flushScrollStat = useCallback(() => {
+    if (accumulatedScroll.current > 0) {
+      modifyStat(Stat.SCROLL_DISTANCE, accumulatedScroll.current);
+      accumulatedScroll.current = 0;
+    }
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      clearTimeout(flushTimer.current);
+      flushScrollStat();
+    };
+  }, []);
 
   const loadMoreData = async (refresh = false) => {
     if (props.fullyLoaded && !refresh) return;
@@ -120,11 +136,12 @@ function RedditDataScroller<T extends RedditDataObject>(
       onScroll={(e) => {
         handleScrollForTabBar(e);
         const scrollPosition = e.nativeEvent.contentOffset.y;
-        modifyStat(
-          Stat.SCROLL_DISTANCE,
-          Math.abs(scrollPosition - lastScrollPosition.current),
+        accumulatedScroll.current += Math.abs(
+          scrollPosition - lastScrollPosition.current,
         );
         lastScrollPosition.current = scrollPosition;
+        clearTimeout(flushTimer.current);
+        flushTimer.current = setTimeout(flushScrollStat, 2000);
       }}
       onEndReachedThreshold={2}
       onEndReached={() => {

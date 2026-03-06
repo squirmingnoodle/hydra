@@ -582,7 +582,6 @@ export function CommentComponent({
                     changeComment={changeComment}
                     deleteComment={deleteComment}
                     collapseThread={collapseThread}
-                    commentPropRef={{ current: null }}
                   />
                 ))}
               {comment.loadMore && comment.loadMore.childIds.length > 0 && (

@@ -1,5 +1,5 @@
 import { Feather } from "@expo/vector-icons";
-import React, { useContext, useEffect, useRef, useState } from "react";
+import React, { useCallback, useContext, useEffect, useRef, useState } from "react";
 import {
   StyleSheet,
   View,
@@ -82,6 +82,26 @@ export default function SearchPage() {
     loadTrending();
   }, []);
 
+  const modifySearchResultsRef = useRef(modifySearchResults);
+  modifySearchResultsRef.current = modifySearchResults;
+
+  const renderSearchItem = useCallback(
+    ({ item }: { item: SearchResult }) => {
+      if (item.type === "post")
+        return (
+          <PostComponent
+            post={item}
+            setPost={(newPost) => modifySearchResultsRef.current([newPost])}
+          />
+        );
+      if (item.type === "subreddit")
+        return <SubredditComponent subreddit={item} />;
+      if (item.type === "user") return <UserComponent user={item} />;
+      return null;
+    },
+    [],
+  );
+
   useEffect(() => {
     refreshSearchResults();
   }, [searchType]);
@@ -137,19 +157,7 @@ export default function SearchPage() {
         fullyLoaded={fullyLoaded}
         hitFilterLimit={hitFilterLimit}
         data={searchResults}
-        renderItem={({ item }) => {
-          if (item.type === "post")
-            return (
-              <PostComponent
-                post={item}
-                setPost={(newPost) => modifySearchResults([newPost])}
-              />
-            );
-          if (item.type === "subreddit")
-            return <SubredditComponent subreddit={item} />;
-          if (item.type === "user") return <UserComponent user={item} />;
-          return null;
-        }}
+        renderItem={renderSearchItem}
         ListEmptyComponent={
           loading ? (
             <View style={styles.loaderContainer}>

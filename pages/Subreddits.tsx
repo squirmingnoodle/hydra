@@ -1,5 +1,5 @@
 import { FontAwesome5, Feather } from "@expo/vector-icons";
-import React, { useContext, useRef, useState } from "react";
+import React, { useContext, useMemo, useRef, useState } from "react";
 import {
   StyleSheet,
   View,
@@ -234,115 +234,127 @@ export default function Subreddits() {
   const shouldUseSystemContentInsets =
     Platform.OS === "ios" && liquidGlassEnabled;
 
-  const scrollItems: ScrollItem[] = [
-    {
-      type: "topButton",
-      title: "Home",
-      path: "https://www.reddit.com/",
-      description: "Posts from subscriptions",
-      icon: <FontAwesome5 name="home" size={24} color={theme.text} />,
-      color: "#fa045e",
-    },
-    {
-      type: "topButton",
-      title: "Popular",
-      path: "https://www.reddit.com/r/popular",
-      description: "Most popular posts across Reddit",
-      icon: <Feather name="trending-up" size={24} color={theme.text} />,
-      color: "#008ffe",
-    },
-    {
-      type: "topButton",
-      title: "All",
-      path: "https://www.reddit.com/r/all",
-      description: "Posts across all subreddits",
-      icon: (
-        <FontAwesome5 name="sort-amount-up-alt" size={24} color={theme.text} />
-      ),
-      color: "#02d82b",
-    },
-  ];
+  const scrollItems = useMemo(() => {
+    const items: ScrollItem[] = [
+      {
+        type: "topButton",
+        title: "Home",
+        path: "https://www.reddit.com/",
+        description: "Posts from subscriptions",
+        icon: <FontAwesome5 name="home" size={24} color={theme.text} />,
+        color: "#fa045e",
+      },
+      {
+        type: "topButton",
+        title: "Popular",
+        path: "https://www.reddit.com/r/popular",
+        description: "Most popular posts across Reddit",
+        icon: <Feather name="trending-up" size={24} color={theme.text} />,
+        color: "#008ffe",
+      },
+      {
+        type: "topButton",
+        title: "All",
+        path: "https://www.reddit.com/r/all",
+        description: "Posts across all subreddits",
+        icon: (
+          <FontAwesome5
+            name="sort-amount-up-alt"
+            size={24}
+            color={theme.text}
+          />
+        ),
+        color: "#02d82b",
+      },
+    ];
 
-  if (subreddits["favorites"].length > 0) {
-    scrollItems.push({
-      type: "sectionDivider",
-      title: "favorites",
-    });
-    scrollItems.push(
-      ...subreddits["favorites"].map((sub) => ({
-        type: "subreddit" as const,
-        subreddit: sub,
-        category: "favorites",
-      })),
-    );
-  }
-
-  if (multis.length > 0) {
-    scrollItems.push({
-      type: "sectionDivider",
-      title: "multireddits",
-    });
-    scrollItems.push(
-      ...multis.map((multi) => ({
-        type: "multireddit" as const,
-        multi: multi,
-      })),
-    );
-  }
-
-  if (subreddits["moderator"].length > 0) {
-    scrollItems.push({
-      type: "sectionDivider",
-      title: "moderator",
-    });
-    scrollItems.push(
-      ...subreddits["moderator"].map((sub) => ({
-        type: "subreddit" as const,
-        subreddit: sub,
-        category: "moderator",
-      })),
-    );
-  }
-
-  if (subreddits["subscriber"].length > 0) {
-    scrollItems.push({
-      type: "sectionDivider",
-      title: "subscriber",
-    });
-    scrollItems.push(
-      ...subreddits["subscriber"].map((sub) => ({
-        type: "subreddit" as const,
-        subreddit: sub,
-        category: "subscriber",
-      })),
-    );
-  }
-
-  if (subreddits["trending"].length > 0) {
-    scrollItems.push({
-      type: "sectionDivider",
-      title: "trending",
-    });
-    scrollItems.push(
-      ...subreddits["trending"].map((sub) => ({
-        type: "subreddit" as const,
-        subreddit: sub,
-        category: "trending",
-      })),
-    );
-  }
-
-  const letterMap = "abcdefghijklmnopqrstuvwxyz".split("").reduce(
-    (acc, letter) => {
-      acc[letter] = scrollItems.findIndex(
-        (item) =>
-          item.type === "subreddit" &&
-          ["subscriber", "trending"].includes(item.category) &&
-          item.subreddit.name.charAt(0).toLowerCase() === letter,
+    if (subreddits["favorites"].length > 0) {
+      items.push({
+        type: "sectionDivider",
+        title: "favorites",
+      });
+      items.push(
+        ...subreddits["favorites"].map((sub) => ({
+          type: "subreddit" as const,
+          subreddit: sub,
+          category: "favorites",
+        })),
       );
-      return acc;
-    },
-    {} as { [key: string]: number },
+    }
+
+    if (multis.length > 0) {
+      items.push({
+        type: "sectionDivider",
+        title: "multireddits",
+      });
+      items.push(
+        ...multis.map((multi) => ({
+          type: "multireddit" as const,
+          multi: multi,
+        })),
+      );
+    }
+
+    if (subreddits["moderator"].length > 0) {
+      items.push({
+        type: "sectionDivider",
+        title: "moderator",
+      });
+      items.push(
+        ...subreddits["moderator"].map((sub) => ({
+          type: "subreddit" as const,
+          subreddit: sub,
+          category: "moderator",
+        })),
+      );
+    }
+
+    if (subreddits["subscriber"].length > 0) {
+      items.push({
+        type: "sectionDivider",
+        title: "subscriber",
+      });
+      items.push(
+        ...subreddits["subscriber"].map((sub) => ({
+          type: "subreddit" as const,
+          subreddit: sub,
+          category: "subscriber",
+        })),
+      );
+    }
+
+    if (subreddits["trending"].length > 0) {
+      items.push({
+        type: "sectionDivider",
+        title: "trending",
+      });
+      items.push(
+        ...subreddits["trending"].map((sub) => ({
+          type: "subreddit" as const,
+          subreddit: sub,
+          category: "trending",
+        })),
+      );
+    }
+
+    return items;
+  }, [subreddits, multis, theme.text]);
+
+  const letterMap = useMemo(
+    () =>
+      "abcdefghijklmnopqrstuvwxyz".split("").reduce(
+        (acc, letter) => {
+          acc[letter] = scrollItems.findIndex(
+            (item) =>
+              item.type === "subreddit" &&
+              ["subscriber", "trending"].includes(item.category) &&
+              item.subreddit.name.charAt(0).toLowerCase() === letter,
+          );
+          return acc;
+        },
+        {} as { [key: string]: number },
+      ),
+    [scrollItems],
   );
 
   const scrollToLetter = (letter: string) => {

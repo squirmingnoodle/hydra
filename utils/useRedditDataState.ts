@@ -24,12 +24,8 @@ const filterExisting = async <T extends RedditDataObject>(
   newData: T[],
   data: T[],
 ) => {
-  return newData.filter(
-    (newItem) =>
-      !data.find(
-        (datum) => datum.id === newItem.id && datum.type === newItem.type,
-      ),
-  );
+  const existingKeys = new Set(data.map((d) => `${d.type}-${d.id}`));
+  return newData.filter((item) => !existingKeys.has(`${item.type}-${item.id}`));
 };
 
 export type ErrorType = "postLoadingError" | "userLoadingError" | null;
@@ -107,7 +103,7 @@ export default function useRedditDataState<
       }
     }
     if (newData.length > 0) {
-      setData([...data, ...newData]);
+      setData((prevData) => [...prevData, ...newData]);
     } else {
       setHitFilterLimit(true);
     }

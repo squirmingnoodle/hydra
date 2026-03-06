@@ -1,4 +1,4 @@
-import { createContext, useEffect, useState } from "react";
+import { createContext, useEffect, useMemo, useState } from "react";
 import { Alert } from "react-native";
 import Purchases, {
   CustomerInfo,
@@ -144,21 +144,24 @@ export function SubscriptionsProvider({ children }: React.PropsWithChildren) {
     }
   }, [isPro]);
 
+  const value = useMemo(
+    () => ({
+      purchasesInitialized,
+      customerInfo,
+      customerId,
+      isPro,
+      buyPro,
+      proOffering,
+      getCustomerInfo,
+      isLoadingOffering,
+      inGracePeriod,
+      gracePeriodEndsAt,
+    }),
+    [purchasesInitialized, customerInfo, proOffering, isLoadingOffering],
+  );
+
   return (
-    <SubscriptionsContext.Provider
-      value={{
-        purchasesInitialized,
-        customerInfo,
-        customerId,
-        isPro,
-        buyPro,
-        proOffering,
-        getCustomerInfo,
-        isLoadingOffering,
-        inGracePeriod,
-        gracePeriodEndsAt,
-      }}
-    >
+    <SubscriptionsContext.Provider value={value}>
       {children}
     </SubscriptionsContext.Provider>
   );
