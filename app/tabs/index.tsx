@@ -97,7 +97,7 @@ export default function Tabs() {
   const { loginInitialized, currentUser, accounts, logIn, logOut } =
     useContext(AccountContext);
   const { inboxCount } = useContext(InboxContext);
-  const { showUsername, liquidGlassEnabled } = useContext(TabSettingsContext);
+  const { showUsername, liquidGlassEnabled, hideTabsOnScroll } = useContext(TabSettingsContext);
   const { tabBarTranslateY } = useContext(TabScrollContext);
   const insets = useSafeAreaInsets();
 
@@ -105,8 +105,7 @@ export default function Tabs() {
   const isSwitchingAccount = useRef(false);
 
   const showLiquidGlassTabBar = Platform.OS === "ios" && liquidGlassEnabled;
-  // Native liquid tabs block AVPlayerViewController fullscreen presentation
-  const useNativeLiquidTabs = false;
+  const useNativeLiquidTabs = showLiquidGlassTabBar;
   const isDark = theme.systemModeStyle === "dark";
   const tabBarGlassTint = isDark
     ? "systemChromeMaterialDark"
@@ -211,27 +210,23 @@ export default function Tabs() {
               tabBarBlurEffect: "systemDefault",
               tabBarActiveTintColor: theme.iconOrTextButton as string,
               tabBarInactiveTintColor: theme.subtleText as string,
-              tabBarStyle: {
-                backgroundColor:
-                  theme.systemModeStyle === "dark"
-                    ? "rgba(20, 20, 24, 0.72)"
-                    : "rgba(248, 248, 252, 0.78)",
-                shadowColor: "transparent",
-              },
             }}
             screenListeners={() => ({
               tabPress: (e) => {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                 const state = navigation.getState();
                 const stackItem = state.routes[state.index];
                 const isCurrentTab = stackItem.key === e.target;
                 const stackHeight = stackItem.state?.index;
                 if (isCurrentTab && stackHeight && stackHeight > 0) {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
                   navigation.dispatch(StackActions.pop());
                   return;
                 }
 
                 if (e.target?.startsWith("Search")) {
                   if (isCurrentTab) {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
                     setShowSubredditSearch(true);
                     return;
                   }
@@ -244,14 +239,7 @@ export default function Tabs() {
                 }
 
                 if (e.target?.startsWith("Account") && isCurrentTab) {
-                  openAccountSwitchMenu();
-                }
-              },
-              tabLongPress: (e: { target?: string }) => {
-                const state = navigation.getState();
-                const stackItem = state.routes[state.index];
-                const isCurrentTab = stackItem.key === e.target;
-                if (e.target?.startsWith("Account") && isCurrentTab) {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
                   openAccountSwitchMenu();
                 }
               },
