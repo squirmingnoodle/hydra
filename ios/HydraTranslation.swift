@@ -1,6 +1,7 @@
 import Foundation
 import React
 import NaturalLanguage
+@preconcurrency import Translation
 
 @objc(HydraTranslation)
 class HydraTranslation: NSObject {
@@ -41,29 +42,22 @@ class HydraTranslation: NSObject {
     resolver resolve: @escaping RCTPromiseResolveBlock,
     rejecter reject: @escaping RCTPromiseRejectBlock
   ) {
-    if #available(iOS 17.4, *) {
+    if #available(iOS 26.0, *) {
       Task { @MainActor in
         do {
-          let sourceLocale: Locale.Language? = sourceLanguage.flatMap { code in
-            Locale.Language(identifier: code)
-          }
           let deviceLangId = Locale.preferredLanguages.first ?? "en"
-          let targetLocale = Locale.Language(identifier: deviceLangId)
+          let target = Locale.Language(identifier: deviceLangId)
 
           let session: TranslationSession
-          if let src = sourceLocale {
-            let config = TranslationSession.Configuration(
-              source: src,
-              target: targetLocale
-            )
-            session = try await TranslationSession(configuration: config)
+          if let srcCode = sourceLanguage {
+            let source = Locale.Language(identifier: srcCode)
+            session = try await TranslationSession(installedSource: source, target: target)
           } else {
-            // Auto-detect source language
-            let config = TranslationSession.Configuration(
-              source: nil,
-              target: targetLocale
-            )
-            session = try await TranslationSession(configuration: config)
+            let recognizer = NLLanguageRecognizer()
+            recognizer.processString(text)
+            let detectedCode = recognizer.dominantLanguage?.rawValue ?? "en"
+            let source = Locale.Language(identifier: detectedCode)
+            session = try await TranslationSession(installedSource: source, target: target)
           }
 
           let response = try await session.translate(text)
@@ -77,7 +71,7 @@ class HydraTranslation: NSObject {
         }
       }
     } else {
-      reject("TRANSLATION_UNAVAILABLE", "Translation requires iOS 17.4 or later", nil)
+      reject("TRANSLATION_UNAVAILABLE", "Translation requires iOS 26.0 or later", nil)
     }
   }
 
@@ -86,7 +80,7 @@ class HydraTranslation: NSObject {
     resolver resolve: @escaping RCTPromiseResolveBlock,
     rejecter _: @escaping RCTPromiseRejectBlock
   ) {
-    if #available(iOS 17.4, *) {
+    if #available(iOS 26.0, *) {
       resolve(true)
     } else {
       resolve(false)

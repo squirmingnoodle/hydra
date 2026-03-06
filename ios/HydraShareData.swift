@@ -1,4 +1,5 @@
 import Foundation
+import React
 
 @objc(HydraShareData)
 class HydraShareData: NSObject {
