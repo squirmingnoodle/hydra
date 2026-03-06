@@ -16,7 +16,8 @@ import {
   StackActions,
   TabActions,
 } from "@react-navigation/native";
-import { Platform, View } from "react-native";
+import { Animated, Platform, View } from "react-native";
+import * as Haptics from "expo-haptics";
 
 import LoadingSplash from "../../components/UI/LoadingSplash";
 import { AccountContext } from "../../contexts/AccountContext";
@@ -47,6 +48,39 @@ const NativeLiquidTab = createNativeBottomTabNavigator<TabParamsList>();
 
 const TAB_BAR_HEIGHT = 70;
 const FULLY_TRANSPARENT_COLOR = "#00000000";
+
+function AnimatedTabIcon({
+  focused,
+  children,
+}: {
+  focused: boolean;
+  children: React.ReactNode;
+}) {
+  const scale = useRef(new Animated.Value(focused ? 1 : 0.85)).current;
+  const opacity = useRef(new Animated.Value(focused ? 1 : 0.6)).current;
+
+  useEffect(() => {
+    Animated.parallel([
+      Animated.spring(scale, {
+        toValue: focused ? 1 : 0.85,
+        useNativeDriver: true,
+        speed: 20,
+        bounciness: focused ? 8 : 4,
+      }),
+      Animated.timing(opacity, {
+        toValue: focused ? 1 : 0.6,
+        duration: 150,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, [focused]);
+
+  return (
+    <Animated.View style={{ transform: [{ scale }], opacity }}>
+      {children}
+    </Animated.View>
+  );
+}
 
 export default function Tabs() {
   if (__DEV__) {
@@ -184,7 +218,6 @@ export default function Tabs() {
                     : "rgba(248, 248, 252, 0.78)",
                 shadowColor: "transparent",
               },
-              tabBarShowLabel: false,
             }}
             screenListeners={() => ({
               tabPress: (e) => {
@@ -416,11 +449,13 @@ export default function Tabs() {
             }}
             screenListeners={() => ({
               tabPress: (e) => {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                 const state = navigation.getState();
                 const stackItem = state.routes[state.index];
                 const isCurrentTab = stackItem.key === e.target;
                 const stackHeight = stackItem.state?.index;
                 if (isCurrentTab && stackHeight && stackHeight > 0) {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
                   navigation.dispatch(StackActions.pop());
                   e.preventDefault();
                 }
@@ -434,11 +469,13 @@ export default function Tabs() {
               },
               tabLongPress: (e) => {
                 if (e.target?.startsWith("Search")) {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
                   setShowSubredditSearch(true);
                   return;
                 }
 
                 if (!e.target?.startsWith("Account")) return;
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
                 openAccountSwitchMenu();
               },
             })}
@@ -449,11 +486,13 @@ export default function Tabs() {
               title: "Posts",
               headerShown: false,
               tabBarIcon: ({ focused, size }) => (
-                <MaterialCommunityIcons
-                  name="post"
-                  size={size}
-                  color={focused ? theme.iconPrimary : theme.subtleText}
-                />
+                <AnimatedTabIcon focused={focused}>
+                  <MaterialCommunityIcons
+                    name="post"
+                    size={size}
+                    color={focused ? theme.iconPrimary : theme.subtleText}
+                  />
+                </AnimatedTabIcon>
               ),
               tabBarActiveTintColor: theme.iconOrTextButton as string,
               tabBarInactiveTintColor: theme.subtleText as string,
@@ -467,11 +506,13 @@ export default function Tabs() {
               title: "Inbox",
               headerShown: false,
               tabBarIcon: ({ focused, size }) => (
-                <Entypo
-                  name="mail"
-                  size={size}
-                  color={focused ? theme.iconPrimary : theme.subtleText}
-                />
+                <AnimatedTabIcon focused={focused}>
+                  <Entypo
+                    name="mail"
+                    size={size}
+                    color={focused ? theme.iconPrimary : theme.subtleText}
+                  />
+                </AnimatedTabIcon>
               ),
               tabBarActiveTintColor: theme.iconOrTextButton as string,
               tabBarInactiveTintColor: theme.subtleText as string,
@@ -486,11 +527,13 @@ export default function Tabs() {
               title: currentUser?.userName ?? "Accounts",
               headerShown: false,
               tabBarIcon: ({ focused, size }) => (
-                <MaterialIcons
-                  name="account-circle"
-                  size={size}
-                  color={focused ? theme.iconPrimary : theme.subtleText}
-                />
+                <AnimatedTabIcon focused={focused}>
+                  <MaterialIcons
+                    name="account-circle"
+                    size={size}
+                    color={focused ? theme.iconPrimary : theme.subtleText}
+                  />
+                </AnimatedTabIcon>
               ),
               tabBarActiveTintColor: theme.iconOrTextButton as string,
               tabBarInactiveTintColor: theme.subtleText as string,
@@ -506,11 +549,13 @@ export default function Tabs() {
               title: "Search",
               headerShown: false,
               tabBarIcon: ({ focused, size }) => (
-                <Feather
-                  name="search"
-                  size={size}
-                  color={focused ? theme.iconPrimary : theme.subtleText}
-                />
+                <AnimatedTabIcon focused={focused}>
+                  <Feather
+                    name="search"
+                    size={size}
+                    color={focused ? theme.iconPrimary : theme.subtleText}
+                  />
+                </AnimatedTabIcon>
               ),
               tabBarActiveTintColor: theme.iconOrTextButton as string,
               tabBarInactiveTintColor: theme.subtleText as string,
@@ -524,11 +569,13 @@ export default function Tabs() {
               title: "Settings",
               headerShown: false,
               tabBarIcon: ({ focused, size }) => (
-                <Ionicons
-                  name="settings-sharp"
-                  size={size}
-                  color={focused ? theme.iconPrimary : theme.subtleText}
-                />
+                <AnimatedTabIcon focused={focused}>
+                  <Ionicons
+                    name="settings-sharp"
+                    size={size}
+                    color={focused ? theme.iconPrimary : theme.subtleText}
+                  />
+                </AnimatedTabIcon>
               ),
               tabBarActiveTintColor: theme.iconOrTextButton as string,
               tabBarInactiveTintColor: theme.subtleText as string,

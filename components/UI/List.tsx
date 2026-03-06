@@ -18,6 +18,7 @@ type ListItem = {
   rightIcon?: ReactNode;
   text: string;
   onPress: () => void;
+  onLongPress?: () => void;
   hide?: boolean;
   renderCustomItem?: (item: ListItem) => ReactNode;
 };
@@ -49,6 +50,7 @@ export default function List({ items, title, containerStyle }: ListProps) {
             <TouchableOpacity
               key={item.key}
               onPress={item.onPress}
+              onLongPress={item.onLongPress}
               activeOpacity={0.5}
               style={[
                 styles.itemButtonContainer,

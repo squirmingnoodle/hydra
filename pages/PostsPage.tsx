@@ -203,22 +203,34 @@ export default function PostsPage({
         contentName={subreddit}
       >
         <RedditDataScroller<Post>
+          persistScrollKey={url}
           ListHeaderComponent={
-            route.name === "PostsPage" ? (
-              <SearchBar
-                clearOnSearch={true}
-                searchOnBlur={false}
-                onSearch={(text) => {
-                  if (!text) return;
+            <SearchBar
+              clearOnSearch={true}
+              searchOnBlur={false}
+              placeholder={
+                subreddit && !isCombinedSubredditFeed
+                  ? `Search r/${subreddit}`
+                  : "Search Reddit"
+              }
+              onSearch={(text) => {
+                if (!text) return;
+                if (subreddit && !isCombinedSubredditFeed) {
                   const newURL = new RedditURL(
                     `https://www.reddit.com/r/${subreddit}/search/`,
                   );
                   newURL.changeQueryParam("q", text);
                   newURL.changeQueryParam("restrict_sr", "true");
                   navigation.pushURL(newURL.toString());
-                }}
-              />
-            ) : null
+                } else {
+                  const newURL = new RedditURL(
+                    `https://www.reddit.com/search/`,
+                  );
+                  newURL.changeQueryParam("q", text);
+                  navigation.pushURL(newURL.toString());
+                }
+              }}
+            />
           }
           loadMore={loadMorePosts}
           refresh={refreshPosts}

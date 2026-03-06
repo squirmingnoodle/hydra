@@ -15,7 +15,11 @@ import {
   RefreshControl,
   ColorValue,
   Platform,
+  TouchableOpacity,
+  Animated,
+  LayoutAnimation,
 } from "react-native";
+import { Feather } from "@expo/vector-icons";
 
 import {
   getPostsDetail,
@@ -40,6 +44,8 @@ import { TabScrollContext } from "../contexts/TabScrollContext";
 import { modifyStat, Stat } from "../db/functions/Stats";
 import ScrollToNextButtonProvider from "../contexts/ScrollToNextButtonProvider";
 import { ScrollToNextButtonContext } from "../contexts/ScrollToNextButtonContext";
+import { CommentSkeletonList } from "../components/UI/SkeletonLoader";
+import SearchBar from "../components/UI/SearchBar";
 
 export type LoadMoreCommentsFunc = (
   commentIds: string[],
@@ -68,9 +74,8 @@ function PostDetails(props: PostDetailsProps) {
   const { handleScrollForTabBar } = useContext(TabScrollContext);
   const shouldUseSystemContentInsets =
     Platform.OS === "ios" && liquidGlassEnabled;
-  const { setScrollToNext, setScrollToPrevious } = useContext(
-    ScrollToNextButtonContext,
-  );
+  const { setScrollToNext, setScrollToPrevious, setScrollToParent } =
+    useContext(ScrollToNextButtonContext);
 
   const topOfScroll = useRef<View>(null);
   const scrollView = useRef<ScrollView>(null);
@@ -78,6 +83,8 @@ function PostDetails(props: PostDetailsProps) {
 
   const [postDetail, setPostDetail] = useState<PostDetail>();
   const [refreshing, setRefreshing] = useState(false);
+  const [commentSearchVisible, setCommentSearchVisible] = useState(false);
+  const [commentSearchFilter, setCommentSearchFilter] = useState("");
 
   const deferredPostDetail = useDeferredValue(postDetail);
 
@@ -284,6 +291,7 @@ function PostDetails(props: PostDetailsProps) {
   useEffect(() => {
     setScrollToNext(() => scrollToNextComment());
     setScrollToPrevious(() => scrollToNextComment(true));
+    setScrollToParent(() => scrollToNextComment(true));
   }, [commentsView.current]);
 
   /**
@@ -336,6 +344,42 @@ function PostDetails(props: PostDetailsProps) {
             loadPostDetails={loadPostDetails}
             setPostDetail={setPostDetail}
           />
+          {deferredPostDetail && deferredPostDetail.comments.length > 0 && (
+            <View style={styles.commentSearchContainer}>
+              <TouchableOpacity
+                onPress={() => {
+                  LayoutAnimation.configureNext(
+                    LayoutAnimation.Presets.easeInEaseOut,
+                  );
+                  if (commentSearchVisible) {
+                    setCommentSearchFilter("");
+                  }
+                  setCommentSearchVisible(!commentSearchVisible);
+                }}
+                style={[
+                  styles.commentSearchToggle,
+                  { backgroundColor: theme.tint },
+                ]}
+              >
+                <Feather
+                  name="search"
+                  size={16}
+                  color={theme.text}
+                />
+                <Text style={[styles.commentSearchToggleText, { color: theme.text }]}>
+                  {commentSearchVisible ? "Close" : "Search Comments"}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          )}
+          {commentSearchVisible && (
+            <SearchBar
+              placeholder="Filter comments..."
+              clearOnSearch={false}
+              searchOnBlur={true}
+              onSearch={(text) => setCommentSearchFilter(text)}
+            />
+          )}
           {deferredPostDetail && deferredPostDetail.comments.length > 0 ? (
             <Comments
               key={`${deferredPostDetail.id}-comments`}
@@ -346,13 +390,11 @@ function PostDetails(props: PostDetailsProps) {
               changeComment={changeComment}
               deleteComment={deleteComment}
               collapseThread={collapseThread}
+              searchFilter={commentSearchFilter}
             />
           ) : postDetail !== deferredPostDetail ? (
-            <View
-              key="loading-comments"
-              style={styles.loadingCommentsContainer}
-            >
-              <ActivityIndicator size="small" />
+            <View key="loading-comments">
+              <CommentSkeletonList count={5} />
             </View>
           ) : (
             <View key="no-comments" style={styles.noCommentsContainer}>
@@ -456,5 +498,22 @@ const styles = StyleSheet.create({
   },
   noCommentsText: {
     fontSize: 15,
+  },
+  commentSearchContainer: {
+    flexDirection: "row",
+    justifyContent: "center",
+    paddingVertical: 8,
+    paddingHorizontal: 10,
+  },
+  commentSearchToggle: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 15,
+    gap: 6,
+  },
+  commentSearchToggleText: {
+    fontSize: 13,
   },
 });

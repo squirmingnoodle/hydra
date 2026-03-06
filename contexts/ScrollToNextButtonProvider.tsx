@@ -22,6 +22,8 @@ import { useAccountScopedMMKVString } from "../utils/accountScopedSettings";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 const BUTTON_SIZE = 40;
+const PARENT_BUTTON_SIZE = 32;
+const PARENT_BUTTON_GAP = 8;
 const EDGE_PADDING = 20;
 
 export default function ScrollToNextButtonProvider({
@@ -37,6 +39,7 @@ export default function ScrollToNextButtonProvider({
 
   const scrollToNext = useRef<(() => void) | null>(null);
   const scrollToPrevious = useRef<(() => void) | null>(null);
+  const scrollToParent = useRef<(() => void) | null>(null);
   const [containerHeight, setContainerHeight] = useState(0);
   const [containerWidth, setContainerWidth] = useState(0);
   const [containerVerticalOffset, setContainerVerticalOffset] = useState(0);
@@ -163,6 +166,9 @@ export default function ScrollToNextButtonProvider({
       setScrollToPrevious: (fn: () => void) => {
         scrollToPrevious.current = fn;
       },
+      setScrollToParent: (fn: () => void) => {
+        scrollToParent.current = fn;
+      },
     }),
     [],
   );
@@ -170,6 +176,38 @@ export default function ScrollToNextButtonProvider({
   return (
     <ScrollToNextButtonContext.Provider value={value}>
       {containerHeight > 0 && containerWidth > 0 && (
+        <>
+        <Animated.View
+          style={[
+            styles.parentButton,
+            {
+              top: 0,
+              left: 0,
+              transform: [
+                {
+                  translateX: Animated.add(
+                    position.x,
+                    (BUTTON_SIZE - PARENT_BUTTON_SIZE) / 2,
+                  ),
+                },
+                {
+                  translateY: Animated.add(
+                    position.y,
+                    -(PARENT_BUTTON_SIZE + PARENT_BUTTON_GAP),
+                  ),
+                },
+              ],
+              backgroundColor: theme.buttonBg,
+              opacity: buttonOpacity,
+              zIndex: 1000,
+            },
+          ]}
+          onTouchStart={() => {
+            scrollToParent.current?.();
+          }}
+        >
+          <AntDesign name="up" size={14} color={theme.buttonText} />
+        </Animated.View>
         <Animated.View
           style={[
             styles.skipToNextButton,
@@ -246,6 +284,7 @@ export default function ScrollToNextButtonProvider({
         >
           <AntDesign name="down" size={18} color={theme.buttonText} />
         </Animated.View>
+        </>
       )}
       <Animated.View
         style={[
@@ -294,6 +333,16 @@ const styles = StyleSheet.create({
     borderRadius: 1000,
     width: BUTTON_SIZE,
     height: BUTTON_SIZE,
+  },
+  parentButton: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: 1000,
+    width: PARENT_BUTTON_SIZE,
+    height: PARENT_BUTTON_SIZE,
   },
   overlay: {
     zIndex: 1,

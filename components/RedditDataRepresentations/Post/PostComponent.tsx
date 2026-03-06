@@ -7,7 +7,9 @@ import {
   TouchableOpacity,
   Share,
   AccessibilityInfo,
+  Alert,
 } from "react-native";
+import * as Haptics from "expo-haptics";
 import { openExternalLink } from "../../../utils/openExternalLink";
 
 import CompactPostMedia from "./PostParts/CompactPostMedia";
@@ -15,8 +17,11 @@ import PostMedia from "./PostParts/PostMedia";
 import SubredditIcon from "./PostParts/SubredditIcon";
 import { vote } from "../../../api/PostDetail";
 import { Post, VoteOption } from "../../../api/Posts";
+import { hidePost } from "../../../api/Hide";
+import { reportContent, REPORT_REASONS } from "../../../api/Report";
 import { saveItem } from "../../../api/Save";
 import { URLRoutes } from "../../../app/stack";
+import PostPreviewModal from "../../Modals/PostPreviewModal";
 import SavedPostCategoryPrompt from "../../Modals/SavedPostCategoryPrompt";
 import { PostInteractionProvider } from "../../../contexts/PostInteractionContext";
 import { ModalContext } from "../../../contexts/ModalContext";
@@ -203,6 +208,7 @@ export default React.memo(function PostComponent({
     {
       label: post.saved ? "Unsave" : "Save",
       handle: async () => {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
         const shouldSave = !post.saved;
         await saveItem(post, shouldSave);
         if (!shouldSave) {
@@ -219,6 +225,36 @@ export default React.memo(function PostComponent({
       isAllowed: post.saved,
       handle: async () => {
         await openSavedPostCategoryPicker();
+      },
+    },
+    {
+      label: "Hide Post",
+      isAllowed: !!deletePost,
+      handle: async () => {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+        await hidePost(post, true);
+        deletePost?.();
+      },
+    },
+    {
+      label: "Report",
+      handle: async () => {
+        const reason = await showContextMenu({
+          options: [...REPORT_REASONS],
+        });
+        if (!reason) return;
+        try {
+          await reportContent(post, reason as (typeof REPORT_REASONS)[number]);
+          Alert.alert("Reported", "Thank you for your report.");
+        } catch (_) {
+          Alert.alert("Error", "Failed to submit report.");
+        }
+      },
+    },
+    {
+      label: "Preview",
+      handle: async () => {
+        setModal(<PostPreviewModal post={post} />);
       },
     },
     {
@@ -246,6 +282,7 @@ export default React.memo(function PostComponent({
   };
 
   const voteOnPost = async (voteOption: VoteOption) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     const result = await vote(post, voteOption);
     setPost({
       ...post,
@@ -326,6 +363,12 @@ export default React.memo(function PostComponent({
             icon: <FontAwesome name="share" />,
             color: theme.share,
             action: () => handleAction("Share"),
+          },
+          {
+            name: "hidePost",
+            icon: <Feather name="eye-off" />,
+            color: theme.showHide,
+            action: () => handleAction("Hide Post"),
           },
         ]}
         leftNames={[postSwipeOptions.right, postSwipeOptions.farRight]}

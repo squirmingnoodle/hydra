@@ -65,6 +65,7 @@ module.exports = {
         }
       ],
       'expo-notifications',
+      'expo-quick-actions',
       [
         "expo-alternate-app-icons",
         [
