@@ -159,11 +159,17 @@ export default function UserProfileIOSHero({
       value: accountAge,
       label: "Account Age",
     },
-    {
-      key: "followers",
-      value: new Numbers(followers).prettyNum().toString(),
-      label: "Followers",
-    },
+    // Reddit's public API returns 0 for subreddit.subscribers on user profiles,
+    // so only show followers when we have a positive count (e.g. logged-in user).
+    ...(followers > 0
+      ? [
+          {
+            key: "followers",
+            value: new Numbers(followers).prettyNum().toString(),
+            label: "Followers",
+          },
+        ]
+      : []),
   ];
 
   return (
@@ -321,7 +327,9 @@ export default function UserProfileIOSHero({
               },
             ]}
           >
-            {`u/${userName} \u2022 ${new Numbers(followers).prettyNum()} followers`}
+            {followers > 0
+              ? `u/${userName} \u2022 ${new Numbers(followers).prettyNum()} followers`
+              : `u/${userName}`}
           </Text>
           {!!user.bio && (
             <Text
