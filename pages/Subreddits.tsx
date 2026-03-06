@@ -368,7 +368,9 @@ export default function Subreddits() {
   };
 
   return (
-    <View style={styles.subredditsContainer}>
+    <View
+      style={[styles.subredditsContainer, { backgroundColor: theme.background }]}
+    >
       <FlashList
         ref={flashListRef}
         contentInsetAdjustmentBehavior={

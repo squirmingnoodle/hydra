@@ -408,7 +408,11 @@ function LegacyUserPageContent({
   }, []);
 
   useEffect(() => {
-    const contextOptions: ContextTypes[] = ["Block", "Share"];
+    const contextOptions: ContextTypes[] = [
+      "Add to Multireddit",
+      "Block",
+      "Share",
+    ];
     if (currentUser?.userName !== user?.userName) {
       contextOptions.unshift("Message");
     }
@@ -961,7 +965,11 @@ function ModernUserPageContent(props: StackPageProps<"UserPage">) {
   );
 
   useEffect(() => {
-    const contextOptions: ContextTypes[] = ["Block", "Share"];
+    const contextOptions: ContextTypes[] = [
+      "Add to Multireddit",
+      "Block",
+      "Share",
+    ];
     if (!isOwnProfile) {
       if (user) {
         contextOptions.unshift(user.friends ? "Unfollow" : "Follow");

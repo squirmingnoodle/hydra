@@ -183,9 +183,7 @@ export default function Stack() {
     <View
       style={{
         flex: 1,
-        backgroundColor: showLiquidGlassHeader
-          ? FULLY_TRANSPARENT_COLOR
-          : theme.background,
+        backgroundColor: theme.background,
       }}
     >
       <StackNavigator.Navigator
@@ -223,9 +221,7 @@ export default function Stack() {
               paddingBottom: SHOWS_BENEATH_TABS[route.name]
                 ? 0
                 : Math.max(0, tabBarHeight - TAB_BAR_REMOVED_PADDING_BOTTOM),
-              backgroundColor: showLiquidGlassHeader
-                ? FULLY_TRANSPARENT_COLOR
-                : theme.background,
+              backgroundColor: theme.background,
             },
           };
         }}

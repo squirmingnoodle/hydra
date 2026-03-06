@@ -59,6 +59,11 @@ export function AccountProvider({ children }: React.PropsWithChildren) {
       Sentry.setUser({ username: user.userName });
       await RedditCookies.saveSessionCookies(user.userName);
       await addUser(user.userName);
+      // Cache avatar URL for the account viewer
+      const avatarURL = user.avatarImage || user.profileImage || user.icon;
+      if (avatarURL) {
+        KeyStore.set(`avatarURL:${user.userName}`, avatarURL);
+      }
       void syncAccountSettingsForUser(user.userName);
       return true;
     } catch (_e) {
@@ -111,6 +116,7 @@ export function AccountProvider({ children }: React.PropsWithChildren) {
       await logOutContext();
     }
     // remove from saved data
+    KeyStore.delete(`avatarURL:${username}`);
     await RedditCookies.deleteSessionCookies(username);
     await saveAccounts(accs);
     setAccounts(accs);

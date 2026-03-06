@@ -71,3 +71,33 @@ export async function removeFromMulti(
     },
   );
 }
+
+export async function addUserToMulti(multi: Multi, username: string) {
+  await api(
+    `https://www.reddit.com/api/multi${multi.url}/u/${username}`,
+    {
+      method: "PUT",
+    },
+    {
+      requireAuth: true,
+      body: {
+        model: JSON.stringify({
+          name: username,
+        }),
+      },
+    },
+  );
+}
+
+export async function removeUserFromMulti(multi: Multi, username: string) {
+  await api(
+    `https://www.reddit.com/api/multi${multi.url}/u/${username}`,
+    {
+      method: "DELETE",
+    },
+    {
+      requireAuth: true,
+      dontJsonifyResponse: true,
+    },
+  );
+}

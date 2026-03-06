@@ -1,4 +1,5 @@
 import { Feather } from "@expo/vector-icons";
+import { Image } from "expo-image";
 import React, { useContext, useState } from "react";
 import {
   StyleSheet,
@@ -13,6 +14,26 @@ import Slideable from "../components/UI/Slideable";
 import { AccountContext } from "../contexts/AccountContext";
 import { ThemeContext } from "../contexts/SettingsContexts/ThemeContext";
 import useContextMenu from "../utils/useContextMenu";
+import KeyStore from "../utils/KeyStore";
+
+function isAnimatedImageURI(uri?: string): boolean {
+  if (!uri) return false;
+  try {
+    const parsed = new URL(uri);
+    const pathname = parsed.pathname.toLowerCase();
+    const search = parsed.search.toLowerCase();
+    return (
+      /\.(gif|webp|apng)$/.test(pathname) ||
+      pathname.endsWith(".gifv") ||
+      search.includes("format=gif") ||
+      search.includes("format=webp") ||
+      search.includes("animated=true") ||
+      search.includes("is_animated=true")
+    );
+  } catch {
+    return false;
+  }
+}
 
 export default function AccountsPage() {
   const { theme } = useContext(ThemeContext);
@@ -106,6 +127,30 @@ export default function AccountsPage() {
                   }
                 }}
               >
+                {username !== "Logged Out" ? (
+                  (() => {
+                    const avatarURL = KeyStore.getString(`avatarURL:${username}`);
+                    return avatarURL ? (
+                      <Image
+                        source={avatarURL}
+                        style={styles.avatar}
+                        contentFit="cover"
+                        autoplay={isAnimatedImageURI(avatarURL)}
+                      />
+                    ) : (
+                      <View
+                        style={[
+                          styles.avatarFallback,
+                          { backgroundColor: theme.tint },
+                        ]}
+                      >
+                        <Text style={[styles.avatarInitial, { color: theme.text }]}>
+                          {username[0]?.toUpperCase() ?? "U"}
+                        </Text>
+                      </View>
+                    );
+                  })()
+                ) : null}
                 <Text
                   style={[
                     styles.accountItemText,
@@ -175,11 +220,29 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingVertical: 20,
+    paddingVertical: 14,
     paddingHorizontal: 15,
     borderBottomWidth: 1,
+    gap: 12,
   },
   accountItemText: {
+    flex: 1,
     fontSize: 16,
+  },
+  avatar: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+  },
+  avatarFallback: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  avatarInitial: {
+    fontSize: 16,
+    fontWeight: "600",
   },
 });
