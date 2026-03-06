@@ -55,6 +55,8 @@
     </dict>
     <key>NSCameraUsageDescription</key>
     <string>Allow $(PRODUCT_NAME) to access your camera</string>
+    <key>NSFaceIDUsageDescription</key>
+    <string>Hydra uses Face ID to protect your privacy by locking the app.</string>
     <key>NSMicrophoneUsageDescription</key>
     <string>Allow $(PRODUCT_NAME) to access your microphone</string>
     <key>NSPhotoLibraryAddUsageDescription</key>
@@ -63,6 +65,9 @@
     <string>$(PRODUCT_NAME) accesses your photos to upload images.</string>
     <key>NSUserActivityTypes</key>
     <array>
+      <string>com.darlops.hydra.viewPost</string>
+      <string>com.darlops.hydra.viewSubreddit</string>
+      <string>com.darlops.hydra.viewUser</string>
       <string>$(PRODUCT_BUNDLE_IDENTIFIER).expo.index_route</string>
     </array>
     <key>RCTNewArchEnabled</key>

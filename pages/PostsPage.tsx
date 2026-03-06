@@ -11,6 +11,7 @@ import { ThemeContext } from "../contexts/SettingsContexts/ThemeContext";
 import { markPostSeen } from "../db/functions/SeenPosts";
 import { filterSeenItems } from "../utils/filters/filterSeenItems";
 import useRedditDataState from "../utils/useRedditDataState";
+import { NativeWidgetData } from "../utils/nativeWidgetData";
 import RedditURL, { PageType } from "../utils/RedditURL";
 import { incrementSubredditVisitCount } from "../db/functions/Stats";
 import { useURLNavigation } from "../utils/navigation";
@@ -85,6 +86,24 @@ export default function PostsPage({
   });
 
   useOfferGalleryMode({ url, posts });
+
+  // Sync trending posts to widget when on home feed
+  useEffect(() => {
+    const pageType = redditURL.getPageType();
+    if (pageType === PageType.HOME && posts.length > 0) {
+      NativeWidgetData.setTrendingPosts(
+        posts.slice(0, 10).map((p) => ({
+          id: p.id,
+          title: p.title,
+          subreddit: p.subreddit,
+          author: p.author,
+          upvotes: p.upvotes,
+          commentCount: p.commentCount,
+          url: p.link,
+        })),
+      );
+    }
+  }, [posts]);
 
   const handleScrolledPastPostRef = useRef<(post: Post) => void>(undefined);
   handleScrolledPastPostRef.current = async (post: Post) => {

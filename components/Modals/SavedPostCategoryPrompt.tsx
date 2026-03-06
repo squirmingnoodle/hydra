@@ -18,12 +18,14 @@ import {
 } from "../../utils/savedPostCategories";
 
 type SavedPostCategoryPromptProps = {
+  title?: string;
   initialValue?: string;
   onCancel: () => void;
   onSubmit: (categoryName: string) => void;
 };
 
 export default function SavedPostCategoryPrompt({
+  title = "New Category",
   initialValue = "",
   onCancel,
   onSubmit,
@@ -73,7 +75,7 @@ export default function SavedPostCategoryPrompt({
               },
             ]}
           >
-            New Category
+            {title}
           </Text>
           <TextInput
             autoFocus

@@ -51,6 +51,7 @@ import EditComment from "../../../Modals/EditComment";
 import NewComment from "../../../Modals/NewComment";
 import SelectText from "../../../Modals/SelectText";
 import Slideable from "../../../UI/Slideable";
+import TranslateButton from "../../../UI/TranslateButton";
 import { GesturesContext } from "../../../../contexts/SettingsContexts/GesturesContext";
 import Time from "../../../../utils/Time";
 
@@ -134,6 +135,7 @@ export function CommentComponent({
   }
 
   const [loadingMore, setLoadingMore] = useState(false);
+  const [translatedHtml, setTranslatedHtml] = useState<string | null>(null);
 
   const toggleCollapse = () => {
     if (comment.type !== "comment") return;
@@ -564,8 +566,17 @@ export function CommentComponent({
                   {!comment.collapsed ? (
                     <View style={styles.textContainer}>
                       <RenderHtml
-                        html={comment.html}
+                        html={translatedHtml ?? comment.html}
                         subreddit={comment.subreddit}
+                      />
+                      <TranslateButton
+                        text={comment.text}
+                        onTranslated={(translated) =>
+                          setTranslatedHtml(
+                            `<p>${translated.replace(/\n/g, "<br/>")}</p>`,
+                          )
+                        }
+                        onShowOriginal={() => setTranslatedHtml(null)}
                       />
                     </View>
                   ) : comment.type === "comment" &&

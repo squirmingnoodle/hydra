@@ -3,6 +3,8 @@ import {
   GestureResponderEvent,
   Platform,
   StyleSheet,
+  Text,
+  TouchableOpacity,
   View,
 } from "react-native";
 import React, {
@@ -14,17 +16,23 @@ import React, {
   useState,
 } from "react";
 import { ThemeContext } from "./SettingsContexts/ThemeContext";
-import { AntDesign } from "@expo/vector-icons";
+import { AntDesign, Feather } from "@expo/vector-icons";
 import { ScrollToNextButtonContext } from "./ScrollToNextButtonContext";
 import { BottomTabBarHeightContext } from "@react-navigation/bottom-tabs";
 import { TAB_BAR_REMOVED_PADDING_BOTTOM } from "../constants/TabBarPadding";
 import { useAccountScopedMMKVString } from "../utils/accountScopedSettings";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import {
+  CommentFilterMode,
+  COMMENT_FILTER_MODES,
+} from "../utils/commentFilters";
 
 const BUTTON_SIZE = 40;
 const PARENT_BUTTON_SIZE = 32;
 const PARENT_BUTTON_GAP = 8;
 const EDGE_PADDING = 20;
+const FILTER_CHIP_SIZE = 28;
+const FILTER_CHIP_GAP = 6;
 
 export default function ScrollToNextButtonProvider({
   children,
@@ -40,6 +48,8 @@ export default function ScrollToNextButtonProvider({
   const scrollToNext = useRef<(() => void) | null>(null);
   const scrollToPrevious = useRef<(() => void) | null>(null);
   const scrollToParent = useRef<(() => void) | null>(null);
+  const [commentFilterMode, setCommentFilterMode] =
+    useState<CommentFilterMode>("all");
   const [containerHeight, setContainerHeight] = useState(0);
   const [containerWidth, setContainerWidth] = useState(0);
   const [containerVerticalOffset, setContainerVerticalOffset] = useState(0);
@@ -169,14 +179,76 @@ export default function ScrollToNextButtonProvider({
       setScrollToParent: (fn: () => void) => {
         scrollToParent.current = fn;
       },
+      commentFilterMode,
+      setCommentFilterMode,
     }),
-    [],
+    [commentFilterMode],
   );
 
   return (
     <ScrollToNextButtonContext.Provider value={value}>
       {containerHeight > 0 && containerWidth > 0 && (
         <>
+        {/* Comment filter chips row */}
+        {COMMENT_FILTER_MODES.map((mode, index) => {
+          const isActive = commentFilterMode === mode.key;
+          const chipOffsetY =
+            -(PARENT_BUTTON_SIZE + PARENT_BUTTON_GAP) -
+            (FILTER_CHIP_SIZE + FILTER_CHIP_GAP) * (COMMENT_FILTER_MODES.length - index);
+          return (
+            <Animated.View
+              key={mode.key}
+              style={[
+                styles.filterChip,
+                {
+                  top: 0,
+                  left: 0,
+                  transform: [
+                    {
+                      translateX: Animated.add(
+                        position.x,
+                        (BUTTON_SIZE - FILTER_CHIP_SIZE) / 2,
+                      ),
+                    },
+                    {
+                      translateY: Animated.add(position.y, chipOffsetY),
+                    },
+                  ],
+                  backgroundColor: isActive ? theme.iconOrTextButton : theme.buttonBg,
+                  opacity: buttonOpacity,
+                  zIndex: 1000,
+                },
+              ]}
+            >
+              <TouchableOpacity
+                style={styles.filterChipTouchable}
+                onPress={() => {
+                  setCommentFilterMode(
+                    commentFilterMode === mode.key ? "all" : mode.key,
+                  );
+                }}
+                activeOpacity={0.7}
+              >
+                {mode.key === "op" ? (
+                  <Text
+                    style={[
+                      styles.filterChipText,
+                      { color: isActive ? "#fff" : theme.buttonText },
+                    ]}
+                  >
+                    OP
+                  </Text>
+                ) : (
+                  <Feather
+                    name={mode.icon as any}
+                    size={13}
+                    color={isActive ? "#fff" : theme.buttonText}
+                  />
+                )}
+              </TouchableOpacity>
+            </Animated.View>
+          );
+        })}
         <Animated.View
           style={[
             styles.parentButton,
@@ -358,5 +430,23 @@ const styles = StyleSheet.create({
     height: BUTTON_SIZE,
     borderRadius: 1000,
     borderWidth: 2,
+  },
+  filterChip: {
+    position: "absolute",
+    width: FILTER_CHIP_SIZE,
+    height: FILTER_CHIP_SIZE,
+    borderRadius: FILTER_CHIP_SIZE / 2,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  filterChipTouchable: {
+    width: "100%",
+    height: "100%",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  filterChipText: {
+    fontSize: 10,
+    fontWeight: "700",
   },
 });

@@ -4,6 +4,7 @@ import { createContext, useContext, useEffect, useMemo, useState } from "react";
 import { AccountContext } from "./AccountContext";
 import { getInboxItems } from "../api/Messages";
 import { UserAuth } from "../api/Authentication";
+import { NativeWidgetData } from "../utils/nativeWidgetData";
 
 type InboxContextType = {
   inboxCount: number;
@@ -48,6 +49,7 @@ export function InboxProvider({ children }: React.PropsWithChildren) {
 
   useEffect(() => {
     Notifications.setBadgeCountAsync(inboxCount);
+    NativeWidgetData.setInboxCount(inboxCount);
   }, [inboxCount]);
 
   const value = useMemo(

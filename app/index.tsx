@@ -34,6 +34,8 @@ import { TabScrollProvider } from "../contexts/TabScrollContext";
 import { StartupModalProvider } from "../contexts/StartupModalContext";
 import { modifyStat, Stat } from "../db/functions/Stats";
 import { ActionSheetBgProvider } from "../contexts/ActionSheetBgProvider";
+import { AppLockProvider } from "../contexts/AppLockContext";
+import AppLockScreen from "../components/UI/AppLockScreen";
 import VideoCache from "../utils/VideoCache";
 import {
   hydrateSettingsFromSnapshot,
@@ -148,26 +150,29 @@ function RootLayout() {
         <AccountProvider>
           <SubscriptionsProvider>
             <SettingsProvider>
-              <TabScrollProvider>
-                <NavigationProvider>
-                  <ActionSheetProvider>
-                    <ActionSheetBgProvider>
-                      <InboxProvider>
-                        <ModalProvider>
-                          <MediaViewerProvider>
-                            <SubredditProvider>
-                              <StartupModalProvider>
-                                <SubscribeToHydra />
-                                <Tabs />
-                              </StartupModalProvider>
-                            </SubredditProvider>
-                          </MediaViewerProvider>
-                        </ModalProvider>
-                      </InboxProvider>
-                    </ActionSheetBgProvider>
-                  </ActionSheetProvider>
-                </NavigationProvider>
-              </TabScrollProvider>
+              <AppLockProvider>
+                <TabScrollProvider>
+                  <NavigationProvider>
+                    <ActionSheetProvider>
+                      <ActionSheetBgProvider>
+                        <InboxProvider>
+                          <ModalProvider>
+                            <MediaViewerProvider>
+                              <SubredditProvider>
+                                <StartupModalProvider>
+                                  <SubscribeToHydra />
+                                  <Tabs />
+                                  <AppLockScreen />
+                                </StartupModalProvider>
+                              </SubredditProvider>
+                            </MediaViewerProvider>
+                          </ModalProvider>
+                        </InboxProvider>
+                      </ActionSheetBgProvider>
+                    </ActionSheetProvider>
+                  </NavigationProvider>
+                </TabScrollProvider>
+              </AppLockProvider>
             </SettingsProvider>
           </SubscriptionsProvider>
         </AccountProvider>

@@ -26,6 +26,9 @@ export type Comment = {
   isOP: boolean;
   isModerator: boolean;
   isStickied: boolean;
+  isAdmin: boolean;
+  gilded: number;
+  controversiality: number;
   editedAt: number | undefined;
   upvotes: number;
   scoreHidden: boolean;
@@ -94,6 +97,12 @@ export function formatComments(
       isOP: comment.data.is_submitter,
       isModerator: comment.data.distinguished === "moderator",
       isStickied: comment.data.stickied,
+      isAdmin: comment.data.distinguished === "admin",
+      gilded: typeof comment.data.gilded === "number" ? comment.data.gilded : 0,
+      controversiality:
+        typeof comment.data.controversiality === "number"
+          ? comment.data.controversiality
+          : 0,
       editedAt: comment.data.edited ? comment.data.edited * 1_000 : undefined,
       upvotes: comment.data.ups,
       scoreHidden: comment.data.score_hidden,
@@ -164,6 +173,9 @@ export async function getPostsDetail(
     path: [],
     collapsed: false,
     isOP: postData.data.is_submitter,
+    isAdmin: postData.data.distinguished === "admin",
+    gilded: postData.data.gilded ?? 0,
+    controversiality: 0,
     editedAt: postData.data.edited ? postData.data.edited * 1_000 : undefined,
     postTitle: postData.data.link_title,
     postLink: postData.data.link_permalink,

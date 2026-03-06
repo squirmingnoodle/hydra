@@ -55,12 +55,14 @@ import { ThemeContext } from "../contexts/SettingsContexts/ThemeContext";
 import RedditURL from "../utils/RedditURL";
 import {
   getAllCategoriesFromMap,
+  getCategoryCountsFromMap,
   matchesFilter,
   SAVED_POST_CATEGORY_ALL,
   SAVED_POST_CATEGORY_UNCATEGORIZED,
   SavedPostCategoryFilter,
   useSavedPostCategoryMap,
 } from "../utils/savedPostCategories";
+import CollectionManager from "../components/Modals/CollectionManager";
 import URL from "../utils/URL";
 import { useURLNavigation } from "../utils/navigation";
 import useRedditDataState from "../utils/useRedditDataState";
@@ -255,6 +257,7 @@ function LegacyUserPageContent({
 
   const { theme } = useContext(ThemeContext);
   const { currentUser } = useContext(AccountContext);
+  const { setModal } = useContext(ModalContext);
 
   const [user, setUser] = useState<User>();
   const [savedPostCategoryMap] = useSavedPostCategoryMap();
@@ -263,6 +266,10 @@ function LegacyUserPageContent({
 
   const savedPostCategories = useMemo(
     () => getAllCategoriesFromMap(savedPostCategoryMap),
+    [savedPostCategoryMap],
+  );
+  const savedPostCategoryCounts = useMemo(
+    () => getCategoryCountsFromMap(savedPostCategoryMap),
     [savedPostCategoryMap],
   );
   const savedPostCategoryFilters = useMemo(
@@ -443,6 +450,11 @@ function LegacyUserPageContent({
     >
       {savedPostCategoryFilters.map((category) => {
         const selected = category.key === selectedSavedPostCategoryFilter;
+        const count =
+          category.key !== SAVED_POST_CATEGORY_ALL &&
+          category.key !== SAVED_POST_CATEGORY_UNCATEGORIZED
+            ? savedPostCategoryCounts[category.key.toLowerCase()] || 0
+            : undefined;
 
         return (
           <TouchableOpacity
@@ -466,10 +478,26 @@ function LegacyUserPageContent({
               ]}
             >
               {category.label}
+              {count !== undefined ? ` (${count})` : ""}
             </Text>
           </TouchableOpacity>
         );
       })}
+      {savedPostCategories.length > 0 && (
+        <TouchableOpacity
+          activeOpacity={0.8}
+          style={[
+            styles.savedCategoryFilterButton,
+            {
+              backgroundColor: theme.tint,
+              borderColor: theme.divider,
+            },
+          ]}
+          onPress={() => setModal(<CollectionManager />)}
+        >
+          <Feather name="settings" size={13} color={theme.subtleText} />
+        </TouchableOpacity>
+      )}
     </ScrollView>
   );
 
@@ -544,6 +572,7 @@ type ModernUserPageHeaderProps = {
   selectedSavedTypeTab: UserSavedTypeTab;
   isSavedPostsPage: boolean;
   savedPostCategoryFilters: { key: SavedPostCategoryFilter; label: string }[];
+  savedPostCategoryCounts: Record<string, number>;
   selectedSavedPostCategoryFilter: SavedPostCategoryFilter;
   onEditProfile: () => void;
   onShareProfile: () => void;
@@ -552,6 +581,7 @@ type ModernUserPageHeaderProps = {
   onSelectPrimaryTab: (tab: UserProfilePrimaryTab) => void;
   onSelectSavedTypeTab: (tab: UserSavedTypeTab) => void;
   onSelectSavedPostCategoryFilter: (filter: SavedPostCategoryFilter) => void;
+  onManageCollections: () => void;
 };
 
 function ModernUserPageHeader({
@@ -565,6 +595,7 @@ function ModernUserPageHeader({
   selectedSavedTypeTab,
   isSavedPostsPage,
   savedPostCategoryFilters,
+  savedPostCategoryCounts,
   selectedSavedPostCategoryFilter,
   onEditProfile,
   onShareProfile,
@@ -573,6 +604,7 @@ function ModernUserPageHeader({
   onSelectPrimaryTab,
   onSelectSavedTypeTab,
   onSelectSavedPostCategoryFilter,
+  onManageCollections,
 }: ModernUserPageHeaderProps) {
   const { theme } = useContext(ThemeContext);
   return (
@@ -684,6 +716,11 @@ function ModernUserPageHeader({
               {savedPostCategoryFilters.map((category) => {
                 const selected =
                   category.key === selectedSavedPostCategoryFilter;
+                const count =
+                  category.key !== SAVED_POST_CATEGORY_ALL &&
+                  category.key !== SAVED_POST_CATEGORY_UNCATEGORIZED
+                    ? savedPostCategoryCounts[category.key.toLowerCase()] || 0
+                    : undefined;
                 return (
                   <TouchableOpacity
                     key={category.key}
@@ -712,10 +749,26 @@ function ModernUserPageHeader({
                       ]}
                     >
                       {category.label}
+                      {count !== undefined ? ` (${count})` : ""}
                     </Text>
                   </TouchableOpacity>
                 );
               })}
+              {savedPostCategoryFilters.length > 2 && (
+                <TouchableOpacity
+                  activeOpacity={0.8}
+                  style={[
+                    styles.savedCategoryFilterButton,
+                    {
+                      backgroundColor: theme.tint,
+                      borderColor: theme.divider,
+                    },
+                  ]}
+                  onPress={onManageCollections}
+                >
+                  <Feather name="settings" size={13} color={theme.subtleText} />
+                </TouchableOpacity>
+              )}
             </ScrollView>
           )}
         </>
@@ -804,6 +857,10 @@ function ModernUserPageContent(props: StackPageProps<"UserPage">) {
       })),
     ],
     [savedPostCategories],
+  );
+  const savedPostCategoryCounts = useMemo(
+    () => getCategoryCountsFromMap(savedPostCategoryMap),
+    [savedPostCategoryMap],
   );
 
   const setFollowState = useCallback((nextFollowing: boolean) => {
@@ -1148,6 +1205,7 @@ function ModernUserPageContent(props: StackPageProps<"UserPage">) {
         selectedSavedTypeTab={selectedSavedTypeTab}
         isSavedPostsPage={isSavedPostsPage}
         savedPostCategoryFilters={savedPostCategoryFilters}
+        savedPostCategoryCounts={savedPostCategoryCounts}
         selectedSavedPostCategoryFilter={selectedSavedPostCategoryFilter}
         onEditProfile={openEditProfile}
         onShareProfile={shareProfile}
@@ -1156,6 +1214,7 @@ function ModernUserPageContent(props: StackPageProps<"UserPage">) {
         onSelectPrimaryTab={goToPrimaryTab}
         onSelectSavedTypeTab={goToSavedTypeTab}
         onSelectSavedPostCategoryFilter={setSelectedSavedPostCategoryFilter}
+        onManageCollections={() => setModal(<CollectionManager />)}
       />
     ),
     [
@@ -1166,6 +1225,7 @@ function ModernUserPageContent(props: StackPageProps<"UserPage">) {
       selectedSavedTypeTab,
       isSavedPostsPage,
       savedPostCategoryFilters,
+      savedPostCategoryCounts,
       selectedSavedPostCategoryFilter,
       isFollowLoading,
       openEditProfile,

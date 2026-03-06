@@ -13,6 +13,7 @@ import OpenInHydra from "./General/OpenInHydra";
 import ExternalLinks from "./General/ExternalLinks";
 import Privacy from "./Privacy";
 import Root from "./Root";
+import Security from "./Security";
 import Sorting from "./General/Sorting";
 import Startup from "./General/Startup";
 import Theme from "./Theme";
@@ -83,6 +84,7 @@ export default function SettingsPage({
         {relativePath === "settings/dataUse" && <DataUse />}
         {relativePath === "settings/stats" && <Stats />}
         {relativePath === "settings/privacy" && <Privacy />}
+        {relativePath === "settings/security" && <Security />}
         {relativePath === "settings/advanced" && <Advanced />}
         {relativePath === "settings/hydraPro" && <HydraPro />}
       </KeyboardAvoidingScroller>

@@ -145,6 +145,50 @@ export function clearCategory(postName: string): void {
   writeSavedPostCategoryMap(newCategoryMap);
 }
 
+export function renameCategory(
+  oldName: string,
+  newName: string,
+): string | undefined {
+  const normalizedNew = normalizeSavedPostCategoryName(newName);
+  if (!normalizedNew || !oldName) return undefined;
+
+  const categoryMap = readSavedPostCategoryMap();
+  const updated: SavedPostCategoryMap = {};
+  for (const [postName, category] of Object.entries(categoryMap)) {
+    updated[postName] =
+      category.toLowerCase() === oldName.toLowerCase()
+        ? normalizedNew
+        : category;
+  }
+  writeSavedPostCategoryMap(updated);
+  return normalizedNew;
+}
+
+export function deleteCategory(categoryName: string): void {
+  if (!categoryName) return;
+  const categoryMap = readSavedPostCategoryMap();
+  const updated: SavedPostCategoryMap = {};
+  for (const [postName, category] of Object.entries(categoryMap)) {
+    if (category.toLowerCase() !== categoryName.toLowerCase()) {
+      updated[postName] = category;
+    }
+  }
+  writeSavedPostCategoryMap(updated);
+}
+
+export function getCategoryCountsFromMap(
+  categoryMap: SavedPostCategoryMap,
+): Record<string, number> {
+  const counts: Record<string, number> = {};
+  for (const category of Object.values(categoryMap)) {
+    const normalized = normalizeSavedPostCategoryName(category);
+    if (!normalized) continue;
+    const key = normalized.toLowerCase();
+    counts[key] = (counts[key] || 0) + 1;
+  }
+  return counts;
+}
+
 export function matchesFilter(
   postName: string,
   filter: SavedPostCategoryFilter,
