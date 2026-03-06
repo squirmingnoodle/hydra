@@ -63,6 +63,8 @@
     <string>Allow $(PRODUCT_NAME) to save photos and videos to your library.</string>
     <key>NSPhotoLibraryUsageDescription</key>
     <string>$(PRODUCT_NAME) accesses your photos to upload images.</string>
+    <key>NSSupportsLiveActivities</key>
+    <true/>
     <key>NSUserActivityTypes</key>
     <array>
       <string>com.darlops.hydra.viewPost</string>
