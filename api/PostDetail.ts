@@ -260,7 +260,7 @@ export class ParseableError extends Error {}
 
 export async function submitPost(
   subreddit: string,
-  kind: "self" | "link" | "image",
+  kind: "self" | "link" | "image" | "video",
   title: string,
   content: string,
   flairId?: string,

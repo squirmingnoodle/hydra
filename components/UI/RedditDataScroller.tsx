@@ -20,6 +20,8 @@ import { ThemeContext } from "../../contexts/SettingsContexts/ThemeContext";
 import { TabSettingsContext } from "../../contexts/SettingsContexts/TabSettingsContext";
 import { TabScrollContext } from "../../contexts/TabScrollContext";
 import { modifyStat, Stat } from "../../db/functions/Stats";
+import KeyStore from "../../utils/KeyStore";
+import { PostSkeletonList } from "./SkeletonLoader";
 
 /**
  * Future note for when I'm an idiot and the scroller gets all glitchy again.
@@ -48,6 +50,7 @@ type RedditDataScrollerProps<T> = OverridableFlashListProps<T> & {
   data: T[];
   fullyLoaded: boolean;
   hitFilterLimit: boolean;
+  persistScrollKey?: string;
 };
 
 function RedditDataScroller<T extends RedditDataObject>(
@@ -68,6 +71,15 @@ function RedditDataScroller<T extends RedditDataObject>(
   const lastScrollPosition = useRef(0);
   const accumulatedScroll = useRef(0);
   const flushTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
+  const isLoadingRef = useRef(false);
+
+  // Scroll position persistence
+  const scrollPersistKey = props.persistScrollKey
+    ? `scrollPos:${props.persistScrollKey}`
+    : null;
+  const scrollPersistTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
+  const hasRestoredScroll = useRef(false);
+  const listRef = useRef<any>(null);
 
   const flushScrollStat = useCallback(() => {
     if (accumulatedScroll.current > 0) {
@@ -79,20 +91,48 @@ function RedditDataScroller<T extends RedditDataObject>(
   useEffect(() => {
     return () => {
       clearTimeout(flushTimer.current);
+      clearTimeout(scrollPersistTimer.current);
       flushScrollStat();
     };
   }, []);
 
+  // Restore scroll position when data first loads
+  useEffect(() => {
+    if (
+      !hasRestoredScroll.current &&
+      scrollPersistKey &&
+      props.data.length > 0
+    ) {
+      hasRestoredScroll.current = true;
+      const savedOffset = KeyStore.getNumber(scrollPersistKey);
+      if (savedOffset && savedOffset > 0) {
+        // Small delay to let FlashList finish layout
+        setTimeout(() => {
+          listRef.current?.scrollToOffset({
+            offset: savedOffset,
+            animated: false,
+          });
+        }, 100);
+      }
+    }
+  }, [props.data.length]);
+
   const loadMoreData = async (refresh = false) => {
     if (props.fullyLoaded && !refresh) return;
+    if (isLoadingRef.current && !refresh) return;
+    isLoadingRef.current = true;
     setIsLoadingMore(true);
-    if (refresh) {
-      await props.refresh();
-      setRefreshing(false);
-    } else {
-      await props.loadMore();
+    try {
+      if (refresh) {
+        await props.refresh();
+        setRefreshing(false);
+      } else {
+        await props.loadMore();
+      }
+    } finally {
+      isLoadingRef.current = false;
+      setIsLoadingMore(false);
     }
-    setIsLoadingMore(false);
   };
 
   /**
@@ -117,6 +157,7 @@ function RedditDataScroller<T extends RedditDataObject>(
   return (
     <FlashList<T>
       {...props}
+      ref={listRef}
       contentInsetAdjustmentBehavior={contentInsetAdjustmentBehavior}
       automaticallyAdjustContentInsets={automaticallyAdjustContentInsets}
       scrollEnabled={!scrollDisabled}
@@ -128,6 +169,10 @@ function RedditDataScroller<T extends RedditDataObject>(
           onRefresh={() => {
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
             setRefreshing(true);
+            if (scrollPersistKey) {
+              KeyStore.delete(scrollPersistKey);
+              hasRestoredScroll.current = true; // Don't restore after refresh
+            }
             loadMoreData(true);
           }}
         />
@@ -142,6 +187,13 @@ function RedditDataScroller<T extends RedditDataObject>(
         lastScrollPosition.current = scrollPosition;
         clearTimeout(flushTimer.current);
         flushTimer.current = setTimeout(flushScrollStat, 2000);
+        // Debounce scroll position persistence
+        if (scrollPersistKey) {
+          clearTimeout(scrollPersistTimer.current);
+          scrollPersistTimer.current = setTimeout(() => {
+            KeyStore.set(scrollPersistKey, scrollPosition);
+          }, 500);
+        }
       }}
       onEndReachedThreshold={2}
       onEndReached={() => {
@@ -155,7 +207,13 @@ function RedditDataScroller<T extends RedditDataObject>(
       }}
       ListFooterComponent={
         <View style={styles.endOfListContainer}>
-          {isLoadingMore && <ActivityIndicator size="small" />}
+          {isLoadingMore && (
+            props.data.length === 0 ? (
+              <PostSkeletonList count={3} />
+            ) : (
+              <ActivityIndicator size="small" />
+            )
+          )}
           {!isLoadingMore && props.fullyLoaded && !!props.data.length && (
             <Text
               style={[

@@ -25,6 +25,7 @@ import {
   Alert,
   Share,
 } from "react-native";
+import * as Haptics from "expo-haptics";
 
 import {
   Comment,
@@ -34,6 +35,7 @@ import {
   vote,
 } from "../../../../api/PostDetail";
 import { VoteOption } from "../../../../api/Posts";
+import { reportContent, REPORT_REASONS } from "../../../../api/Report";
 import { saveItem } from "../../../../api/Save";
 import { AccountContext } from "../../../../contexts/AccountContext";
 import { ModalContext } from "../../../../contexts/ModalContext";
@@ -52,6 +54,31 @@ import Slideable from "../../../UI/Slideable";
 import { GesturesContext } from "../../../../contexts/SettingsContexts/GesturesContext";
 import Time from "../../../../utils/Time";
 
+function countNestedReplies(comment: PostDetail | Comment): number {
+  let count = 0;
+  for (const child of comment.comments) {
+    count += 1;
+    count += countNestedReplies(child);
+  }
+  return count;
+}
+
+function commentMatchesSearch(
+  comment: PostDetail | Comment,
+  filter: string,
+): boolean {
+  const lowerFilter = filter.toLowerCase();
+  if (
+    comment.type === "comment" &&
+    comment.text.toLowerCase().includes(lowerFilter)
+  ) {
+    return true;
+  }
+  return comment.comments.some((child) =>
+    commentMatchesSearch(child, filter),
+  );
+}
+
 interface CommentProps {
   loadMoreComments?: LoadMoreCommentsFunc;
   comment: PostDetail | Comment;
@@ -61,6 +88,7 @@ interface CommentProps {
   changeComment: (comment: Comment) => void;
   deleteComment: (comment: Comment) => void;
   collapseThread?: (comment: Comment) => void;
+  searchFilter?: string;
 
   // This comment prop ref thing is horrific. Don't do it. We're using it so
   // the post details page can reach into the comments inside of it to get to
@@ -77,6 +105,7 @@ export function CommentComponent({
   changeComment,
   deleteComment,
   collapseThread,
+  searchFilter,
   commentPropRef,
 }: CommentProps) {
   const { theme } = useContext(ThemeContext);
@@ -91,9 +120,12 @@ export function CommentComponent({
   const showContextMenu = useContextMenu();
 
   const isFiltered =
-    comment.type === "comment" &&
-    !displayInList &&
-    !doesCommentPassTextFilter(comment);
+    (comment.type === "comment" &&
+      !displayInList &&
+      !doesCommentPassTextFilter(comment)) ||
+    (!!searchFilter &&
+      comment.type === "comment" &&
+      !commentMatchesSearch(comment, searchFilter));
 
   const commentRef = useRef<ComponentRef<typeof TouchableHighlight>>(null);
 
@@ -113,6 +145,7 @@ export function CommentComponent({
   };
 
   const voteOnComment = async (voteOption: VoteOption) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     if (comment.type === "comment") {
       const result = await vote(comment, voteOption);
       changeComment?.({
@@ -126,6 +159,7 @@ export function CommentComponent({
 
   const saveComment = async () => {
     if (comment.type !== "comment") return;
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     await saveItem(comment, !comment.saved);
     changeComment?.({
       ...comment,
@@ -197,6 +231,7 @@ export function CommentComponent({
       "Reply",
       ...(comment.saved ? ["Unsave"] : ["Save"]),
       ...(currentUser?.userName === comment.author ? ["Edit", "Delete"] : []),
+      "Report",
       "Share",
     ];
     const result = await showContextMenu({ options });
@@ -219,6 +254,20 @@ export function CommentComponent({
       confirmDeleteComment();
     } else if (result === "Select Text") {
       setModal(<SelectText text={comment.text} />);
+    } else if (result === "Report") {
+      const reason = await showContextMenu({
+        options: [...REPORT_REASONS],
+      });
+      if (!reason) return;
+      try {
+        await reportContent(
+          comment,
+          reason as (typeof REPORT_REASONS)[number],
+        );
+        Alert.alert("Reported", "Thank you for your report.");
+      } catch (_) {
+        Alert.alert("Error", "Failed to submit report.");
+      }
     } else if (result === "Share") {
       Share.share({ url: new RedditURL(comment.link).toString() });
     }
@@ -519,6 +568,19 @@ export function CommentComponent({
                         subreddit={comment.subreddit}
                       />
                     </View>
+                  ) : comment.type === "comment" &&
+                    comment.comments.length > 0 ? (
+                    <Text
+                      style={[
+                        styles.collapsedCount,
+                        { color: theme.subtleText },
+                      ]}
+                    >
+                      {countNestedReplies(comment)}{" "}
+                      {countNestedReplies(comment) === 1
+                        ? "reply"
+                        : "replies"}
+                    </Text>
                   ) : null}
                   {displayInList && (
                     <TouchableOpacity
@@ -582,6 +644,7 @@ export function CommentComponent({
                     changeComment={changeComment}
                     deleteComment={deleteComment}
                     collapseThread={collapseThread}
+                    searchFilter={searchFilter}
                   />
                 ))}
               {comment.loadMore && comment.loadMore.childIds.length > 0 && (
@@ -655,6 +718,7 @@ export function CommentComponent({
       comment,
       comment.renderCount,
       theme,
+      searchFilter,
     ],
   );
 }
@@ -666,6 +730,7 @@ interface CommentsProps {
   changeComment: (comment: Comment) => void;
   deleteComment: (comment: Comment) => void;
   collapseThread: (comment: Comment) => void;
+  searchFilter?: string;
 }
 
 const Comments = forwardRef(
@@ -677,6 +742,7 @@ const Comments = forwardRef(
       changeComment,
       deleteComment,
       collapseThread,
+      searchFilter,
     }: CommentsProps,
     ref: ForwardedRef<View>,
   ) => {
@@ -701,6 +767,7 @@ const Comments = forwardRef(
           changeComment={changeComment}
           deleteComment={deleteComment}
           collapseThread={collapseThread}
+          searchFilter={searchFilter}
         />
       </View>
     );
@@ -794,6 +861,10 @@ const styles = StyleSheet.create({
   },
   spacer: {
     height: 10,
+  },
+  collapsedCount: {
+    fontSize: 12,
+    marginTop: 4,
   },
   bookmarkNotch: {
     position: "absolute",

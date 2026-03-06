@@ -19,7 +19,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import * as Clipboard from "expo-clipboard";
 
-import { uploadImage } from "../../api/Media";
+import { uploadImage, uploadVideo } from "../../api/Media";
 import { CaptchaError, ParseableError, submitPost } from "../../api/PostDetail";
 import { ModalContext } from "../../contexts/ModalContext";
 import { ThemeContext } from "../../contexts/SettingsContexts/ThemeContext";
@@ -37,7 +37,7 @@ type NewPostProps = {
   subreddit: string;
 };
 
-type PostType = "self" | "link" | "image";
+type PostType = "self" | "link" | "image" | "video";
 
 const DRAFT_PREFIX = "newPostDraft-";
 
@@ -65,6 +65,9 @@ export default function NewPostEditor({
 
   const [isUploadingImg, setIsUploadingImg] = useState(false);
   const [localImgUrl, setLocalImgUrl] = useState<string>();
+  const [isUploadingVideo, setIsUploadingVideo] = useState(false);
+  const [localVideoUri, setLocalVideoUri] = useState<string>();
+  const [videoDuration, setVideoDuration] = useState<number>();
 
   const [mediaAccess, requestMediaAccess] = useMediaLibraryPermissions();
 
@@ -182,6 +185,49 @@ export default function NewPostEditor({
     }
   };
 
+  const selectVideo = async () => {
+    if (!mediaAccess?.granted && !mediaAccess?.canAskAgain) {
+      Alert.alert(
+        "Permission Denied",
+        "Please enable media library access in settings to upload videos.",
+      );
+      return;
+    } else if (!mediaAccess?.granted) {
+      const response = await requestMediaAccess();
+      if (!response.granted) {
+        Alert.alert(
+          "Permission Denied",
+          "Please enable media library access in settings to upload videos.",
+        );
+        return;
+      }
+    }
+    const result = await launchImageLibraryAsync({
+      mediaTypes: ["videos"],
+      quality: 1,
+      videoMaxDuration: 900, // 15 minutes max
+    });
+    if (result.canceled) {
+      return;
+    }
+    const videoAsset = result.assets[0];
+    setIsUploadingVideo(true);
+    try {
+      const videoURL = await uploadVideo(videoAsset);
+      if (videoURL) {
+        setText(videoURL);
+        setLocalVideoUri(videoAsset.uri);
+        setVideoDuration(videoAsset.duration ?? undefined);
+      } else {
+        throw new Error("Failed to upload video");
+      }
+    } catch (_e) {
+      Alert.alert("Failed to upload video", "Please try again later.");
+    } finally {
+      setIsUploadingVideo(false);
+    }
+  };
+
   return (
     <View
       style={[
@@ -269,7 +315,7 @@ export default function NewPostEditor({
           {submitThroughBrowser ? (
             <WebView
               source={{
-                uri: `https://new.reddit.com/r/${subreddit}/submit/?type=${kind === "self" ? "text" : kind}`,
+                uri: `https://new.reddit.com/r/${subreddit}/submit/?type=${kind === "self" ? "text" : kind === "video" ? "media" : kind}`,
               }}
               sharedCookiesEnabled={true}
               thirdPartyCookiesEnabled={true}
@@ -280,7 +326,7 @@ export default function NewPostEditor({
               keyboardShouldPersistTaps="handled"
             >
               <View style={styles.postTypeContainer}>
-                {(["self", "link", "image"] as PostType[]).map((btnKind) => (
+                {(["self", "link", "image", "video"] as PostType[]).map((btnKind) => (
                   <TouchableOpacity
                     key={btnKind}
                     style={[
@@ -292,12 +338,14 @@ export default function NewPostEditor({
                     ]}
                     onPress={() => setKind(btnKind)}
                   >
-                    <Text style={{ color: theme.text, textAlign: "center" }}>
+                    <Text style={{ color: theme.text, textAlign: "center", fontSize: 13 }}>
                       {btnKind === "self"
-                        ? "Text Post"
+                        ? "Text"
                         : btnKind === "link"
-                          ? "Link Post"
-                          : "Image Post"}
+                          ? "Link"
+                          : btnKind === "image"
+                            ? "Image"
+                            : "Video"}
                     </Text>
                   </TouchableOpacity>
                 ))}
@@ -435,6 +483,47 @@ export default function NewPostEditor({
                     <Image src={localImgUrl} style={styles.image} />
                   ) : null}
                 </>
+              ) : kind === "video" ? (
+                <>
+                  <TouchableOpacity
+                    style={[
+                      styles.uploadImageButton,
+                      {
+                        backgroundColor: theme.iconPrimary,
+                      },
+                    ]}
+                    activeOpacity={0.5}
+                    onPress={() => selectVideo()}
+                  >
+                    {isUploadingVideo ? (
+                      <ActivityIndicator size="small" color={theme.text} />
+                    ) : (
+                      <Text
+                        style={[
+                          styles.uploadImageText,
+                          {
+                            color: theme.text,
+                          },
+                        ]}
+                      >
+                        Select Video
+                      </Text>
+                    )}
+                  </TouchableOpacity>
+                  {localVideoUri ? (
+                    <View style={styles.videoPreview}>
+                      <Text style={[styles.videoPreviewText, { color: theme.text }]}>
+                        Video selected
+                        {videoDuration
+                          ? ` (${Math.floor(videoDuration / 60)}:${String(Math.floor(videoDuration % 60)).padStart(2, "0")})`
+                          : ""}
+                      </Text>
+                      <Text style={[styles.videoPreviewHint, { color: theme.subtleText }]}>
+                        Video will be processed by Reddit after posting
+                      </Text>
+                    </View>
+                  ) : null}
+                </>
               ) : null}
             </ScrollView>
           )}
@@ -548,5 +637,18 @@ const styles = StyleSheet.create({
     flex: 1,
     marginVertical: 10,
     alignSelf: "center",
+  },
+  videoPreview: {
+    paddingHorizontal: 20,
+    paddingVertical: 15,
+    alignItems: "center",
+    gap: 4,
+  },
+  videoPreviewText: {
+    fontSize: 16,
+    fontWeight: "500",
+  },
+  videoPreviewHint: {
+    fontSize: 13,
   },
 });

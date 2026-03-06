@@ -90,6 +90,29 @@ export const CounterStats = sqliteTable(
   ],
 );
 
+export const SearchHistory = sqliteTable(
+  "search_history",
+  {
+    id: integer({ mode: "number" }).primaryKey({ autoIncrement: true }),
+    query: text().notNull(),
+    searchType: text().notNull().default("posts"),
+    createdAt: text()
+      .notNull()
+      .default(sql`(CURRENT_TIMESTAMP)`),
+    updatedAt: text()
+      .notNull()
+      .default(sql`(CURRENT_TIMESTAMP)`)
+      .$onUpdate(() => sql`(CURRENT_TIMESTAMP)`),
+  },
+  (table) => [
+    uniqueIndex("search_history_query_type_idx").on(
+      table.query,
+      table.searchType,
+    ),
+    index("search_history_updatedAt_idx").on(table.updatedAt),
+  ],
+);
+
 export const SubredditVisits = sqliteTable(
   "subreddit_visits",
   {

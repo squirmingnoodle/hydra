@@ -1,7 +1,8 @@
 import * as Clipboard from "expo-clipboard";
 import * as Linking from "expo-linking";
+import * as QuickActions from "expo-quick-actions";
 import { useEffect, useRef } from "react";
-import { Alert, AppState } from "react-native";
+import { Alert, AppState, Platform } from "react-native";
 
 import RedditURL, { PageType } from "./RedditURL";
 import { PageTypeToNavName } from "./navigation";
@@ -41,6 +42,20 @@ export default function useHandleIncomingURLs() {
       return;
     const url = deepLink.replace(/hydra:\/\/openurl\?url=/i, "");
     handleURL(url);
+  };
+
+  const handleQuickAction = (action: QuickActions.Action) => {
+    switch (action.id) {
+      case "search":
+        navigation.dispatch(TabActions.jumpTo("Search"));
+        break;
+      case "inbox":
+        navigation.dispatch(TabActions.jumpTo("Inbox"));
+        break;
+      case "new_post":
+        navigation.dispatch(TabActions.jumpTo("Posts"));
+        break;
+    }
   };
 
   const handleClipboardURL = async () => {
@@ -100,6 +115,10 @@ export default function useHandleIncomingURLs() {
       if (deepLink) {
         handleDeepLink(deepLink);
       }
+      // Handle quick action that opened the app (cold start)
+      if (QuickActions.initial) {
+        handleQuickAction(QuickActions.initial);
+      }
     };
     navigation.addListener("ready", startupLinkHandler);
     const subscription = Linking.addEventListener("url", (event) => {
@@ -109,5 +128,32 @@ export default function useHandleIncomingURLs() {
       subscription.remove();
       navigation.removeListener("ready", startupLinkHandler);
     };
+  }, []);
+
+  // Set up quick actions and listener
+  useEffect(() => {
+    QuickActions.setItems([
+      {
+        id: "search",
+        title: "Search",
+        subtitle: "Search Reddit",
+        icon: Platform.OS === "ios" ? "symbol:magnifyingglass" : undefined,
+      },
+      {
+        id: "inbox",
+        title: "Inbox",
+        subtitle: "Check your messages",
+        icon: Platform.OS === "ios" ? "symbol:tray.fill" : undefined,
+      },
+      {
+        id: "new_post",
+        title: "New Post",
+        subtitle: "Create a new post",
+        icon: Platform.OS === "ios" ? "symbol:square.and.pencil" : undefined,
+      },
+    ]);
+
+    const subscription = QuickActions.addListener(handleQuickAction);
+    return () => subscription.remove();
   }, []);
 }

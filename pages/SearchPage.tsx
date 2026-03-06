@@ -26,16 +26,28 @@ import { ThemeContext } from "../contexts/SettingsContexts/ThemeContext";
 import { useURLNavigation } from "../utils/navigation";
 import useRedditDataState from "../utils/useRedditDataState";
 import { useFocusEffect } from "@react-navigation/native";
+import {
+  addSearchQuery,
+  getRecentSearches,
+  deleteSearchQuery,
+} from "../db/functions/SearchHistory";
 
 export default function SearchPage() {
   const { theme } = useContext(ThemeContext);
   const { pushURL } = useURLNavigation();
 
   const [trending, setTrending] = useState<Subreddit[]>([]);
+  const [recentSearches, setRecentSearches] = useState<
+    { query: string; searchType: string }[]
+  >([]);
   const search = useRef<string>("");
   const searchBarRef = useRef<TextInput | null>(null);
   const [searchType, setSearchType] = useState<SearchType>("posts");
   const [loading, setLoading] = useState(false);
+
+  const loadRecentSearches = () => {
+    setRecentSearches(getRecentSearches(undefined, 20));
+  };
 
   const {
     data: searchResults,
@@ -80,6 +92,7 @@ export default function SearchPage() {
 
   useEffect(() => {
     loadTrending();
+    loadRecentSearches();
   }, []);
 
   const modifySearchResultsRef = useRef(modifySearchResults);
@@ -147,6 +160,10 @@ export default function SearchPage() {
         ref={searchBarRef}
         onSearch={(text) => {
           search.current = text;
+          if (text.trim()) {
+            addSearchQuery(text.trim(), searchType);
+            loadRecentSearches();
+          }
           refreshSearchResults();
         }}
       />
@@ -164,21 +181,48 @@ export default function SearchPage() {
               <ActivityIndicator size="small" color={theme.text} />
             </View>
           ) : (
-            <List
-              title="Trending Subreddits"
-              items={trending.map((sub) => ({
-                key: sub.id,
-                icon: (
-                  <Feather
-                    name="trending-up"
-                    size={22}
-                    color={theme.iconPrimary}
-                  />
-                ),
-                text: sub.name,
-                onPress: () => pushURL(sub.url),
-              }))}
-            />
+            <>
+              {recentSearches.length > 0 && (
+                <List
+                  title="Recent Searches"
+                  items={recentSearches.map((entry) => ({
+                    key: `${entry.searchType}-${entry.query}`,
+                    icon: (
+                      <Feather
+                        name="clock"
+                        size={22}
+                        color={theme.iconPrimary}
+                      />
+                    ),
+                    text: entry.query,
+                    onPress: () => {
+                      search.current = entry.query;
+                      setSearchType(entry.searchType as SearchType);
+                      refreshSearchResults();
+                    },
+                    onLongPress: () => {
+                      deleteSearchQuery(entry.query, entry.searchType);
+                      loadRecentSearches();
+                    },
+                  }))}
+                />
+              )}
+              <List
+                title="Trending Subreddits"
+                items={trending.map((sub) => ({
+                  key: sub.id,
+                  icon: (
+                    <Feather
+                      name="trending-up"
+                      size={22}
+                      color={theme.iconPrimary}
+                    />
+                  ),
+                  text: sub.name,
+                  onPress: () => pushURL(sub.url),
+                }))}
+              />
+            </>
           )
         }
       />

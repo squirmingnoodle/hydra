@@ -49,6 +49,7 @@ export default function useRedditDataState<
   refreshDependencies = [],
 }: UseRedditDataStateProps<T>) {
   const unfilteredAfter = useRef<string | undefined>(undefined);
+  const isRefreshing = useRef(false);
 
   const [data, setData] = useState<T[]>([]);
   const [fullyLoaded, setFullyLoaded] = useState(false);
@@ -83,6 +84,7 @@ export default function useRedditDataState<
 
   const loadMoreData = async () => {
     if (hitFilterLimit) return;
+    if (isRefreshing.current) return;
     let newData: T[] = [];
     for (let i = 0; i < filterRetries; i++) {
       const potentialData = await loadDataWithFailureHandling(
@@ -110,6 +112,7 @@ export default function useRedditDataState<
   };
 
   const refreshData = async ({ clearBeforeLoading = false } = {}) => {
+    isRefreshing.current = true;
     if (clearBeforeLoading) {
       setData([]);
     }
@@ -124,6 +127,7 @@ export default function useRedditDataState<
       if (potentialData.length === 0) {
         setData([]);
         setFullyLoaded(true);
+        isRefreshing.current = false;
         return;
       }
       unfilteredAfter.current = potentialData.slice(-1)[0]?.after;
@@ -131,10 +135,13 @@ export default function useRedditDataState<
       if (newData.length > 0) {
         break;
       }
+    }
+    if (newData.length === 0) {
       setHitFilterLimit(true);
     }
     setFullyLoaded(false);
     setData(newData);
+    isRefreshing.current = false;
   };
 
   const modifyData = (modifiedData: T[]) => {

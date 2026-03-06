@@ -56,6 +56,10 @@ export const POST_SWIPE_OPTIONS = [
     label: "Share",
     value: "share",
   },
+  {
+    label: "Hide Post",
+    value: "hidePost",
+  },
 ] as const;
 
 export const COMMENT_SWIPE_OPTIONS = [
