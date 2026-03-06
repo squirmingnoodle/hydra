@@ -4,9 +4,11 @@ import { Alert } from "react-native";
 import { AccountContext } from "./AccountContext";
 import {
   addToMulti,
+  addUserToMulti,
   getMyMultis,
   Multi,
   removeFromMulti,
+  removeUserFromMulti,
 } from "../api/Multireddit";
 import {
   Subreddit,
@@ -32,6 +34,8 @@ type SubredditContextType = {
     multi: Multi,
     subredditName: Subreddit["name"],
   ) => Promise<void>;
+  addUserToMulti: (multi: Multi, username: string) => Promise<void>;
+  deleteUserFromMulti: (multi: Multi, username: string) => Promise<void>;
 };
 
 const initialAccountContext: SubredditContextType = {
@@ -48,6 +52,8 @@ const initialAccountContext: SubredditContextType = {
   toggleFavorite: async () => {},
   addSubToMulti: async () => {},
   deleteSubFromMulti: async () => {},
+  addUserToMulti: async () => {},
+  deleteUserFromMulti: async () => {},
 };
 
 export const SubredditContext = createContext(initialAccountContext);
@@ -198,6 +204,29 @@ export function SubredditProvider({ children }: React.PropsWithChildren) {
     }
   };
 
+  const addUserToMultiContext = async (multi: Multi, username: string) => {
+    try {
+      await addUserToMulti(multi, username);
+      loadMultis();
+      alert(`Added u/${username} to ${multi.name}`);
+    } catch (e) {
+      alert("Something went wrong: " + e);
+    }
+  };
+
+  const deleteUserFromMultiContext = async (
+    multi: Multi,
+    username: string,
+  ) => {
+    try {
+      await removeUserFromMulti(multi, username);
+      loadMultis();
+      alert(`Removed u/${username} from ${multi.name}`);
+    } catch (e) {
+      alert("Something went wrong: " + e);
+    }
+  };
+
   const loadData = async () => {
     setIsLoadingSubreddits(true);
     await loadSubreddits();
@@ -220,6 +249,8 @@ export function SubredditProvider({ children }: React.PropsWithChildren) {
         toggleFavorite,
         addSubToMulti,
         deleteSubFromMulti,
+        addUserToMulti: addUserToMultiContext,
+        deleteUserFromMulti: deleteUserFromMultiContext,
       }}
     >
       {children}

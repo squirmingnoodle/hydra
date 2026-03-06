@@ -9,7 +9,6 @@ import {
   View,
   StyleSheet,
   Text,
-  TouchableOpacity,
   useWindowDimensions,
 } from "react-native";
 
@@ -506,23 +505,20 @@ export default function useMediaSharing() {
             ? "Videos"
             : "Video";
       setModal(
-        <TouchableOpacity
-          style={[styles.modalContainer, { width, height }]}
-          onPress={() => setModal(null)}
-          activeOpacity={0.9}
-        >
+        <View pointerEvents="none" style={[styles.toastContainer, { width }]}>
           <View
             style={[
-              styles.modal,
+              styles.toastPill,
               {
                 backgroundColor: theme.background,
                 borderColor: theme.divider,
               },
             ]}
           >
+            <ActivityIndicator size="small" style={styles.toastSpinner} />
             <Text
               style={[
-                styles.title,
+                styles.toastText,
                 {
                   color: theme.text,
                 },
@@ -532,9 +528,8 @@ export default function useMediaSharing() {
                 ? `Preparing ${mediaTypeLabel}...`
                 : `Saving ${mediaTypeLabel}...`}
             </Text>
-            <ActivityIndicator size="small" />
           </View>
-        </TouchableOpacity>,
+        </View>,
       );
 
       for (let i = 0; i < mediaUrls.length; i += 1) {
@@ -592,15 +587,13 @@ export default function useMediaSharing() {
             );
           }
         } else if (resolvedDownloadDestination === "photos") {
-          Alert.alert(
-            "Saved to Photos",
+          showTopToast(
             savedToHydraAlbum
-              ? `Saved ${itemLabel} to the ${HYDRA_PHOTOS_ALBUM_NAME} album.`
+              ? `Saved ${itemLabel} to ${HYDRA_PHOTOS_ALBUM_NAME}.`
               : `Saved ${itemLabel} to Photos.`,
           );
         } else {
-          Alert.alert(
-            "Saved to Files",
+          showTopToast(
             `Saved ${itemLabel} to ${destinationFolderName ?? "selected folder"}.`,
           );
         }
@@ -647,23 +640,6 @@ export default function useMediaSharing() {
 }
 
 const styles = StyleSheet.create({
-  modalContainer: {
-    position: "absolute",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  modal: {
-    alignItems: "center",
-    justifyContent: "center",
-    borderWidth: 2,
-    borderRadius: 15,
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-  },
-  title: {
-    fontSize: 16,
-    marginBottom: 10,
-  },
   toastContainer: {
     position: "absolute",
     top: 56,
@@ -671,11 +647,16 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   toastPill: {
+    flexDirection: "row",
+    alignItems: "center",
     borderWidth: 1,
     borderRadius: 999,
     paddingHorizontal: 14,
     paddingVertical: 8,
     maxWidth: "90%",
+  },
+  toastSpinner: {
+    marginRight: 8,
   },
   toastText: {
     fontSize: 13,

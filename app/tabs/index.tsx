@@ -71,45 +71,25 @@ export default function Tabs() {
   const isSwitchingAccount = useRef(false);
 
   const showLiquidGlassTabBar = Platform.OS === "ios" && liquidGlassEnabled;
-  // TODO: Re-enable native liquid tabs after post video fullscreen stability is verified.
+  // Native liquid tabs block AVPlayerViewController fullscreen presentation
   const useNativeLiquidTabs = false;
-  const tabBarGlassTint =
-    theme.systemModeStyle === "dark"
-      ? "systemChromeMaterialDark"
-      : "systemChromeMaterialLight";
-  const tabBarGlassBackground =
-    theme.systemModeStyle === "dark"
-      ? "rgba(16, 18, 22, 0.18)"
-      : "rgba(255, 255, 255, 0.18)";
-  const tabBarGlassBorderColor =
-    theme.systemModeStyle === "dark"
-      ? "rgba(255, 255, 255, 0.26)"
-      : "rgba(255, 255, 255, 0.72)";
-  const tabBarGlassHighlightColor =
-    theme.systemModeStyle === "dark"
-      ? "rgba(255, 255, 255, 0.35)"
-      : "rgba(255, 255, 255, 0.9)";
-  const tabBarGlassBottomGlowColor =
-    theme.systemModeStyle === "dark"
-      ? "rgba(255, 255, 255, 0.16)"
-      : "rgba(255, 255, 255, 0.4)";
-  const tabBarGlassShadowColor =
-    theme.systemModeStyle === "dark"
-      ? "rgba(0, 0, 0, 0.38)"
-      : "rgba(20, 30, 50, 0.12)";
-  const tabBarGlassShadowOpacity = theme.systemModeStyle === "dark" ? 0.22 : 0.08;
-  const tabBarActivePillColor =
-    theme.systemModeStyle === "dark"
-      ? "rgba(255, 255, 255, 0.32)"
-      : "rgba(255, 255, 255, 0.72)";
-  const tabBarActivePillBorderColor =
-    theme.systemModeStyle === "dark"
-      ? "rgba(255, 255, 255, 0.38)"
-      : "rgba(255, 255, 255, 0.95)";
-  const tabBarActivePillHighlightColor =
-    theme.systemModeStyle === "dark"
-      ? "rgba(255, 255, 255, 0.28)"
-      : "rgba(255, 255, 255, 0.98)";
+  const isDark = theme.systemModeStyle === "dark";
+  const tabBarGlassTint = isDark
+    ? "systemChromeMaterialDark"
+    : "systemThickMaterialLight";
+  const tabBarGlassBackground = isDark
+    ? "rgba(28, 28, 30, 0.15)"
+    : "rgba(245, 245, 250, 0.25)";
+  const tabBarGlassBorderColor = isDark
+    ? "rgba(255, 255, 255, 0.18)"
+    : "rgba(255, 255, 255, 0.65)";
+  const tabBarGlassShadowColor = isDark
+    ? "rgba(0, 0, 0, 0.55)"
+    : "rgba(0, 0, 0, 0.1)";
+  const tabBarGlassShadowOpacity = isDark ? 0.35 : 0.15;
+  const tabBarActivePillColor = isDark
+    ? "rgba(255, 255, 255, 0.2)"
+    : "rgba(255, 255, 255, 0.65)";
   const tabBarLeftInset = showLiquidGlassTabBar
     ? Math.max(14, insets.left + 10)
     : 0;
@@ -204,10 +184,7 @@ export default function Tabs() {
                     : "rgba(248, 248, 252, 0.78)",
                 shadowColor: "transparent",
               },
-              tabBarLabelStyle: {
-                fontSize: 12,
-                fontWeight: "500",
-              },
+              tabBarShowLabel: false,
             }}
             screenListeners={() => ({
               tabPress: (e) => {
@@ -330,28 +307,28 @@ export default function Tabs() {
                 left: tabBarLeftInset,
                 right: tabBarRightInset,
                 bottom: tabBarFloatingBottom,
-                height: showLiquidGlassTabBar ? 66 : undefined,
+                height: showLiquidGlassTabBar ? 62 : undefined,
                 paddingTop: showLiquidGlassTabBar ? 2 : 0,
                 paddingBottom: showLiquidGlassTabBar ? 2 : 0,
                 backgroundColor: showLiquidGlassTabBar
                   ? FULLY_TRANSPARENT_COLOR
                   : theme.background,
-                borderWidth: showLiquidGlassTabBar ? 1 : 0,
+                borderWidth: showLiquidGlassTabBar ? 0.5 : 0,
                 borderColor: showLiquidGlassTabBar
                   ? tabBarGlassBorderColor
                   : "transparent",
-                borderTopWidth: 0,
-                borderRadius: showLiquidGlassTabBar ? 33 : 0,
+                borderTopWidth: showLiquidGlassTabBar ? 0.5 : 0,
+                borderRadius: showLiquidGlassTabBar ? 31 : 0,
                 overflow: showLiquidGlassTabBar ? "hidden" : "visible",
                 shadowColor: showLiquidGlassTabBar
                   ? tabBarGlassShadowColor
                   : "transparent",
                 shadowOpacity: showLiquidGlassTabBar ? tabBarGlassShadowOpacity : 0,
                 shadowOffset: showLiquidGlassTabBar
-                  ? { width: 0, height: 9 }
+                  ? { width: 0, height: 4 }
                   : { width: 0, height: 0 },
-                shadowRadius: showLiquidGlassTabBar ? 16 : 0,
-                elevation: showLiquidGlassTabBar ? 8 : 0,
+                shadowRadius: showLiquidGlassTabBar ? 12 : 0,
+                elevation: showLiquidGlassTabBar ? 6 : 0,
                 transform: [
                   {
                     translateY: tabBarTranslateY.interpolate({
@@ -367,10 +344,10 @@ export default function Tabs() {
               },
               tabBarItemStyle: showLiquidGlassTabBar
                 ? {
-                    marginHorizontal: 4,
-                    marginVertical: 6,
+                    marginHorizontal: 3,
+                    marginVertical: 5,
                     paddingVertical: 2,
-                    borderRadius: 999,
+                    borderRadius: 22,
                     overflow: "hidden",
                   }
                 : undefined,
@@ -384,12 +361,7 @@ export default function Tabs() {
                     transform: [{ scale: 1.12 }],
                   }
                 : undefined,
-              tabBarLabelStyle: showLiquidGlassTabBar
-                ? {
-                    fontSize: 12,
-                    marginTop: -1,
-                  }
-                : undefined,
+              tabBarShowLabel: false,
               tabBarBackground: showLiquidGlassTabBar
                 ? () => (
                     <View
@@ -403,7 +375,7 @@ export default function Tabs() {
                     >
                       <BlurView
                         tint={tabBarGlassTint}
-                        intensity={88}
+                        intensity={80}
                         style={{
                           position: "absolute",
                           top: 0,
@@ -422,40 +394,17 @@ export default function Tabs() {
                           backgroundColor: tabBarGlassBackground,
                         }}
                       />
+                      {/* Specular highlight along top edge */}
                       <View
                         style={{
                           position: "absolute",
-                          top: 2,
-                          left: 12,
-                          right: 12,
-                          height: 18,
-                          borderRadius: 999,
-                          backgroundColor:
-                            theme.systemModeStyle === "dark"
-                              ? "rgba(255, 255, 255, 0.08)"
-                              : "rgba(255, 255, 255, 0.28)",
-                        }}
-                      />
-                      <View
-                        style={{
-                          position: "absolute",
-                          left: 16,
-                          right: 16,
-                          top: 0,
-                          height: 1,
-                          borderRadius: 999,
-                          backgroundColor: tabBarGlassHighlightColor,
-                        }}
-                      />
-                      <View
-                        style={{
-                          position: "absolute",
-                          left: 18,
-                          right: 18,
-                          bottom: 1,
-                          height: 1,
-                          borderRadius: 999,
-                          backgroundColor: tabBarGlassBottomGlowColor,
+                          left: 20,
+                          right: 20,
+                          top: 0.5,
+                          height: 0.5,
+                          backgroundColor: isDark
+                            ? "rgba(255, 255, 255, 0.25)"
+                            : "rgba(255, 255, 255, 0.8)",
                         }}
                       />
                     </View>

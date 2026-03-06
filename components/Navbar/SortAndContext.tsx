@@ -98,8 +98,14 @@ export default function SortAndContext({
 }: SortAndContextProps) {
   const { theme } = useContext(ThemeContext);
   const { setModal } = useContext(ModalContext);
-  const { subscribe, unsubscribe, toggleFavorite, multis, addSubToMulti } =
-    useContext(SubredditContext);
+  const {
+    subscribe,
+    unsubscribe,
+    toggleFavorite,
+    multis,
+    addSubToMulti,
+    addUserToMulti,
+  } = useContext(SubredditContext);
   const { toggleHideSeenURL } = useContext(FiltersContext);
 
   const { replaceURL, pushURL, setParams, openGallery } = useURLNavigation();
@@ -314,16 +320,21 @@ export default function SortAndContext({
                 alert(
                   "You have no multireddits created yet. Please create one first.",
                 );
+                return;
               }
               const multi = await showContextMenu({
                 options: multis.map((multi) => multi.name),
               });
               const selectedMulti = multis.find((m) => m.name === multi);
               if (selectedMulti) {
-                addSubToMulti(
-                  selectedMulti,
-                  new RedditURL(currentPath).getSubreddit(),
-                );
+                if (pageData?.type === "user") {
+                  addUserToMulti(selectedMulti, pageData.userName);
+                } else {
+                  addSubToMulti(
+                    selectedMulti,
+                    new RedditURL(currentPath).getSubreddit(),
+                  );
+                }
               }
             } else if (result === "Edit" && pageData?.type === "postDetail") {
               setModal(
