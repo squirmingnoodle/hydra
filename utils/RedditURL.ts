@@ -69,13 +69,13 @@ export default class RedditURL extends URL {
       this.url = `https://${url}`;
     } else if (url.startsWith("reddit.com")) {
       this.url = `https://www.${url}`;
-    } else if (url.startsWith("https://www.reddit.com/r/u_")) {
-      this.url = url.replace(
-        "https://www.reddit.com/r/u_",
-        "https://www.reddit.com/user/",
-      );
     } else {
       throw new Error(`Weird URL being passed ${url}`);
+    }
+    // Convert user profile subreddits (/r/u_username) to user paths (/user/username).
+    // Reddit uses u_username as the subreddit name for user profile posts.
+    if (this.url.includes("/r/u_")) {
+      this.url = this.url.replace("/r/u_", "/user/");
     }
     if (
       !this.url.startsWith("hydra://") &&

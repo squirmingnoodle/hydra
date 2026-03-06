@@ -119,7 +119,13 @@ export function formatUserData(child: any): User {
     typeof safeChild.id === "string" && safeChild.id.length > 0
       ? safeChild.id
       : userName;
-  const totalKarma = Math.max(0, postKarma + commentKarma);
+  // Use Reddit's total_karma when available (includes award karma);
+  // fall back to sum of post + comment karma.
+  const totalKarma =
+    typeof safeChild.total_karma === "number" &&
+    Number.isFinite(safeChild.total_karma)
+      ? Math.max(0, safeChild.total_karma)
+      : Math.max(0, postKarma + commentKarma);
 
   return {
     id,
