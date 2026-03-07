@@ -216,139 +216,112 @@ struct TrendingPostsWidgetView: View {
   var body: some View {
     if let post = entry.post {
       Link(destination: URL(string: "hydra://openurl?url=\(post.url)")!) {
-        ZStack {
-          // Background thumbnail (fills entire widget)
+        VStack(alignment: .leading, spacing: 0) {
+          // Thumbnail image — constrained to fixed height, never overflows
           if let path = post.localThumbnailPath,
              let uiImage = UIImage(contentsOfFile: path) {
-            Image(uiImage: uiImage)
-              .resizable()
-              .aspectRatio(contentMode: .fill)
-              .frame(maxWidth: .infinity, maxHeight: .infinity)
-              .clipped()
-              .overlay {
-                // Gradient overlay for text readability
-                LinearGradient(
-                  colors: [.clear, .clear, .black.opacity(0.7), .black.opacity(0.85)],
-                  startPoint: .top,
-                  endPoint: .bottom
-                )
-              }
-          } else {
-            // No thumbnail - solid background
-            Color(.systemBackground).opacity(0.05)
+            GeometryReader { geo in
+              Image(uiImage: uiImage)
+                .resizable()
+                .aspectRatio(contentMode: .fill)
+                .frame(width: geo.size.width, height: geo.size.height)
+                .clipped()
+            }
+            .frame(height: imageHeight)
+            .frame(maxWidth: .infinity)
+            .clipShape(Rectangle())
           }
 
-          // Content overlay
-          VStack(alignment: .leading, spacing: 0) {
-            // Top bar: nav dots + account
-            HStack {
-              // Page indicator dots
-              if entry.totalPosts > 1 {
-                HStack(spacing: 4) {
-                  ForEach(0..<min(entry.totalPosts, 10), id: \.self) { i in
-                    Circle()
-                      .fill(i == entry.postIndex ? Color.white : Color.white.opacity(0.4))
-                      .frame(width: i == entry.postIndex ? 6 : 4, height: i == entry.postIndex ? 6 : 4)
-                  }
+          // Post info
+          VStack(alignment: .leading, spacing: 3) {
+            Text(post.title)
+              .font(.system(size: titleFontSize, weight: .semibold))
+              .foregroundStyle(.primary)
+              .lineLimit(titleLineLimit)
+
+            HStack(spacing: 6) {
+              Text("r/\(post.subreddit)")
+                .font(.system(size: metaFontSize, weight: .medium))
+                .foregroundStyle(.secondary)
+
+              HStack(spacing: 2) {
+                Image(systemName: "arrow.up")
+                  .font(.system(size: metaFontSize - 2))
+                  .foregroundStyle(.orange)
+                Text("\(post.upvotes)")
+                  .font(.system(size: metaFontSize))
+                  .foregroundStyle(.secondary)
+              }
+
+              HStack(spacing: 2) {
+                Image(systemName: "bubble.left")
+                  .font(.system(size: metaFontSize - 2))
+                  .foregroundStyle(.blue)
+                Text("\(post.commentCount)")
+                  .font(.system(size: metaFontSize))
+                  .foregroundStyle(.secondary)
+              }
+
+              if !post.author.isEmpty && family != .systemSmall {
+                Text("u/\(post.author)")
+                  .font(.system(size: metaFontSize))
+                  .foregroundStyle(Color.secondary.opacity(0.7))
+                  .lineLimit(1)
+              }
+            }
+
+            if let account = entry.accountName, family != .systemSmall {
+              Text("u/\(account)")
+                .font(.system(size: 9, weight: .medium))
+                .foregroundStyle(Color.secondary.opacity(0.6))
+            }
+          }
+          .padding(.horizontal, 10)
+          .padding(.vertical, 6)
+
+          Spacer(minLength: 0)
+
+          // Navigation row
+          if entry.totalPosts > 1 {
+            HStack(spacing: 6) {
+              Button(intent: NavigatePostIntent(direction: -1)) {
+                Image(systemName: "chevron.left")
+                  .font(.system(size: 11, weight: .semibold))
+                  .foregroundStyle(.secondary)
+                  .frame(width: 28, height: 24)
+                  .background(Color(.systemFill), in: RoundedRectangle(cornerRadius: 6))
+              }
+              .buttonStyle(.plain)
+
+              Spacer()
+
+              // Page dots
+              HStack(spacing: 3) {
+                ForEach(0..<min(entry.totalPosts, 8), id: \.self) { i in
+                  Circle()
+                    .fill(i == entry.postIndex ? Color.primary : Color.secondary.opacity(0.3))
+                    .frame(width: i == entry.postIndex ? 5 : 4, height: i == entry.postIndex ? 5 : 4)
+                }
+                if entry.totalPosts > 8 {
+                  Text("…")
+                    .font(.system(size: 8))
+                    .foregroundStyle(.secondary)
                 }
               }
 
               Spacer()
 
-              if let account = entry.accountName {
-                Text("u/\(account)")
-                  .font(.system(size: 9, weight: .medium))
-                  .foregroundStyle(.white.opacity(0.7))
+              Button(intent: NavigatePostIntent(direction: 1)) {
+                Image(systemName: "chevron.right")
+                  .font(.system(size: 11, weight: .semibold))
+                  .foregroundStyle(.secondary)
+                  .frame(width: 28, height: 24)
+                  .background(Color(.systemFill), in: RoundedRectangle(cornerRadius: 6))
               }
+              .buttonStyle(.plain)
             }
-            .padding(.horizontal, 12)
-            .padding(.top, 10)
-
-            Spacer()
-
-            // Bottom: post info
-            VStack(alignment: .leading, spacing: 4) {
-              Text(post.title)
-                .font(.system(size: titleFontSize, weight: .semibold))
-                .foregroundStyle(hasThumbnail(post) ? .white : .primary)
-                .lineLimit(titleLineLimit)
-
-              HStack(spacing: 6) {
-                Text("r/\(post.subreddit)")
-                  .font(.system(size: metaFontSize, weight: .medium))
-                  .foregroundStyle(hasThumbnail(post) ? .white.opacity(0.8) : .secondary)
-
-                HStack(spacing: 2) {
-                  Image(systemName: "arrow.up")
-                    .font(.system(size: metaFontSize - 2))
-                    .foregroundStyle(.orange)
-                  Text("\(post.upvotes)")
-                    .font(.system(size: metaFontSize))
-                    .foregroundStyle(hasThumbnail(post) ? .white.opacity(0.8) : .secondary)
-                }
-
-                HStack(spacing: 2) {
-                  Image(systemName: "bubble.left")
-                    .font(.system(size: metaFontSize - 2))
-                    .foregroundStyle(.blue)
-                  Text("\(post.commentCount)")
-                    .font(.system(size: metaFontSize))
-                    .foregroundStyle(hasThumbnail(post) ? .white.opacity(0.8) : .secondary)
-                }
-
-                if !post.author.isEmpty {
-                  Text("u/\(post.author)")
-                    .font(.system(size: metaFontSize))
-                    .foregroundStyle(hasThumbnail(post) ? Color.white.opacity(0.6) : Color.secondary.opacity(0.6))
-                    .lineLimit(1)
-                }
-              }
-            }
-            .padding(.horizontal, 12)
-            .padding(.bottom, 10)
-
-            // Navigation buttons
-            if entry.totalPosts > 1 {
-              HStack(spacing: 8) {
-                Button(intent: NavigatePostIntent(direction: -1)) {
-                  HStack(spacing: 3) {
-                    Image(systemName: "chevron.left")
-                      .font(.system(size: 10, weight: .semibold))
-                    Text("Prev")
-                      .font(.system(size: 10, weight: .medium))
-                  }
-                  .foregroundStyle(hasThumbnail(post) ? .white.opacity(0.9) : .secondary)
-                  .padding(.horizontal, 10)
-                  .padding(.vertical, 5)
-                  .background(hasThumbnail(post) ? .white.opacity(0.2) : Color(.systemFill), in: Capsule())
-                }
-                .buttonStyle(.plain)
-
-                Spacer()
-
-                Text("\(entry.postIndex + 1)/\(entry.totalPosts)")
-                  .font(.system(size: 10, weight: .medium, design: .rounded))
-                  .foregroundStyle(hasThumbnail(post) ? Color.white.opacity(0.6) : Color.secondary.opacity(0.6))
-
-                Spacer()
-
-                Button(intent: NavigatePostIntent(direction: 1)) {
-                  HStack(spacing: 3) {
-                    Text("Next")
-                      .font(.system(size: 10, weight: .medium))
-                    Image(systemName: "chevron.right")
-                      .font(.system(size: 10, weight: .semibold))
-                  }
-                  .foregroundStyle(hasThumbnail(post) ? .white.opacity(0.9) : .secondary)
-                  .padding(.horizontal, 10)
-                  .padding(.vertical, 5)
-                  .background(hasThumbnail(post) ? .white.opacity(0.2) : Color(.systemFill), in: Capsule())
-                }
-                .buttonStyle(.plain)
-              }
-              .padding(.horizontal, 12)
-              .padding(.bottom, 8)
-            }
+            .padding(.horizontal, 10)
+            .padding(.bottom, 8)
           }
         }
       }
@@ -367,36 +340,38 @@ struct TrendingPostsWidgetView: View {
     }
   }
 
-  private func hasThumbnail(_ post: TrendingPost) -> Bool {
-    if let path = post.localThumbnailPath {
-      return FileManager.default.fileExists(atPath: path)
+  var imageHeight: CGFloat {
+    switch family {
+    case .systemSmall: return 80
+    case .systemMedium: return 80
+    case .systemLarge: return 180
+    default: return 80
     }
-    return false
   }
 
   var titleFontSize: CGFloat {
     switch family {
-    case .systemSmall: return 13
-    case .systemMedium: return 14
-    case .systemLarge: return 16
-    default: return 14
+    case .systemSmall: return 12
+    case .systemMedium: return 13
+    case .systemLarge: return 15
+    default: return 13
     }
   }
 
   var titleLineLimit: Int {
     switch family {
-    case .systemSmall: return 3
+    case .systemSmall: return 2
     case .systemMedium: return 2
-    case .systemLarge: return 4
+    case .systemLarge: return 3
     default: return 2
     }
   }
 
   var metaFontSize: CGFloat {
     switch family {
-    case .systemSmall: return 10
-    case .systemLarge: return 12
-    default: return 11
+    case .systemSmall: return 9
+    case .systemLarge: return 11
+    default: return 10
     }
   }
 }
