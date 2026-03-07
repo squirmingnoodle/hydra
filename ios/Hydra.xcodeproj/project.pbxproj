@@ -3,7 +3,7 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 54;
+	objectVersion = 70;
 	objects = {
 
 /* Begin PBXBuildFile section */
@@ -18,11 +18,52 @@
 		F2A1B7C22EAB100100A1B2C3 /* HydraFolderBookmarks.m in Sources */ = {isa = PBXBuildFile; fileRef = F2A1B7C02EAB100100A1B2C3 /* HydraFolderBookmarks.m */; };
 		FAA077792F552166001C9D3A /* HydraICloudKV.swift in Sources */ = {isa = PBXBuildFile; fileRef = FAA077782F552166001C9D3A /* HydraICloudKV.swift */; };
 		FAA0777B2F55216A001C9D3A /* HydraICloudKV.m in Sources */ = {isa = PBXBuildFile; fileRef = FAA0777A2F55216A001C9D3A /* HydraICloudKV.m */; };
+		FAA17E062F5BA3F500E60EA1 /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = FAA17E052F5BA3F500E60EA1 /* WidgetKit.framework */; };
+		FAA17E082F5BA3F500E60EA1 /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = FAA17E072F5BA3F500E60EA1 /* SwiftUI.framework */; };
+		FAA17E192F5BA3F600E60EA1 /* HydraWidgetsExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = FAA17E042F5BA3F500E60EA1 /* HydraWidgetsExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		FAD6CDDD2F54A69300247391 /* HydraSeenPosts.swift in Sources */ = {isa = PBXBuildFile; fileRef = FAD6CDDC2F54A69300247391 /* HydraSeenPosts.swift */; };
 		FAD6CDDF2F54A69700247391 /* HydraSeenPosts.m in Sources */ = {isa = PBXBuildFile; fileRef = FAD6CDDE2F54A69700247391 /* HydraSeenPosts.m */; };
 		FAD6CDE52F54A71E00247391 /* HydraCookies.swift in Sources */ = {isa = PBXBuildFile; fileRef = FAD6CDE42F54A71E00247391 /* HydraCookies.swift */; };
 		FAD6CDE72F54A72500247391 /* HydraCookies.m in Sources */ = {isa = PBXBuildFile; fileRef = FAD6CDE62F54A72500247391 /* HydraCookies.m */; };
+		AF57E8659AD3108117BA6A7C /* HydraTranslation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7460640B2BBF7DA7B16522A4 /* HydraTranslation.swift */; };
+		C082F4A8D322151E58DF17CF /* HydraTranslation.m in Sources */ = {isa = PBXBuildFile; fileRef = 09D9D9AD72750FF0742B77FB /* HydraTranslation.m */; };
+		38C0800F0DCCA1B83FD1E38B /* HydraLiveActivity.swift in Sources */ = {isa = PBXBuildFile; fileRef = 66E3B20C46D97CCC359E3A5B /* HydraLiveActivity.swift */; };
+		140B580B4E6C65E339837FE3 /* HydraLiveActivity.m in Sources */ = {isa = PBXBuildFile; fileRef = 715CD22343FFFB9392BA6ECE /* HydraLiveActivity.m */; };
+		80C0CBD4BE1E5B2B16431412 /* HydraWidgetData.swift in Sources */ = {isa = PBXBuildFile; fileRef = F4C45A4FB901033D3C4D4584 /* HydraWidgetData.swift */; };
+		3186525D8DC3BD116A5630E0 /* HydraWidgetData.m in Sources */ = {isa = PBXBuildFile; fileRef = D9149238B4FAD6C4AB33261D /* HydraWidgetData.m */; };
+		234ABCDE5F67890A1B2C3D41 /* HydraImageCache.m in Sources */ = {isa = PBXBuildFile; fileRef = B2C3D4E5F67890ABCD1234A1 /* HydraImageCache.m */; };
+		1234ABCDE5F67890A1B2C3D4 /* HydraImageCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F67890ABCD1234 /* HydraImageCache.swift */; };
+		049E17B98E73467EBC96B02C /* HydraHandoff.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE3128C4AF1B851DC9A61FC5 /* HydraHandoff.swift */; };
+		144ECFC9420990753E3D2A4E /* HydraHandoff.m in Sources */ = {isa = PBXBuildFile; fileRef = 44A0C89046216E2B887BBB00 /* HydraHandoff.m */; };
+		BDFB670F2CAB1BB380C92879 /* HydraSpotlight.swift in Sources */ = {isa = PBXBuildFile; fileRef = AE02A3F8AE97695DB3635E68 /* HydraSpotlight.swift */; };
+		1342999C3430024001172EE3 /* HydraSpotlight.m in Sources */ = {isa = PBXBuildFile; fileRef = DC2C5669FCD8738E62E2BC49 /* HydraSpotlight.m */; };
+		87730310EB4154D997316F39 /* HydraShareData.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA3A68E4F62C82F7B67B3BDB /* HydraShareData.swift */; };
+		5C8DAAE7A1718B53C7CFAB87 /* HydraShareData.m in Sources */ = {isa = PBXBuildFile; fileRef = E472E69974E5A533958CF498 /* HydraShareData.m */; };
 /* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		FAA17E172F5BA3F600E60EA1 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 83CBB9F71A601CBA00E9B192 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = FAA17E032F5BA3F500E60EA1;
+			remoteInfo = HydraWidgetsExtension;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		FAA17E1A2F5BA3F600E60EA1 /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				FAA17E192F5BA3F600E60EA1 /* HydraWidgetsExtension.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
 		0E016E9A6AB8AF7DE330462A /* libPods-Hydra.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-Hydra.a"; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -42,11 +83,43 @@
 		F2A1B7C02EAB100100A1B2C3 /* HydraFolderBookmarks.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = HydraFolderBookmarks.m; path = Hydra/HydraFolderBookmarks.m; sourceTree = "<group>"; };
 		FAA077782F552166001C9D3A /* HydraICloudKV.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HydraICloudKV.swift; sourceTree = "<group>"; };
 		FAA0777A2F55216A001C9D3A /* HydraICloudKV.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = HydraICloudKV.m; sourceTree = "<group>"; };
+		FAA17E042F5BA3F500E60EA1 /* HydraWidgetsExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = HydraWidgetsExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		FAA17E052F5BA3F500E60EA1 /* WidgetKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WidgetKit.framework; path = System/Library/Frameworks/WidgetKit.framework; sourceTree = SDKROOT; };
+		FAA17E072F5BA3F500E60EA1 /* SwiftUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftUI.framework; path = System/Library/Frameworks/SwiftUI.framework; sourceTree = SDKROOT; };
+		FAA17E1F2F5BA40000E60EA1 /* HydraWidgetsExtension.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = HydraWidgetsExtension.entitlements; sourceTree = "<group>"; };
 		FAD6CDDC2F54A69300247391 /* HydraSeenPosts.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HydraSeenPosts.swift; sourceTree = "<group>"; };
 		FAD6CDDE2F54A69700247391 /* HydraSeenPosts.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = HydraSeenPosts.m; sourceTree = "<group>"; };
 		FAD6CDE42F54A71E00247391 /* HydraCookies.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HydraCookies.swift; sourceTree = "<group>"; };
 		FAD6CDE62F54A72500247391 /* HydraCookies.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = HydraCookies.m; sourceTree = "<group>"; };
+		7460640B2BBF7DA7B16522A4 /* HydraTranslation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HydraTranslation.swift; sourceTree = "<group>"; };
+		09D9D9AD72750FF0742B77FB /* HydraTranslation.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = HydraTranslation.m; sourceTree = "<group>"; };
+		66E3B20C46D97CCC359E3A5B /* HydraLiveActivity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HydraLiveActivity.swift; sourceTree = "<group>"; };
+		715CD22343FFFB9392BA6ECE /* HydraLiveActivity.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = HydraLiveActivity.m; sourceTree = "<group>"; };
+		F4C45A4FB901033D3C4D4584 /* HydraWidgetData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HydraWidgetData.swift; sourceTree = "<group>"; };
+		D9149238B4FAD6C4AB33261D /* HydraWidgetData.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = HydraWidgetData.m; sourceTree = "<group>"; };
+		B2C3D4E5F67890ABCD1234A1 /* HydraImageCache.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = HydraImageCache.m; sourceTree = "<group>"; };
+		A1B2C3D4E5F67890ABCD1234 /* HydraImageCache.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HydraImageCache.swift; sourceTree = "<group>"; };
+		CE3128C4AF1B851DC9A61FC5 /* HydraHandoff.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HydraHandoff.swift; sourceTree = "<group>"; };
+		44A0C89046216E2B887BBB00 /* HydraHandoff.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = HydraHandoff.m; sourceTree = "<group>"; };
+		AE02A3F8AE97695DB3635E68 /* HydraSpotlight.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HydraSpotlight.swift; sourceTree = "<group>"; };
+		DC2C5669FCD8738E62E2BC49 /* HydraSpotlight.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = HydraSpotlight.m; sourceTree = "<group>"; };
+		BA3A68E4F62C82F7B67B3BDB /* HydraShareData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HydraShareData.swift; sourceTree = "<group>"; };
+		E472E69974E5A533958CF498 /* HydraShareData.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = HydraShareData.m; sourceTree = "<group>"; };
 /* End PBXFileReference section */
+
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		FAA17E1D2F5BA3F600E60EA1 /* PBXFileSystemSynchronizedBuildFileExceptionSet */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = FAA17E032F5BA3F500E60EA1 /* HydraWidgetsExtension */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
+/* Begin PBXFileSystemSynchronizedRootGroup section */
+		FAA17E092F5BA3F500E60EA1 /* HydraWidgets */ = {isa = PBXFileSystemSynchronizedRootGroup; exceptions = (FAA17E1D2F5BA3F600E60EA1 /* PBXFileSystemSynchronizedBuildFileExceptionSet */, ); explicitFileTypes = {}; explicitFolders = (); path = HydraWidgets; sourceTree = "<group>"; };
+/* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
 		13B07F8C1A680F5B00A75B9A /* Frameworks */ = {
@@ -54,6 +127,15 @@
 			buildActionMask = 2147483647;
 			files = (
 				D9920B8EC5594086CB9B6399 /* libPods-Hydra.a in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		FAA17E012F5BA3F500E60EA1 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				FAA17E082F5BA3F500E60EA1 /* SwiftUI.framework in Frameworks */,
+				FAA17E062F5BA3F500E60EA1 /* WidgetKit.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -77,6 +159,20 @@
 				FAD6CDE42F54A71E00247391 /* HydraCookies.swift */,
 				FAD6CDE62F54A72500247391 /* HydraCookies.m */,
 				FAA077782F552166001C9D3A /* HydraICloudKV.swift */,
+				7460640B2BBF7DA7B16522A4 /* HydraTranslation.swift */,
+				09D9D9AD72750FF0742B77FB /* HydraTranslation.m */,
+				66E3B20C46D97CCC359E3A5B /* HydraLiveActivity.swift */,
+				715CD22343FFFB9392BA6ECE /* HydraLiveActivity.m */,
+				F4C45A4FB901033D3C4D4584 /* HydraWidgetData.swift */,
+				D9149238B4FAD6C4AB33261D /* HydraWidgetData.m */,
+				A1B2C3D4E5F67890ABCD1234 /* HydraImageCache.swift */,
+				B2C3D4E5F67890ABCD1234A1 /* HydraImageCache.m */,
+				CE3128C4AF1B851DC9A61FC5 /* HydraHandoff.swift */,
+				44A0C89046216E2B887BBB00 /* HydraHandoff.m */,
+				AE02A3F8AE97695DB3635E68 /* HydraSpotlight.swift */,
+				DC2C5669FCD8738E62E2BC49 /* HydraSpotlight.m */,
+				BA3A68E4F62C82F7B67B3BDB /* HydraShareData.swift */,
+				E472E69974E5A533958CF498 /* HydraShareData.m */,
 				FAA0777A2F55216A001C9D3A /* HydraICloudKV.m */,
 			);
 			name = Hydra;
@@ -95,6 +191,8 @@
 			children = (
 				ED297162215061F000B7C4FE /* JavaScriptCore.framework */,
 				0E016E9A6AB8AF7DE330462A /* libPods-Hydra.a */,
+				FAA17E052F5BA3F500E60EA1 /* WidgetKit.framework */,
+				FAA17E072F5BA3F500E60EA1 /* SwiftUI.framework */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
@@ -126,8 +224,10 @@
 		83CBB9F61A601CBA00E9B192 = {
 			isa = PBXGroup;
 			children = (
+				FAA17E1F2F5BA40000E60EA1 /* HydraWidgetsExtension.entitlements */,
 				13B07FAE1A68108700A75B9A /* Hydra */,
 				832341AE1AAA6A7D00B99B32 /* Libraries */,
+				FAA17E092F5BA3F500E60EA1 /* HydraWidgets */,
 				83CBBA001A601CBA00E9B192 /* Products */,
 				2D16E6871FA4F8E400B85C8A /* Frameworks */,
 				60A2E6FB9A946C21620ED485 /* Pods */,
@@ -142,6 +242,7 @@
 			isa = PBXGroup;
 			children = (
 				13B07F961A680F5B00A75B9A /* Hydra.app */,
+				FAA17E042F5BA3F500E60EA1 /* HydraWidgetsExtension.appex */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -171,15 +272,39 @@
 				800E24972A6A228C8D4807E9 /* [CP] Copy Pods Resources */,
 				3DB7BF920DB24D90925C2C79 /* Upload Debug Symbols to Sentry */,
 				81A50D8DB29D201346F84E72 /* [CP] Embed Pods Frameworks */,
+				FAA17E1A2F5BA3F600E60EA1 /* Embed Foundation Extensions */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				FAA17E182F5BA3F600E60EA1 /* PBXTargetDependency */,
 			);
 			name = Hydra;
 			productName = Hydra;
 			productReference = 13B07F961A680F5B00A75B9A /* Hydra.app */;
 			productType = "com.apple.product-type.application";
+		};
+		FAA17E032F5BA3F500E60EA1 /* HydraWidgetsExtension */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = FAA17E1E2F5BA3F600E60EA1 /* Build configuration list for PBXNativeTarget "HydraWidgetsExtension" */;
+			buildPhases = (
+				FAA17E002F5BA3F500E60EA1 /* Sources */,
+				FAA17E012F5BA3F500E60EA1 /* Frameworks */,
+				FAA17E022F5BA3F500E60EA1 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				FAA17E092F5BA3F500E60EA1 /* HydraWidgets */,
+			);
+			name = HydraWidgetsExtension;
+			packageProductDependencies = (
+			);
+			productName = HydraWidgetsExtension;
+			productReference = FAA17E042F5BA3F500E60EA1 /* HydraWidgetsExtension.appex */;
+			productType = "com.apple.product-type.app-extension";
 		};
 /* End PBXNativeTarget section */
 
@@ -187,10 +312,14 @@
 		83CBB9F71A601CBA00E9B192 /* Project object */ = {
 			isa = PBXProject;
 			attributes = {
+				LastSwiftUpdateCheck = 2630;
 				LastUpgradeCheck = 1130;
 				TargetAttributes = {
 					13B07F861A680F5B00A75B9A = {
 						LastSwiftMigration = 1250;
+					};
+					FAA17E032F5BA3F500E60EA1 = {
+						CreatedOnToolsVersion = 26.3;
 					};
 				};
 			};
@@ -208,6 +337,7 @@
 			projectRoot = "";
 			targets = (
 				13B07F861A680F5B00A75B9A /* Hydra */,
+				FAA17E032F5BA3F500E60EA1 /* HydraWidgetsExtension */,
 			);
 		};
 /* End PBXProject section */
@@ -221,6 +351,13 @@
 				13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */,
 				3E461D99554A48A4959DE609 /* SplashScreen.storyboard in Resources */,
 				E2E6B6FE8E8D79095952ACC4 /* PrivacyInfo.xcprivacy in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		FAA17E022F5BA3F500E60EA1 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -393,23 +530,48 @@
 				FAA0777B2F55216A001C9D3A /* HydraICloudKV.m in Sources */,
 				F2A1B7C12EAB100100A1B2C3 /* HydraFolderBookmarks.swift in Sources */,
 				FAA077792F552166001C9D3A /* HydraICloudKV.swift in Sources */,
+				AF57E8659AD3108117BA6A7C /* HydraTranslation.swift in Sources */,
+				C082F4A8D322151E58DF17CF /* HydraTranslation.m in Sources */,
+				38C0800F0DCCA1B83FD1E38B /* HydraLiveActivity.swift in Sources */,
+				140B580B4E6C65E339837FE3 /* HydraLiveActivity.m in Sources */,
+				80C0CBD4BE1E5B2B16431412 /* HydraWidgetData.swift in Sources */,
+				3186525D8DC3BD116A5630E0 /* HydraWidgetData.m in Sources */,
+				1234ABCDE5F67890A1B2C3D4 /* HydraImageCache.swift in Sources */,
+				234ABCDE5F67890A1B2C3D41 /* HydraImageCache.m in Sources */,
+				049E17B98E73467EBC96B02C /* HydraHandoff.swift in Sources */,
+				144ECFC9420990753E3D2A4E /* HydraHandoff.m in Sources */,
+				BDFB670F2CAB1BB380C92879 /* HydraSpotlight.swift in Sources */,
+				1342999C3430024001172EE3 /* HydraSpotlight.m in Sources */,
+				87730310EB4154D997316F39 /* HydraShareData.swift in Sources */,
+				5C8DAAE7A1718B53C7CFAB87 /* HydraShareData.m in Sources */,
 				F2A1B7C22EAB100100A1B2C3 /* HydraFolderBookmarks.m in Sources */,
 				A2E9072DD1F91456E4A6855D /* ExpoModulesProvider.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		FAA17E002F5BA3F500E60EA1 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		FAA17E182F5BA3F600E60EA1 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = FAA17E032F5BA3F500E60EA1 /* HydraWidgetsExtension */;
+			targetProxy = FAA17E172F5BA3F600E60EA1 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
 		13B07F941A680F5B00A75B9A /* Debug */ = {
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = 2076F25D1D7C83E95BB6E4A2 /* Pods-Hydra.debug.xcconfig */;
 			buildSettings = {
-				ASSETCATALOG_COMPILER_ALTERNATE_APPICON_NAMES = (
-					cerberus,
-					hail_hydra,
-					hail_hydra_dark,
-				);
+				ASSETCATALOG_COMPILER_ALTERNATE_APPICON_NAMES = "cerberus hail_hydra hail_hydra_dark";
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
 				CLANG_WARN_NULLABILITY_COMPLETENESS = NO;
@@ -438,7 +600,7 @@
 				);
 				OTHER_SWIFT_FLAGS = "$(inherited) -D EXPO_CONFIGURATION_DEBUG";
 				PRODUCT_BUNDLE_IDENTIFIER = com.darlops.hydra;
-				PRODUCT_NAME = "Hydra";
+				PRODUCT_NAME = Hydra;
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SWIFT_OBJC_BRIDGING_HEADER = "Hydra/Hydra-Bridging-Header.h";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
@@ -453,11 +615,7 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = 79EA5859AF8B8CD061F5496E /* Pods-Hydra.release.xcconfig */;
 			buildSettings = {
-				ASSETCATALOG_COMPILER_ALTERNATE_APPICON_NAMES = (
-					cerberus,
-					hail_hydra,
-					hail_hydra_dark,
-				);
+				ASSETCATALOG_COMPILER_ALTERNATE_APPICON_NAMES = "cerberus hail_hydra hail_hydra_dark";
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
 				CLANG_WARN_NULLABILITY_COMPLETENESS = NO;
@@ -481,7 +639,7 @@
 				);
 				OTHER_SWIFT_FLAGS = "$(inherited) -D EXPO_CONFIGURATION_RELEASE";
 				PRODUCT_BUNDLE_IDENTIFIER = com.darlops.hydra;
-				PRODUCT_NAME = "Hydra";
+				PRODUCT_NAME = Hydra;
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SWIFT_OBJC_BRIDGING_HEADER = "Hydra/Hydra-Bridging-Header.h";
 				SWIFT_TREAT_WARNINGS_AS_ERRORS = NO;
@@ -495,11 +653,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
-				ASSETCATALOG_COMPILER_ALTERNATE_APPICON_NAMES = (
-					cerberus,
-					hail_hydra,
-					hail_hydra_dark,
-				);
+				ASSETCATALOG_COMPILER_ALTERNATE_APPICON_NAMES = "cerberus hail_hydra hail_hydra_dark";
 				CLANG_ANALYZER_LOCALIZABILITY_NONLOCALIZED = YES;
 				CLANG_CXX_LANGUAGE_STANDARD = "c++20";
 				CLANG_CXX_LIBRARY = "libc++";
@@ -551,7 +705,7 @@
 				LIBRARY_SEARCH_PATHS = "$(SDKROOT)/usr/lib/swift\"$(inherited)\"";
 				MTL_ENABLE_DEBUG_INFO = YES;
 				ONLY_ACTIVE_ARCH = YES;
-				REACT_NATIVE_PATH = "${PODS_ROOT}/../../../../../node_modules/react-native";
+				REACT_NATIVE_PATH = "${PODS_ROOT}/../../node_modules/react-native";
 				SDKROOT = iphoneos;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "$(inherited) DEBUG";
 				SWIFT_ENABLE_EXPLICIT_MODULES = NO;
@@ -563,11 +717,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
-				ASSETCATALOG_COMPILER_ALTERNATE_APPICON_NAMES = (
-					cerberus,
-					hail_hydra,
-					hail_hydra_dark,
-				);
+				ASSETCATALOG_COMPILER_ALTERNATE_APPICON_NAMES = "cerberus hail_hydra hail_hydra_dark";
 				CLANG_ANALYZER_LOCALIZABILITY_NONLOCALIZED = YES;
 				CLANG_CXX_LANGUAGE_STANDARD = "c++20";
 				CLANG_CXX_LIBRARY = "libc++";
@@ -611,11 +761,108 @@
 				);
 				LIBRARY_SEARCH_PATHS = "$(SDKROOT)/usr/lib/swift\"$(inherited)\"";
 				MTL_ENABLE_DEBUG_INFO = NO;
-				REACT_NATIVE_PATH = "${PODS_ROOT}/../../../../../node_modules/react-native";
+				REACT_NATIVE_PATH = "${PODS_ROOT}/../../node_modules/react-native";
 				SDKROOT = iphoneos;
 				SWIFT_ENABLE_EXPLICIT_MODULES = NO;
 				USE_HERMES = true;
 				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		FAA17E1B2F5BA3F600E60EA1 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CODE_SIGN_ENTITLEMENTS = HydraWidgetsExtension.entitlements;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				DEVELOPMENT_TEAM = 96QXCJR37W;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = HydraWidgets/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = HydraWidgets;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				IPHONEOS_DEPLOYMENT_TARGET = 26.2;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MARKETING_VERSION = 1.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				PRODUCT_BUNDLE_IDENTIFIER = com.darlops.hydra.HydraWidgets;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		FAA17E1C2F5BA3F600E60EA1 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CODE_SIGN_ENTITLEMENTS = HydraWidgetsExtension.entitlements;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
+				COPY_PHASE_STRIP = NO;
+				CURRENT_PROJECT_VERSION = 1;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DEVELOPMENT_TEAM = 96QXCJR37W;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = HydraWidgets/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = HydraWidgets;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				IPHONEOS_DEPLOYMENT_TARGET = 26.2;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MARKETING_VERSION = 1.0;
+				MTL_FAST_MATH = YES;
+				PRODUCT_BUNDLE_IDENTIFIER = com.darlops.hydra.HydraWidgets;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
 			};
 			name = Release;
 		};
@@ -636,6 +883,15 @@
 			buildConfigurations = (
 				83CBBA201A601CBA00E9B192 /* Debug */,
 				83CBBA211A601CBA00E9B192 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		FAA17E1E2F5BA3F600E60EA1 /* Build configuration list for PBXNativeTarget "HydraWidgetsExtension" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				FAA17E1B2F5BA3F600E60EA1 /* Debug */,
+				FAA17E1C2F5BA3F600E60EA1 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

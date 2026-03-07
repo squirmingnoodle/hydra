@@ -18,6 +18,7 @@ import {
   setSubscriptionStatus,
 } from "../api/Subreddits";
 import KeyStore from "../utils/KeyStore";
+import { NativeWidgetData } from "../utils/nativeWidgetData";
 
 type SubredditContextType = {
   isLoadingSubreddits: boolean;
@@ -125,6 +126,9 @@ export function SubredditProvider({ children }: React.PropsWithChildren) {
         ...subreddits,
         favorites: newFavoriteSubs,
       });
+      NativeWidgetData.setFavoriteSubreddits(
+        newFavoriteSubs.map((s) => ({ name: s.name, icon: s.iconURL })),
+      );
     } catch (e) {
       if (e instanceof NeedsLoginToFavorite) {
         return;
@@ -144,6 +148,14 @@ export function SubredditProvider({ children }: React.PropsWithChildren) {
         ...subreddits,
         favorites,
       });
+      NativeWidgetData.setFavoriteSubreddits(
+        favorites.map((s) => ({ name: s.name, icon: s.iconURL })),
+      );
+      // Sync full subscribed subreddits list per-account for widget picker
+      NativeWidgetData.setSubscribedSubreddits(
+        subreddits.subscriber.map((s) => ({ name: s.name, icon: s.iconURL })),
+        currentUser.userName,
+      );
     } else {
       setSubreddits({
         favorites: [],

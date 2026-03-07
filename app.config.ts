@@ -30,6 +30,13 @@ module.exports = {
       bundleIdentifier: "com.darlops.hydra",
       infoPlist: {
         ITSAppUsesNonExemptEncryption: false,
+        NSFaceIDUsageDescription: "Hydra uses Face ID to protect your privacy by locking the app.",
+        NSSupportsLiveActivities: true,
+        NSUserActivityTypes: [
+          "com.darlops.hydra.viewPost",
+          "com.darlops.hydra.viewSubreddit",
+          "com.darlops.hydra.viewUser",
+        ],
       },
       entitlements: {
         "com.apple.developer.ubiquity-kvstore-identifier": "$(TeamIdentifierPrefix)$(CFBundleIdentifier)",

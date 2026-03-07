@@ -1,10 +1,11 @@
 import * as Clipboard from "expo-clipboard";
 import * as Linking from "expo-linking";
 import * as QuickActions from "expo-quick-actions";
-import { useEffect, useRef } from "react";
+import React, { useContext, useEffect, useRef } from "react";
 import { Alert, AppState, Platform } from "react-native";
 
 import RedditURL, { PageType } from "./RedditURL";
+import { NativeShareData } from "./nativeShareData";
 import { PageTypeToNavName } from "./navigation";
 import {
   READ_CLIPBOARD_DEFAULT,
@@ -18,9 +19,12 @@ import {
   useNavigation,
 } from "@react-navigation/native";
 import { getAccountScopedBoolean } from "./accountScopedSettings";
+import { ModalContext } from "../contexts/ModalContext";
+import ShareToReddit from "../components/Modals/ShareToReddit";
 
 export default function useHandleIncomingURLs() {
   const navigation = useNavigation<NavigationContainerRef<AppNavigationProp>>();
+  const { setModal } = useContext(ModalContext);
   const isAsking = useRef(false);
 
   const handleURL = (url: string) => {
@@ -37,9 +41,25 @@ export default function useHandleIncomingURLs() {
     );
   };
 
+  const handleShareDeepLink = async () => {
+    const shared = await NativeShareData.getSharedContent();
+    if (!shared) return;
+    setModal(
+      React.createElement(ShareToReddit, {
+        sharedURL: shared.url,
+        sharedText: shared.text,
+        onPosted: (url: string) => handleURL(url),
+      }),
+    );
+  };
+
   const handleDeepLink = (deepLink: string) => {
-    if (!deepLink || !deepLink.toLowerCase().startsWith("hydra://openurl?url="))
+    if (!deepLink) return;
+    if (deepLink.toLowerCase().startsWith("hydra://share")) {
+      handleShareDeepLink();
       return;
+    }
+    if (!deepLink.toLowerCase().startsWith("hydra://openurl?url=")) return;
     const url = deepLink.replace(/hydra:\/\/openurl\?url=/i, "");
     handleURL(url);
   };

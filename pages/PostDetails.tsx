@@ -46,6 +46,10 @@ import ScrollToNextButtonProvider from "../contexts/ScrollToNextButtonProvider";
 import { ScrollToNextButtonContext } from "../contexts/ScrollToNextButtonContext";
 import { CommentSkeletonList } from "../components/UI/SkeletonLoader";
 import SearchBar from "../components/UI/SearchBar";
+import { commentTreeMatchesFilter } from "../utils/commentFilters";
+import { NativeSpotlight } from "../utils/nativeSpotlight";
+import { NativeHandoff } from "../utils/nativeHandoff";
+import WatchThreadButton from "../components/UI/WatchThreadButton";
 
 export type LoadMoreCommentsFunc = (
   commentIds: string[],
@@ -74,8 +78,12 @@ function PostDetails(props: PostDetailsProps) {
   const { handleScrollForTabBar } = useContext(TabScrollContext);
   const shouldUseSystemContentInsets =
     Platform.OS === "ios" && liquidGlassEnabled;
-  const { setScrollToNext, setScrollToPrevious, setScrollToParent } =
-    useContext(ScrollToNextButtonContext);
+  const {
+    setScrollToNext,
+    setScrollToPrevious,
+    setScrollToParent,
+    commentFilterMode,
+  } = useContext(ScrollToNextButtonContext);
 
   const topOfScroll = useRef<View>(null);
   const scrollView = useRef<ScrollView>(null);
@@ -124,6 +132,22 @@ function PostDetails(props: PostDetailsProps) {
     if (!postDetail) return;
     setPostDetail(postDetail);
     setRefreshing(false);
+
+    // Index in Spotlight for home screen search
+    NativeSpotlight.indexPost(
+      postDetail.id,
+      postDetail.title,
+      postDetail.subreddit,
+      postDetail.author,
+      postDetail.imageThumbnail,
+    );
+
+    // Set Handoff activity for continuity across devices
+    NativeHandoff.setActivity(
+      "viewPost",
+      `Viewing post in r/${postDetail.subreddit}`,
+      postDetail.link,
+    );
 
     if (isSplitView) return;
     const contextOptions: ContextTypes[] = [
@@ -225,7 +249,7 @@ function PostDetails(props: PostDetailsProps) {
   };
 
   const scrollToNextComment = async (goPrevious = false) => {
-    if (!scrollView.current || !commentsView.current) return;
+    if (!scrollView.current || !commentsView.current || !postDetail) return;
     const FUZZY_DISTANCE = 5;
     const scrollRef = scrollView.current;
     const scrollY = (await asyncMeasure(scrollRef, "measureInWindow"))[1];
@@ -235,7 +259,17 @@ function PostDetails(props: PostDetailsProps) {
     const childComments = (commentsView.current as any).__internalInstanceHandle
       .child.child.child.child.memoizedProps[0];
     let prevDelta = 0;
-    for (const commentView of childComments) {
+    for (let i = 0; i < childComments.length; i++) {
+      // When a filter is active, skip top-level threads that don't contain
+      // any matching comments (checks the entire subtree).
+      if (
+        commentFilterMode !== "all" &&
+        i < postDetail.comments.length &&
+        !commentTreeMatchesFilter(postDetail.comments[i], commentFilterMode)
+      ) {
+        continue;
+      }
+      const commentView = childComments[i];
       const commentRef = commentView.props.commentPropRef.current;
       const commentMeasures = await asyncMeasure(commentRef, "measureInWindow");
       const commentY = commentMeasures[1];
@@ -370,6 +404,19 @@ function PostDetails(props: PostDetailsProps) {
                   {commentSearchVisible ? "Close" : "Search Comments"}
                 </Text>
               </TouchableOpacity>
+              <WatchThreadButton
+                postId={postDetail.id}
+                title={postDetail.title}
+                subreddit={postDetail.subreddit}
+                author={postDetail.author}
+                commentCount={postDetail.commentCount}
+                upvotes={postDetail.upvotes}
+                url={postDetail.link}
+                thumbnailURL={postDetail.imageThumbnail || null}
+                postText={postDetail.text?.slice(0, 200) || null}
+                color={theme.text}
+                backgroundColor={theme.tint}
+              />
             </View>
           )}
           {commentSearchVisible && (
@@ -504,6 +551,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     paddingVertical: 8,
     paddingHorizontal: 10,
+    gap: 8,
   },
   commentSearchToggle: {
     flexDirection: "row",
