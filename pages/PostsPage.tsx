@@ -91,17 +91,24 @@ export default function PostsPage({
   useEffect(() => {
     const pageType = redditURL.getPageType();
     if (pageType === PageType.HOME && posts.length > 0) {
-      NativeWidgetData.setTrendingPosts(
-        posts.slice(0, 10).map((p) => ({
-          id: p.id,
-          title: p.title,
-          subreddit: p.subreddit,
-          author: p.author,
-          upvotes: p.upvotes,
-          commentCount: p.commentCount,
-          url: p.link,
-        })),
-      );
+      const trendingData = posts.slice(0, 10).map((p) => ({
+        id: p.id,
+        title: p.title,
+        subreddit: p.subreddit,
+        author: p.author,
+        upvotes: p.upvotes,
+        commentCount: p.commentCount,
+        thumbnail: p.imageThumbnail || undefined,
+        url: p.link,
+      }));
+      NativeWidgetData.setTrendingPosts(trendingData);
+      // Also sync per-account trending posts for configurable widgets
+      if (currentUser?.userName) {
+        NativeWidgetData.setAccountTrendingPosts(
+          trendingData,
+          currentUser.userName,
+        );
+      }
     }
   }, [posts]);
 

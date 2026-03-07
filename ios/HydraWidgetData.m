@@ -22,4 +22,18 @@ RCT_EXTERN_METHOD(setUsername:(NSString *)username
                   resolver:(RCTPromiseResolveBlock)resolve
                   rejecter:(RCTPromiseRejectBlock)reject)
 
+RCT_EXTERN_METHOD(setAvailableAccounts:(NSArray<NSDictionary *> *)accounts
+                  resolver:(RCTPromiseResolveBlock)resolve
+                  rejecter:(RCTPromiseRejectBlock)reject)
+
+RCT_EXTERN_METHOD(setSubscribedSubreddits:(NSArray<NSDictionary *> *)subreddits
+                  forAccount:(NSString *)account
+                  resolver:(RCTPromiseResolveBlock)resolve
+                  rejecter:(RCTPromiseRejectBlock)reject)
+
+RCT_EXTERN_METHOD(setAccountTrendingPosts:(NSArray<NSDictionary *> *)posts
+                  forAccount:(NSString *)account
+                  resolver:(RCTPromiseResolveBlock)resolve
+                  rejecter:(RCTPromiseRejectBlock)reject)
+
 @end

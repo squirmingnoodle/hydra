@@ -57,8 +57,11 @@ export function AppLockProvider({ children }: PropsWithChildren) {
 
   const [isLocked, setIsLocked] = useState(lockEnabled);
   const backgroundTimestamp = useRef<number | null>(null);
+  const isAuthenticating = useRef(false);
 
   const unlock = useCallback(async () => {
+    if (isAuthenticating.current) return false;
+    isAuthenticating.current = true;
     try {
       const result = await LocalAuthentication.authenticateAsync({
         promptMessage: "Unlock Hydra",
@@ -67,12 +70,17 @@ export function AppLockProvider({ children }: PropsWithChildren) {
         disableDeviceFallback: false,
       });
       if (result.success) {
+        // Clear background timestamp so the AppState listener doesn't
+        // immediately re-lock when the Face ID dialog dismisses.
+        backgroundTimestamp.current = null;
         setIsLocked(false);
         return true;
       }
       return false;
     } catch {
       return false;
+    } finally {
+      isAuthenticating.current = false;
     }
   }, []);
 
@@ -83,6 +91,9 @@ export function AppLockProvider({ children }: PropsWithChildren) {
     }
 
     const handleAppState = (nextState: AppStateStatus) => {
+      // Don't re-lock while Face ID / Touch ID prompt is showing
+      if (isAuthenticating.current) return;
+
       if (nextState === "background" || nextState === "inactive") {
         backgroundTimestamp.current = Date.now();
       } else if (nextState === "active") {

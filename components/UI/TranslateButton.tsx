@@ -1,10 +1,10 @@
 import React, { useContext, useEffect, useState } from "react";
 import {
   ActivityIndicator,
+  Alert,
   StyleSheet,
   Text,
   TouchableOpacity,
-  View,
 } from "react-native";
 import { Feather } from "@expo/vector-icons";
 
@@ -24,35 +24,21 @@ export default function TranslateButton({
 }: TranslateButtonProps) {
   const { theme } = useContext(ThemeContext);
   const [available, setAvailable] = useState(false);
-  const [needsTranslation, setNeedsTranslation] = useState(false);
   const [isTranslated, setIsTranslated] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [detectedLang, setDetectedLang] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
-    (async () => {
-      const isAvail = await NativeTranslation.isAvailable();
-      if (!isAvail || cancelled) return;
-      setAvailable(true);
-
-      // Only detect if text is substantial
-      if (text.length < 20) return;
-
-      const detection = await NativeTranslation.detectLanguage(text);
-      if (cancelled || !detection) return;
-
-      if (!detection.isDeviceLanguage && detection.confidence > 0.5) {
-        setNeedsTranslation(true);
-        setDetectedLang(detection.language);
-      }
-    })();
+    NativeTranslation.isAvailable().then((isAvail) => {
+      if (!cancelled) setAvailable(isAvail);
+    });
     return () => {
       cancelled = true;
     };
-  }, [text]);
+  }, []);
 
-  if (!available || !needsTranslation) return null;
+  // Only show for substantial text
+  if (!available || text.length < 20) return null;
 
   const handleTranslate = async () => {
     if (isTranslated) {
@@ -62,13 +48,34 @@ export default function TranslateButton({
     }
 
     setLoading(true);
-    const result = await NativeTranslation.translate(text, detectedLang);
+
+    // Detect language first to see if we even need to translate
+    const detection = await NativeTranslation.detectLanguage(text);
+    if (detection?.isDeviceLanguage) {
+      setLoading(false);
+      Alert.alert(
+        "Already in Your Language",
+        "This comment appears to already be in your device language.",
+      );
+      return;
+    }
+
+    const response = await NativeTranslation.translate(
+      text,
+      detection?.language ?? null,
+    );
     setLoading(false);
 
-    if (result) {
-      setIsTranslated(true);
-      onTranslated(result.translatedText);
+    if ("error" in response) {
+      Alert.alert(
+        "Translation Unavailable",
+        "The language pack may need to be downloaded. Go to Settings > General > Language & Region > Translation Languages to download it.",
+      );
+      return;
     }
+
+    setIsTranslated(true);
+    onTranslated(response.result.translatedText);
   };
 
   return (

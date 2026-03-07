@@ -46,12 +46,17 @@ export const NativeTranslation = {
   async translate(
     text: string,
     sourceLanguage?: string | null,
-  ): Promise<TranslationResult | null> {
-    if (Platform.OS !== "ios" || !nativeModule) return null;
+  ): Promise<{ result: TranslationResult } | { error: string }> {
+    if (Platform.OS !== "ios" || !nativeModule)
+      return { error: "Translation not available" };
     try {
-      return await nativeModule.translate(text, sourceLanguage ?? null);
-    } catch {
-      return null;
+      const result = await nativeModule.translate(
+        text,
+        sourceLanguage ?? null,
+      );
+      return { result };
+    } catch (e: any) {
+      return { error: e?.message ?? "Translation failed" };
     }
   },
 };

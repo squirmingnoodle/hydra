@@ -5,9 +5,12 @@
 RCT_EXTERN_METHOD(startWatching:(NSString *)postId
                   title:(NSString *)title
                   subreddit:(NSString *)subreddit
+                  author:(NSString *)author
                   commentCount:(NSInteger)commentCount
                   upvotes:(NSInteger)upvotes
                   url:(NSString *)url
+                  thumbnailURL:(NSString *)thumbnailURL
+                  postText:(NSString *)postText
                   resolve:(RCTPromiseResolveBlock)resolve
                   rejecter:(RCTPromiseRejectBlock)reject)
 

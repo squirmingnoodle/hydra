@@ -34,6 +34,12 @@ const EDGE_PADDING = 20;
 const FILTER_CHIP_SIZE = 28;
 const FILTER_CHIP_GAP = 6;
 
+// Total height of items stacked above the main button in the cluster
+const CHIPS_HEIGHT =
+  COMMENT_FILTER_MODES.length * (FILTER_CHIP_SIZE + FILTER_CHIP_GAP);
+const ABOVE_MAIN_BUTTON =
+  CHIPS_HEIGHT + PARENT_BUTTON_SIZE + PARENT_BUTTON_GAP;
+
 export default function ScrollToNextButtonProvider({
   children,
 }: PropsWithChildren) {
@@ -53,50 +59,54 @@ export default function ScrollToNextButtonProvider({
   const [containerHeight, setContainerHeight] = useState(0);
   const [containerWidth, setContainerWidth] = useState(0);
   const [containerVerticalOffset, setContainerVerticalOffset] = useState(0);
-  const [containerHorizontalOffset, setContainerHorizontalOffset] = useState(0);
+  const [containerHorizontalOffset, setContainerHorizontalOffset] =
+    useState(0);
 
-  const LOCKED_POSITIONS = useMemo(() => ({
-    "bottom-right": {
-      x: containerWidth - BUTTON_SIZE - EDGE_PADDING,
-      y: containerHeight - BUTTON_SIZE - EDGE_PADDING,
-    },
-    "top-right": {
-      x: containerWidth - BUTTON_SIZE - EDGE_PADDING,
-      y: EDGE_PADDING,
-    },
-    "bottom-left": {
-      x: EDGE_PADDING,
-      y: containerHeight - BUTTON_SIZE - EDGE_PADDING,
-    },
-    "top-left": {
-      x: EDGE_PADDING,
-      y: EDGE_PADDING,
-    },
-    "bottom-center": {
-      x: containerWidth / 2 - BUTTON_SIZE / 2,
-      y: containerHeight - BUTTON_SIZE - EDGE_PADDING,
-    },
-    "top-center": {
-      x: containerWidth / 2 - BUTTON_SIZE / 2,
-      y: EDGE_PADDING,
-    },
-    "left-center": {
-      x: EDGE_PADDING,
-      y: containerHeight / 2 - BUTTON_SIZE / 2,
-    },
-    "right-center": {
-      x: containerWidth - BUTTON_SIZE - EDGE_PADDING,
-      y: containerHeight / 2 - BUTTON_SIZE / 2,
-    },
-    "left-three-quarters-bottom": {
-      x: EDGE_PADDING,
-      y: (containerHeight * 3) / 4 - BUTTON_SIZE,
-    },
-    "right-three-quarters-bottom": {
-      x: containerWidth - BUTTON_SIZE - EDGE_PADDING,
-      y: (containerHeight * 3) / 4 - BUTTON_SIZE,
-    },
-  }), [containerWidth, containerHeight]);
+  const LOCKED_POSITIONS = useMemo(
+    () => ({
+      "bottom-right": {
+        x: containerWidth - BUTTON_SIZE - EDGE_PADDING,
+        y: containerHeight - BUTTON_SIZE - EDGE_PADDING,
+      },
+      "top-right": {
+        x: containerWidth - BUTTON_SIZE - EDGE_PADDING,
+        y: EDGE_PADDING,
+      },
+      "bottom-left": {
+        x: EDGE_PADDING,
+        y: containerHeight - BUTTON_SIZE - EDGE_PADDING,
+      },
+      "top-left": {
+        x: EDGE_PADDING,
+        y: EDGE_PADDING,
+      },
+      "bottom-center": {
+        x: containerWidth / 2 - BUTTON_SIZE / 2,
+        y: containerHeight - BUTTON_SIZE - EDGE_PADDING,
+      },
+      "top-center": {
+        x: containerWidth / 2 - BUTTON_SIZE / 2,
+        y: EDGE_PADDING,
+      },
+      "left-center": {
+        x: EDGE_PADDING,
+        y: containerHeight / 2 - BUTTON_SIZE / 2,
+      },
+      "right-center": {
+        x: containerWidth - BUTTON_SIZE - EDGE_PADDING,
+        y: containerHeight / 2 - BUTTON_SIZE / 2,
+      },
+      "left-three-quarters-bottom": {
+        x: EDGE_PADDING,
+        y: (containerHeight * 3) / 4 - BUTTON_SIZE,
+      },
+      "right-three-quarters-bottom": {
+        x: containerWidth - BUTTON_SIZE - EDGE_PADDING,
+        y: (containerHeight * 3) / 4 - BUTTON_SIZE,
+      },
+    }),
+    [containerWidth, containerHeight],
+  );
 
   const [storedButtonPosition, setButtonPosition] = useAccountScopedMMKVString(
     "scrollToNextButtonPosition",
@@ -164,10 +174,6 @@ export default function ScrollToNextButtonProvider({
     position.setValue(LOCKED_POSITIONS[buttonPosition]);
   }, [containerHeight, containerWidth]);
 
-  /**
-   * Since this provider only provides functions, we need to memoize the value
-   * or all consumers will re-render when the provider re-renders.
-   */
   const value = useMemo(
     () => ({
       setScrollToNext: (fn: () => void) => {
@@ -187,242 +193,241 @@ export default function ScrollToNextButtonProvider({
 
   return (
     <ScrollToNextButtonContext.Provider value={value}>
-      {containerHeight > 0 && containerWidth > 0 && (
-        <>
-        {/* Comment filter chips row */}
-        {COMMENT_FILTER_MODES.map((mode, index) => {
-          const isActive = commentFilterMode === mode.key;
-          const chipOffsetY =
-            -(PARENT_BUTTON_SIZE + PARENT_BUTTON_GAP) -
-            (FILTER_CHIP_SIZE + FILTER_CHIP_GAP) * (COMMENT_FILTER_MODES.length - index);
-          return (
-            <Animated.View
-              key={mode.key}
+      <View style={styles.rootContainer}>
+        {children}
+        {/* Drag mode overlay - shows locked position indicators */}
+        <Animated.View
+          style={[
+            styles.dragOverlay,
+            {
+              opacity: overlayOpacity,
+              bottom: tabBarHeight - TAB_BAR_REMOVED_PADDING_BOTTOM,
+            },
+          ]}
+          pointerEvents="none"
+        >
+          {Object.entries(LOCKED_POSITIONS).map(([key, lockedPosition]) => (
+            <View
+              key={key}
               style={[
-                styles.filterChip,
+                styles.lockedPosition,
                 {
-                  top: 0,
-                  left: 0,
-                  transform: [
-                    {
-                      translateX: Animated.add(
-                        position.x,
-                        (BUTTON_SIZE - FILTER_CHIP_SIZE) / 2,
-                      ),
-                    },
-                    {
-                      translateY: Animated.add(position.y, chipOffsetY),
-                    },
-                  ],
-                  backgroundColor: isActive ? theme.iconOrTextButton : theme.buttonBg,
-                  opacity: buttonOpacity,
-                  zIndex: 1000,
+                  left: lockedPosition.x,
+                  top: lockedPosition.y,
+                  borderColor: theme.buttonBg,
                 },
               ]}
-            >
-              <TouchableOpacity
-                style={styles.filterChipTouchable}
-                onPress={() => {
-                  setCommentFilterMode(
-                    commentFilterMode === mode.key ? "all" : mode.key,
-                  );
-                }}
-                activeOpacity={0.7}
-              >
-                {mode.key === "op" ? (
-                  <Text
-                    style={[
-                      styles.filterChipText,
-                      { color: isActive ? "#fff" : theme.buttonText },
-                    ]}
-                  >
-                    OP
-                  </Text>
-                ) : (
-                  <Feather
-                    name={mode.icon as any}
-                    size={13}
-                    color={isActive ? "#fff" : theme.buttonText}
-                  />
-                )}
-              </TouchableOpacity>
-            </Animated.View>
-          );
-        })}
-        <Animated.View
-          style={[
-            styles.parentButton,
-            {
-              top: 0,
-              left: 0,
-              transform: [
-                {
-                  translateX: Animated.add(
-                    position.x,
-                    (BUTTON_SIZE - PARENT_BUTTON_SIZE) / 2,
-                  ),
-                },
-                {
-                  translateY: Animated.add(
-                    position.y,
-                    -(PARENT_BUTTON_SIZE + PARENT_BUTTON_GAP),
-                  ),
-                },
-              ],
-              backgroundColor: theme.buttonBg,
-              opacity: buttonOpacity,
-              zIndex: 1000,
-            },
-          ]}
-          onTouchStart={() => {
-            scrollToParent.current?.();
-          }}
-        >
-          <AntDesign name="up" size={14} color={theme.buttonText} />
+            />
+          ))}
         </Animated.View>
-        <Animated.View
+        {/* Invisible measurement layer to get the available area dimensions */}
+        <View
           style={[
-            styles.skipToNextButton,
-            {
-              top: 0,
-              left: 0,
-              transform: [
-                { translateX: position.x },
-                { translateY: position.y },
-              ],
-              backgroundColor: theme.buttonBg,
-              opacity: buttonOpacity,
-              zIndex: 1000,
-            },
+            styles.measureLayer,
+            { bottom: tabBarHeight - TAB_BAR_REMOVED_PADDING_BOTTOM },
           ]}
-          onTouchStart={() => {
-            touchStartedTime.current = Date.now();
-            buttonOpacity.setValue(0.7);
-            scrollToPreviousTimeout.current = setTimeout(() => {
-              scrollToPrevious.current?.();
-            }, 300);
-            startDragTimeout.current = setTimeout(() => {
-              startDrag();
-            }, 1000);
+          pointerEvents="none"
+          onLayout={(event) => {
+            event.target.measure((_x, _y, width, height, pageX, pageY) => {
+              setContainerVerticalOffset(pageY);
+              setContainerHorizontalOffset(pageX);
+              setContainerHeight(height);
+              setContainerWidth(width);
+            });
           }}
-          onTouchMove={(event) => {
-            if (!inMoveMode.current) {
-              const distance = Math.sqrt(
-                event.nativeEvent.locationX ** 2 +
-                  event.nativeEvent.locationY ** 2,
-              );
-              if (distance > 30) {
-                startDrag();
-              }
-            }
-            if (inMoveMode.current) {
-              const btnPosition = getButtonOffsetPosition(event);
-              const hoveredLockedPosition =
-                getHoveredLockedPosition(btnPosition);
-              if (hoveredLockedPosition) {
-                position.setValue(hoveredLockedPosition.position);
-                return;
-              }
-              position.setValue(btnPosition);
-            }
-          }}
-          onTouchEnd={(e) => {
-            buttonOpacity.setValue(1);
-            if (inMoveMode.current) {
-              const hoveredLockedPosition = getHoveredLockedPosition(
-                getButtonOffsetPosition(e),
-              );
-              if (hoveredLockedPosition) {
-                setButtonPosition(hoveredLockedPosition.positionName);
-              } else {
-                Animated.spring(position, {
-                  toValue: LOCKED_POSITIONS[buttonPosition],
-                  useNativeDriver: true,
-                }).start();
-              }
-              inMoveMode.current = false;
-              overlayOpacity.setValue(0);
-            }
-            if (!touchStartedTime.current) return;
-            const delay = Date.now() - touchStartedTime.current;
-            if (touchStartedTime.current && delay < 300) {
-              clearTimeouts();
-              scrollToNext.current?.();
-            }
-            if (startDragTimeout.current && delay < 1000) {
-              clearTimeouts();
-            }
-          }}
-        >
-          <AntDesign name="down" size={18} color={theme.buttonText} />
-        </Animated.View>
-        </>
-      )}
-      <Animated.View
-        style={[
-          styles.overlay,
-          {
-            opacity: overlayOpacity,
-            bottom: tabBarHeight - TAB_BAR_REMOVED_PADDING_BOTTOM,
-            pointerEvents: "none",
-          },
-        ]}
-        onLayout={(event) => {
-          event.target.measure((_x, _y, width, height, pageX, pageY) => {
-            setContainerVerticalOffset(pageY);
-            setContainerHorizontalOffset(pageX);
-            setContainerHeight(height);
-            setContainerWidth(width);
-          });
-        }}
-      >
-        {Object.entries(LOCKED_POSITIONS).map(([key, lockedPosition]) => (
-          <View
-            key={key}
+        />
+        {/* Button cluster: single Animated.View that holds all buttons in a vertical
+            column layout. The container translates so the main button (last child)
+            ends up at position.x/y. Regular TouchableOpacity inside works because
+            they participate in normal layout flow within the cluster. */}
+        {containerHeight > 0 && containerWidth > 0 && (
+          <Animated.View
             style={[
-              styles.lockedPosition,
+              styles.buttonCluster,
               {
-                left: lockedPosition.x,
-                top: lockedPosition.y,
-                borderColor: theme.buttonBg,
+                opacity: buttonOpacity,
+                transform: [
+                  { translateX: position.x },
+                  {
+                    translateY: Animated.add(
+                      position.y,
+                      -ABOVE_MAIN_BUTTON,
+                    ),
+                  },
+                ],
               },
             ]}
-          />
-        ))}
-      </Animated.View>
-      {children}
+            pointerEvents="box-none"
+          >
+            {/* Comment filter chips - vertically stacked */}
+            {COMMENT_FILTER_MODES.map((mode) => {
+              const isActive = commentFilterMode === mode.key;
+              return (
+                <TouchableOpacity
+                  key={mode.key}
+                  style={[
+                    styles.filterChip,
+                    {
+                      backgroundColor: isActive
+                        ? theme.iconOrTextButton
+                        : theme.buttonBg,
+                    },
+                  ]}
+                  onPress={() => {
+                    setCommentFilterMode(
+                      commentFilterMode === mode.key ? "all" : mode.key,
+                    );
+                  }}
+                  activeOpacity={0.6}
+                >
+                  {mode.key === "op" ? (
+                    <Text
+                      style={[
+                        styles.filterChipText,
+                        { color: isActive ? "#fff" : theme.buttonText },
+                      ]}
+                    >
+                      OP
+                    </Text>
+                  ) : (
+                    <Feather
+                      name={mode.icon as any}
+                      size={13}
+                      color={isActive ? "#fff" : theme.buttonText}
+                    />
+                  )}
+                </TouchableOpacity>
+              );
+            })}
+            {/* Go to parent comment button */}
+            <TouchableOpacity
+              style={[
+                styles.parentButton,
+                { backgroundColor: theme.buttonBg },
+              ]}
+              onPress={() => scrollToParent.current?.()}
+              activeOpacity={0.6}
+            >
+              <AntDesign name="up" size={14} color={theme.buttonText} />
+            </TouchableOpacity>
+            {/* Spacer between parent and main button */}
+            <View style={{ height: PARENT_BUTTON_GAP }} />
+            {/* Main scroll-to-next button with drag support.
+                Uses responder system so drag/tap/long-press all work. */}
+            <View
+              style={[
+                styles.mainButton,
+                { backgroundColor: theme.buttonBg },
+              ]}
+              onStartShouldSetResponder={() => true}
+              onMoveShouldSetResponder={() => true}
+              onResponderGrant={() => {
+                touchStartedTime.current = Date.now();
+                buttonOpacity.setValue(0.7);
+                scrollToPreviousTimeout.current = setTimeout(() => {
+                  scrollToPrevious.current?.();
+                }, 300);
+                startDragTimeout.current = setTimeout(() => {
+                  startDrag();
+                }, 1000);
+              }}
+              onResponderMove={(event) => {
+                if (!inMoveMode.current) {
+                  const distance = Math.sqrt(
+                    event.nativeEvent.locationX ** 2 +
+                      event.nativeEvent.locationY ** 2,
+                  );
+                  if (distance > 30) {
+                    startDrag();
+                  }
+                }
+                if (inMoveMode.current) {
+                  const btnPosition = getButtonOffsetPosition(event);
+                  const hoveredLockedPosition =
+                    getHoveredLockedPosition(btnPosition);
+                  if (hoveredLockedPosition) {
+                    position.setValue(hoveredLockedPosition.position);
+                    return;
+                  }
+                  position.setValue(btnPosition);
+                }
+              }}
+              onResponderRelease={(e) => {
+                buttonOpacity.setValue(1);
+                if (inMoveMode.current) {
+                  const hoveredLockedPosition = getHoveredLockedPosition(
+                    getButtonOffsetPosition(e),
+                  );
+                  if (hoveredLockedPosition) {
+                    setButtonPosition(hoveredLockedPosition.positionName);
+                  } else {
+                    Animated.spring(position, {
+                      toValue: LOCKED_POSITIONS[buttonPosition],
+                      useNativeDriver: true,
+                    }).start();
+                  }
+                  inMoveMode.current = false;
+                  overlayOpacity.setValue(0);
+                }
+                if (!touchStartedTime.current) return;
+                const delay = Date.now() - touchStartedTime.current;
+                if (touchStartedTime.current && delay < 300) {
+                  clearTimeouts();
+                  scrollToNext.current?.();
+                }
+                if (startDragTimeout.current && delay < 1000) {
+                  clearTimeouts();
+                }
+              }}
+            >
+              <AntDesign name="down" size={18} color={theme.buttonText} />
+            </View>
+          </Animated.View>
+        )}
+      </View>
     </ScrollToNextButtonContext.Provider>
   );
 }
 
 const styles = StyleSheet.create({
-  skipToNextButton: {
-    position: "absolute",
-    top: 0,
-    left: 0,
+  rootContainer: {
+    flex: 1,
+  },
+  mainButton: {
     alignItems: "center",
     justifyContent: "center",
     borderRadius: 1000,
     width: BUTTON_SIZE,
     height: BUTTON_SIZE,
+    alignSelf: "center",
   },
   parentButton: {
-    position: "absolute",
-    top: 0,
-    left: 0,
     alignItems: "center",
     justifyContent: "center",
     borderRadius: 1000,
     width: PARENT_BUTTON_SIZE,
     height: PARENT_BUTTON_SIZE,
+    alignSelf: "center",
   },
-  overlay: {
-    zIndex: 1,
+  dragOverlay: {
     position: "absolute",
     top: 0,
     left: 0,
     right: 0,
     backgroundColor: "rgba(0, 0, 0, 0.5)",
+  },
+  measureLayer: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+  },
+  buttonCluster: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    alignItems: "center",
+    width: BUTTON_SIZE,
   },
   lockedPosition: {
     position: "absolute",
@@ -432,18 +437,12 @@ const styles = StyleSheet.create({
     borderWidth: 2,
   },
   filterChip: {
-    position: "absolute",
     width: FILTER_CHIP_SIZE,
     height: FILTER_CHIP_SIZE,
     borderRadius: FILTER_CHIP_SIZE / 2,
     alignItems: "center",
     justifyContent: "center",
-  },
-  filterChipTouchable: {
-    width: "100%",
-    height: "100%",
-    alignItems: "center",
-    justifyContent: "center",
+    marginBottom: FILTER_CHIP_GAP,
   },
   filterChipText: {
     fontSize: 10,

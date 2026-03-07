@@ -16,9 +16,12 @@ export async function startWatchingThread(
   postId: string,
   title: string,
   subreddit: string,
+  author: string,
   commentCount: number,
   upvotes: number,
   url: string,
+  thumbnailURL: string | null,
+  postText: string | null,
 ): Promise<boolean> {
   if (watchedThreads.has(postId)) return false;
 
@@ -26,9 +29,12 @@ export async function startWatchingThread(
     postId,
     title,
     subreddit,
+    author,
     commentCount,
     upvotes,
-    `https://www.reddit.com${url}`,
+    url,
+    thumbnailURL,
+    postText,
   );
 
   if (!activityId) return false;

@@ -151,6 +151,11 @@ export function SubredditProvider({ children }: React.PropsWithChildren) {
       NativeWidgetData.setFavoriteSubreddits(
         favorites.map((s) => ({ name: s.name, icon: s.iconURL })),
       );
+      // Sync full subscribed subreddits list per-account for widget picker
+      NativeWidgetData.setSubscribedSubreddits(
+        subreddits.subscriber.map((s) => ({ name: s.name, icon: s.iconURL })),
+        currentUser.userName,
+      );
     } else {
       setSubreddits({
         favorites: [],

@@ -16,12 +16,31 @@ type FavoriteSubreddit = {
   icon?: string;
 };
 
+type WidgetAccount = {
+  username: string;
+  avatarURL?: string;
+};
+
+type SubscribedSubreddit = {
+  name: string;
+  icon?: string;
+};
+
 type NativeHydraWidgetDataModule = {
   setTrendingPosts(posts: TrendingPost[]): Promise<void>;
   setInboxCount(count: number): Promise<void>;
   setFavoriteSubreddits(subreddits: FavoriteSubreddit[]): Promise<void>;
   setKarma(karma: number): Promise<void>;
   setUsername(username: string | null): Promise<void>;
+  setAvailableAccounts(accounts: WidgetAccount[]): Promise<void>;
+  setSubscribedSubreddits(
+    subreddits: SubscribedSubreddit[],
+    forAccount: string,
+  ): Promise<void>;
+  setAccountTrendingPosts(
+    posts: TrendingPost[],
+    forAccount: string,
+  ): Promise<void>;
 };
 
 const nativeModule =
@@ -74,6 +93,39 @@ export const NativeWidgetData = {
     if (!isAvailable()) return;
     try {
       await nativeModule!.setUsername(username);
+    } catch {
+      // Silently fail
+    }
+  },
+
+  async setAvailableAccounts(accounts: WidgetAccount[]): Promise<void> {
+    if (!isAvailable()) return;
+    try {
+      await nativeModule!.setAvailableAccounts(accounts);
+    } catch {
+      // Silently fail
+    }
+  },
+
+  async setSubscribedSubreddits(
+    subreddits: SubscribedSubreddit[],
+    forAccount: string,
+  ): Promise<void> {
+    if (!isAvailable()) return;
+    try {
+      await nativeModule!.setSubscribedSubreddits(subreddits, forAccount);
+    } catch {
+      // Silently fail
+    }
+  },
+
+  async setAccountTrendingPosts(
+    posts: TrendingPost[],
+    forAccount: string,
+  ): Promise<void> {
+    if (!isAvailable()) return;
+    try {
+      await nativeModule!.setAccountTrendingPosts(posts, forAccount);
     } catch {
       // Silently fail
     }

@@ -131,6 +131,13 @@ export function AccountProvider({ children }: React.PropsWithChildren) {
 
   const saveAccounts = async (accs: string[]) => {
     KeyStore.set("usernames", JSON.stringify(accs));
+    // Sync account list to widgets for the account picker
+    NativeWidgetData.setAvailableAccounts(
+      accs.map((username) => ({
+        username,
+        avatarURL: KeyStore.getString(`avatarURL:${username}`) || undefined,
+      })),
+    );
   };
 
   const loadSavedData = async () => {
@@ -138,6 +145,13 @@ export function AccountProvider({ children }: React.PropsWithChildren) {
     if (usernamesJSON) {
       const usernames: string[] = JSON.parse(usernamesJSON);
       setAccounts(usernames);
+      // Sync account list to widgets on startup
+      NativeWidgetData.setAvailableAccounts(
+        usernames.map((username) => ({
+          username,
+          avatarURL: KeyStore.getString(`avatarURL:${username}`) || undefined,
+        })),
+      );
       const currentUsername = KeyStore.getString("currentUser");
       if (currentUsername) {
         await logInContext(currentUsername);

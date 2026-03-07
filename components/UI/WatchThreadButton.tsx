@@ -13,9 +13,12 @@ type WatchThreadButtonProps = {
   postId: string;
   title: string;
   subreddit: string;
+  author: string;
   commentCount: number;
   upvotes: number;
   url: string;
+  thumbnailURL: string | null;
+  postText: string | null;
   color: ColorValue;
   backgroundColor: ColorValue;
 };
@@ -24,9 +27,12 @@ export default function WatchThreadButton({
   postId,
   title,
   subreddit,
+  author,
   commentCount,
   upvotes,
   url,
+  thumbnailURL,
+  postText,
   color,
   backgroundColor,
 }: WatchThreadButtonProps) {
@@ -49,9 +55,12 @@ export default function WatchThreadButton({
         postId,
         title,
         subreddit,
+        author,
         commentCount,
         upvotes,
         url,
+        thumbnailURL,
+        postText,
       );
       if (started) {
         setWatching(true);

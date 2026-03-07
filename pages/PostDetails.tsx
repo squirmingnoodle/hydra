@@ -146,7 +146,7 @@ function PostDetails(props: PostDetailsProps) {
     NativeHandoff.setActivity(
       "viewPost",
       `Viewing post in r/${postDetail.subreddit}`,
-      `https://www.reddit.com${postDetail.link}`,
+      postDetail.link,
     );
 
     if (isSplitView) return;
@@ -408,9 +408,12 @@ function PostDetails(props: PostDetailsProps) {
                 postId={postDetail.id}
                 title={postDetail.title}
                 subreddit={postDetail.subreddit}
+                author={postDetail.author}
                 commentCount={postDetail.commentCount}
                 upvotes={postDetail.upvotes}
                 url={postDetail.link}
+                thumbnailURL={postDetail.imageThumbnail || null}
+                postText={postDetail.text?.slice(0, 200) || null}
                 color={theme.text}
                 backgroundColor={theme.tint}
               />

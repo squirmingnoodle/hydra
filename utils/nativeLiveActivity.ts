@@ -5,9 +5,12 @@ type NativeHydraLiveActivityModule = {
     postId: string,
     title: string,
     subreddit: string,
+    author: string,
     commentCount: number,
     upvotes: number,
     url: string,
+    thumbnailURL: string | null,
+    postText: string | null,
   ): Promise<string>;
   updateWatching(
     activityId: string,
@@ -41,9 +44,12 @@ export const NativeLiveActivity = {
     postId: string,
     title: string,
     subreddit: string,
+    author: string,
     commentCount: number,
     upvotes: number,
     url: string,
+    thumbnailURL: string | null,
+    postText: string | null,
   ): Promise<string | null> {
     if (!moduleAvailable()) return null;
     try {
@@ -51,9 +57,12 @@ export const NativeLiveActivity = {
         postId,
         title,
         subreddit,
+        author,
         commentCount,
         upvotes,
         url,
+        thumbnailURL,
+        postText,
       );
     } catch {
       return null;

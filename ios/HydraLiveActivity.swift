@@ -5,14 +5,17 @@ import ActivityKit
 @objc(HydraLiveActivity)
 class HydraLiveActivity: NSObject {
 
-  @objc
+  @objc(startWatching:title:subreddit:author:commentCount:upvotes:url:thumbnailURL:postText:resolve:rejecter:)
   func startWatching(
     _ postId: String,
     title: String,
     subreddit: String,
+    author: String,
     commentCount: Int,
     upvotes: Int,
     url: String,
+    thumbnailURL: String?,
+    postText: String?,
     resolve: @escaping RCTPromiseResolveBlock,
     rejecter reject: @escaping RCTPromiseRejectBlock
   ) {
@@ -26,11 +29,21 @@ class HydraLiveActivity: NSObject {
       return
     }
 
+    // Pre-cache the thumbnail so the Live Activity can load it from a local file
+    var localThumbPath: String?
+    if let thumbURL = thumbnailURL, !thumbURL.isEmpty {
+      localThumbPath = HydraImageCache.cacheImageSync(urlString: thumbURL, timeout: 5)
+    }
+
     let attributes = ThreadWatcherAttributes(
       postId: postId,
       title: title,
       subreddit: subreddit,
-      url: url
+      author: author,
+      url: url,
+      thumbnailURL: thumbnailURL,
+      localThumbnailPath: localThumbPath,
+      postText: postText
     )
 
     let initialState = ThreadWatcherAttributes.ContentState(
@@ -54,7 +67,7 @@ class HydraLiveActivity: NSObject {
     }
   }
 
-  @objc
+  @objc(updateWatching:commentCount:upvotes:lastReplyAuthor:lastReplyPreview:resolve:rejecter:)
   func updateWatching(
     _ activityId: String,
     commentCount: Int,
@@ -90,7 +103,7 @@ class HydraLiveActivity: NSObject {
     }
   }
 
-  @objc
+  @objc(stopWatching:resolve:rejecter:)
   func stopWatching(
     _ activityId: String,
     resolve: @escaping RCTPromiseResolveBlock,
@@ -113,8 +126,11 @@ class HydraLiveActivity: NSObject {
     }
   }
 
-  @objc
-  func isAvailable(_ resolve: @escaping RCTPromiseResolveBlock, rejecter reject: @escaping RCTPromiseRejectBlock) {
+  @objc(isAvailable:rejecter:)
+  func isAvailable(
+    _ resolve: @escaping RCTPromiseResolveBlock,
+    rejecter reject: @escaping RCTPromiseRejectBlock
+  ) {
     if #available(iOS 16.2, *) {
       resolve(ActivityAuthorizationInfo().areActivitiesEnabled)
     } else {
@@ -140,5 +156,9 @@ struct ThreadWatcherAttributes: ActivityAttributes {
   var postId: String
   var title: String
   var subreddit: String
+  var author: String
   var url: String
+  var thumbnailURL: String?
+  var localThumbnailPath: String?
+  var postText: String?
 }
