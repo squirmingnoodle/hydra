@@ -7,7 +7,9 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   TextInput,
+  Platform,
 } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import {
   SearchResult,
@@ -23,6 +25,7 @@ import List from "../components/UI/List";
 import RedditDataScroller from "../components/UI/RedditDataScroller";
 import SearchBar from "../components/UI/SearchBar";
 import { ThemeContext } from "../contexts/SettingsContexts/ThemeContext";
+import { TabSettingsContext } from "../contexts/SettingsContexts/TabSettingsContext";
 import { useURLNavigation } from "../utils/navigation";
 import useRedditDataState from "../utils/useRedditDataState";
 import { useFocusEffect } from "@react-navigation/native";
@@ -34,7 +37,10 @@ import {
 
 export default function SearchPage() {
   const { theme } = useContext(ThemeContext);
+  const { liquidGlassEnabled } = useContext(TabSettingsContext);
   const { pushURL } = useURLNavigation();
+  const insets = useSafeAreaInsets();
+  const transparentHeader = Platform.OS === "ios" && liquidGlassEnabled;
 
   const [trending, setTrending] = useState<Subreddit[]>([]);
   const [recentSearches, setRecentSearches] = useState<
@@ -128,7 +134,12 @@ export default function SearchPage() {
         },
       ]}
     >
-      <View style={styles.searchOptionsContainer}>
+      <View
+        style={[
+          styles.searchOptionsContainer,
+          transparentHeader && { marginTop: insets.top },
+        ]}
+      >
         {SearchTypes.map((type) => (
           <TouchableOpacity
             key={type}
@@ -168,6 +179,8 @@ export default function SearchPage() {
         }}
       />
       <RedditDataScroller<SearchResult>
+        contentInsetAdjustmentBehavior="never"
+        automaticallyAdjustContentInsets={false}
         showInitialLoader={false}
         loadMore={loadMoreSearchResults}
         refresh={refreshSearchResults}

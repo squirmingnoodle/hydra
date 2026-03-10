@@ -4,7 +4,6 @@ import React, { useMemo, useRef, useState, useContext } from "react";
 import {
   Animated,
   Modal,
-  PanResponder,
   Platform,
   StyleSheet,
   TouchableWithoutFeedback,
@@ -53,7 +52,7 @@ function FullscreenVideoModal({
   onClose: () => void;
 }) {
   const insets = useSafeAreaInsets();
-  const { height: screenHeight } = useWindowDimensions();
+  const { width: screenWidth, height: screenHeight } = useWindowDimensions();
   const videoSource = useMemo(
     () => VideoCache.makeCachedVideoSource(source),
     [source],
@@ -91,47 +90,35 @@ function FullscreenVideoModal({
     outputRange: [0.75, 1, 1, 1, 0.75],
   });
 
-  // Use refs for values needed in PanResponder callbacks
-  const onCloseRef = useRef(onClose);
-  onCloseRef.current = onClose;
-  const screenHeightRef = useRef(screenHeight);
-  screenHeightRef.current = screenHeight;
+  const touchState = useRef({
+    x: 0,
+    y: 0,
+    direction: null as "vertical" | "horizontal" | null,
+    videoTime: 0,
+    wasPlaying: false,
+  });
 
-  const panResponder = useRef(
-    PanResponder.create({
-      onStartShouldSetPanResponder: () => false,
-      onMoveShouldSetPanResponder: (_, gs) => {
-        // Only capture vertical drags
-        return (
-          Math.abs(gs.dy) > 15 &&
-          Math.abs(gs.dy) > Math.abs(gs.dx) * 1.5
-        );
-      },
-      onPanResponderMove: (_, gs) => {
-        dragY.setValue(gs.dy);
-      },
-      onPanResponderRelease: (_, gs) => {
-        if (
-          Math.abs(gs.dy) > SWIPE_CLOSE_OFFSET ||
-          Math.abs(gs.vy) > SWIPE_CLOSE_VELOCITY
-        ) {
-          // Dismiss: animate off screen then close
-          Animated.timing(dragY, {
-            toValue: gs.dy > 0 ? screenHeightRef.current : -screenHeightRef.current,
-            duration: 200,
-            useNativeDriver: false,
-          }).start(() => onCloseRef.current());
-        } else {
-          // Snap back
-          Animated.spring(dragY, {
-            toValue: 0,
-            bounciness: 5,
-            useNativeDriver: false,
-          }).start();
-        }
-      },
-    }),
-  ).current;
+  const animationFrameRequest = useRef<number | null>(null);
+  const pendingScrubTime = useRef<number | null>(null);
+
+  const handleDismiss = (dy: number, vy: number) => {
+    if (
+      Math.abs(dy) > SWIPE_CLOSE_OFFSET ||
+      Math.abs(vy) > SWIPE_CLOSE_VELOCITY
+    ) {
+      Animated.timing(dragY, {
+        toValue: dy > 0 ? screenHeight : -screenHeight,
+        duration: 200,
+        useNativeDriver: false,
+      }).start(() => onClose());
+    } else {
+      Animated.spring(dragY, {
+        toValue: 0,
+        bounciness: 5,
+        useNativeDriver: false,
+      }).start();
+    }
+  };
 
   return (
     <Modal
@@ -142,24 +129,109 @@ function FullscreenVideoModal({
       supportedOrientations={["portrait", "landscape"]}
       onRequestClose={onClose}
     >
-      <Animated.View
-        style={[styles.modalContainer, { opacity: backgroundOpacity }]}
+      <View
+        style={styles.modalTouchBlocker}
+        onStartShouldSetResponder={() => true}
+        onResponderTerminationRequest={() => false}
+        onTouchStart={(e) => {
+          touchState.current = {
+            x: e.nativeEvent.pageX,
+            y: e.nativeEvent.pageY,
+            direction: null,
+            videoTime: player.currentTime,
+            wasPlaying: player.playing,
+          };
+        }}
+        onTouchMove={(e) => {
+          const state = touchState.current;
+          const dx = e.nativeEvent.pageX - state.x;
+          const dy = e.nativeEvent.pageY - state.y;
+
+          if (!state.direction) {
+            if (Math.abs(dy) > Math.abs(dx) * 1.5 && Math.abs(dy) > 15) {
+              state.direction = "vertical";
+            } else if (Math.abs(dx) > Math.abs(dy) * 1.5 && Math.abs(dx) > 15) {
+              state.direction = "horizontal";
+              state.x += dx;
+              state.y += dy;
+              if (state.wasPlaying) {
+                player.pause();
+              }
+            }
+            return;
+          }
+
+          if (state.direction === "vertical") {
+            dragY.setValue(dy);
+          } else {
+            const duration = player.duration;
+            if (duration > 0) {
+              const scrubDx = e.nativeEvent.pageX - state.x;
+              // Scale so one full screen width = half the video duration for finer control
+              const videoChange = scrubDx / (screenWidth / (duration * 0.5));
+              const newTime = Math.max(
+                0,
+                Math.min(duration, state.videoTime + videoChange),
+              );
+              pendingScrubTime.current = newTime;
+              if (animationFrameRequest.current) {
+                cancelAnimationFrame(animationFrameRequest.current);
+              }
+              animationFrameRequest.current = requestAnimationFrame(() => {
+                if (pendingScrubTime.current !== null) {
+                  player.currentTime = pendingScrubTime.current;
+                  pendingScrubTime.current = null;
+                }
+              });
+            }
+          }
+        }}
+        onTouchEnd={(e) => {
+          if (animationFrameRequest.current) {
+            cancelAnimationFrame(animationFrameRequest.current);
+            animationFrameRequest.current = null;
+          }
+          // Apply any pending scrub time immediately on release
+          if (pendingScrubTime.current !== null) {
+            player.currentTime = pendingScrubTime.current;
+            pendingScrubTime.current = null;
+          }
+
+          const state = touchState.current;
+          const dy = e.nativeEvent.pageY - state.y;
+
+          if (!state.direction) {
+            if (player.playing) {
+              player.pause();
+            } else {
+              player.play();
+            }
+          } else if (state.direction === "vertical") {
+            handleDismiss(dy, 0);
+          } else if (state.direction === "horizontal") {
+            if (state.wasPlaying) {
+              player.play();
+            }
+          }
+
+          touchState.current = {
+            x: 0,
+            y: 0,
+            direction: null,
+            videoTime: 0,
+            wasPlaying: false,
+          };
+        }}
       >
         <Animated.View
-          style={[
-            styles.modalVideo,
-            { transform: [{ translateY: dragY }, { scale: videoScale }] },
-          ]}
-          {...panResponder.panHandlers}
+          style={[styles.modalContainer, { opacity: backgroundOpacity }]}
+          pointerEvents="none"
         >
-          <TouchableWithoutFeedback
-            onPress={() => {
-              if (isPlaying) {
-                player.pause();
-              } else {
-                player.play();
-              }
-            }}
+          <Animated.View
+            style={[
+              styles.modalVideo,
+              { transform: [{ translateY: dragY }, { scale: videoScale }] },
+            ]}
           >
             <VideoView
               player={player}
@@ -167,7 +239,7 @@ function FullscreenVideoModal({
               nativeControls={false}
               contentFit="contain"
             />
-          </TouchableWithoutFeedback>
+          </Animated.View>
         </Animated.View>
         <TouchableOpacity
           style={[styles.modalCloseButton, { top: insets.top + 10 }]}
@@ -175,7 +247,7 @@ function FullscreenVideoModal({
         >
           <FontAwesome6 name="xmark" size={20} color="white" />
         </TouchableOpacity>
-      </Animated.View>
+      </View>
     </Modal>
   );
 }
@@ -499,8 +571,11 @@ const styles = StyleSheet.create({
   videoError: {
     marginHorizontal: 20,
   },
-  modalContainer: {
+  modalTouchBlocker: {
     flex: 1,
+  },
+  modalContainer: {
+    ...StyleSheet.absoluteFillObject,
     backgroundColor: "black",
   },
   modalVideo: {
