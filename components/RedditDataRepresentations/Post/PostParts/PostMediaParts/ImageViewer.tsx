@@ -11,6 +11,7 @@ import {
 import { default as ImageView } from "./ImageView/ImageViewing";
 import { DataModeContext } from "../../../../../contexts/SettingsContexts/DataModeContext";
 import { ThemeContext } from "../../../../../contexts/SettingsContexts/ThemeContext";
+import { FeedMediaViewerContext } from "../../../../../contexts/FeedMediaViewerContext";
 import URL from "../../../../../utils/URL";
 import useMediaSharing from "../../../../../utils/useMediaSharing";
 
@@ -19,13 +20,17 @@ export default function ImageViewer({
   thumbnail,
   aspectRatio,
   subreddit,
+  postId,
 }: {
   images: string[];
   thumbnail?: string;
   aspectRatio?: number;
   subreddit?: string;
+  postId?: string;
 }) {
   const { currentDataMode } = useContext(DataModeContext);
+  const { openMediaViewer, isAvailable: feedMediaViewerAvailable } =
+    useContext(FeedMediaViewerContext);
   const { width, height } = useWindowDimensions();
   const shareMedia = useMediaSharing();
 
@@ -100,9 +105,13 @@ export default function ImageViewer({
           activeOpacity={1}
           key={index}
           onPress={() => {
-            setLoadLowData(false);
-            initialImageIndex.current = index;
-            setVisible(true);
+            if (feedMediaViewerAvailable && postId) {
+              openMediaViewer(postId, index);
+            } else {
+              setLoadLowData(false);
+              initialImageIndex.current = index;
+              setVisible(true);
+            }
           }}
           style={styles.touchableZone}
           underlayColor={theme.background}

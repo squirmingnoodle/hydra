@@ -1,5 +1,11 @@
 import { Feather } from "@expo/vector-icons";
-import React, { useCallback, useContext, useEffect, useRef, useState } from "react";
+import React, {
+  useCallback,
+  useContext,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 import {
   StyleSheet,
   View,
@@ -50,6 +56,7 @@ export default function SearchPage() {
   const searchBarRef = useRef<TextInput | null>(null);
   const [searchType, setSearchType] = useState<SearchType>("posts");
   const [loading, setLoading] = useState(false);
+  const searchRequestId = useRef(0);
 
   const loadRecentSearches = () => {
     setRecentSearches(getRecentSearches(undefined, 20));
@@ -75,11 +82,15 @@ export default function SearchPage() {
         // API only allows 1 page of search for users
         return [];
       }
+      const requestId = ++searchRequestId.current;
       setLoading(true);
       const newResults = await getSearchResults(searchType, search.current, {
         after,
       });
-      setLoading(false);
+      // Only update loading state if this is still the latest request
+      if (requestId === searchRequestId.current) {
+        setLoading(false);
+      }
       return newResults;
     },
   });
@@ -104,22 +115,19 @@ export default function SearchPage() {
   const modifySearchResultsRef = useRef(modifySearchResults);
   modifySearchResultsRef.current = modifySearchResults;
 
-  const renderSearchItem = useCallback(
-    ({ item }: { item: SearchResult }) => {
-      if (item.type === "post")
-        return (
-          <PostComponent
-            post={item}
-            setPost={(newPost) => modifySearchResultsRef.current([newPost])}
-          />
-        );
-      if (item.type === "subreddit")
-        return <SubredditComponent subreddit={item} />;
-      if (item.type === "user") return <UserComponent user={item} />;
-      return null;
-    },
-    [],
-  );
+  const renderSearchItem = useCallback(({ item }: { item: SearchResult }) => {
+    if (item.type === "post")
+      return (
+        <PostComponent
+          post={item}
+          setPost={(newPost) => modifySearchResultsRef.current([newPost])}
+        />
+      );
+    if (item.type === "subreddit")
+      return <SubredditComponent subreddit={item} />;
+    if (item.type === "user") return <UserComponent user={item} />;
+    return null;
+  }, []);
 
   useEffect(() => {
     refreshSearchResults();
@@ -152,6 +160,9 @@ export default function SearchPage() {
             ]}
             activeOpacity={0.8}
             onPress={() => setSearchType(type)}
+            accessibilityLabel={`Search ${type}`}
+            accessibilityRole="tab"
+            accessibilityState={{ selected: searchType === type }}
           >
             <Text
               key={type}

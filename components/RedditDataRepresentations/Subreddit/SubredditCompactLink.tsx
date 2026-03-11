@@ -35,6 +35,7 @@ export default function SubredditCompactLink({
             source={{ uri: subreddit.iconURL }}
             style={styles.subredditIcon}
             recyclingKey={subreddit.iconURL}
+            cachePolicy="memory-disk"
           />
         ) : (
           <FontAwesome name="reddit" size={30} color={theme.text} />

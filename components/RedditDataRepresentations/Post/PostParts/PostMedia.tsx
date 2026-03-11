@@ -66,6 +66,7 @@ export default React.memo(function PostMedia({
             thumbnail={post.imageThumbnail}
             aspectRatio={post.mediaAspectRatio}
             subreddit={post.subreddit}
+            postId={post.id}
           />
         </View>
       )}
@@ -76,6 +77,7 @@ export default React.memo(function PostMedia({
             thumbnail={post.imageThumbnail}
             aspectRatio={post.mediaAspectRatio}
             subreddit={post.subreddit}
+            postId={post.id}
           />
         </View>
       )}

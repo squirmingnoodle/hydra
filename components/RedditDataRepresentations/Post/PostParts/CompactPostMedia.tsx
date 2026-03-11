@@ -31,7 +31,9 @@ type CompactPostMediaProps = {
 
 const MEDIA_SQUARE_SIZE = 60;
 
-export default React.memo(function CompactPostMedia({ post }: CompactPostMediaProps) {
+export default React.memo(function CompactPostMedia({
+  post,
+}: CompactPostMediaProps) {
   const { theme } = useContext(ThemeContext);
   const { currentDataMode } = useContext(DataModeContext);
   const { interactedWithPost } = useContext(PostInteractionContext);
@@ -81,6 +83,7 @@ export default React.memo(function CompactPostMedia({ post }: CompactPostMediaPr
             <Image
               source={{ uri: post.imageThumbnail }}
               recyclingKey={post.imageThumbnail}
+              cachePolicy="memory-disk"
               style={styles.image}
             />
           )}
@@ -117,6 +120,7 @@ export default React.memo(function CompactPostMedia({ post }: CompactPostMediaPr
             <Image
               source={{ uri: post.imageThumbnail }}
               recyclingKey={post.imageThumbnail}
+              cachePolicy="memory-disk"
               style={styles.image}
             />
           )}
@@ -189,6 +193,7 @@ export default React.memo(function CompactPostMedia({ post }: CompactPostMediaPr
               source={{ uri: post.openGraphData.image }}
               contentFit="cover"
               recyclingKey={post.openGraphData.image}
+              cachePolicy="memory-disk"
               style={styles.image}
             />
           )}

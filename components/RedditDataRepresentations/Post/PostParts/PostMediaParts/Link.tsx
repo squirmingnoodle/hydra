@@ -64,6 +64,7 @@ export default function Link({ post }: { post: Post | PostDetail }) {
               style={{ height: 200, borderRadius: 10 }}
               transition={250}
               recyclingKey={post.openGraphData?.image}
+              cachePolicy="memory-disk"
             />
           )}
           <Text

@@ -1,4 +1,4 @@
-import React, { useCallback, useContext, useEffect, useRef, useState } from "react";
+import React, { useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { StyleSheet, View } from "react-native";
 import { getPosts, Post } from "../api/Posts";
 
@@ -6,11 +6,18 @@ import { StackPageProps } from "../app/stack";
 import PostComponent from "../components/RedditDataRepresentations/Post/PostComponent";
 import RedditDataScroller from "../components/UI/RedditDataScroller";
 import SearchBar from "../components/UI/SearchBar";
+import MediaViewer, {
+  MediaItemCollection,
+  MediaViewerRef,
+} from "../components/UI/MediaViewer.tsx/MediaViewer";
+import PostOverlay from "../components/UI/MediaViewer.tsx/PostOverlay";
 import { FiltersContext } from "../contexts/SettingsContexts/FiltersContext";
 import { ThemeContext } from "../contexts/SettingsContexts/ThemeContext";
+import { FeedMediaViewerProvider } from "../contexts/FeedMediaViewerContext";
 import { markPostSeen } from "../db/functions/SeenPosts";
 import { filterSeenItems } from "../utils/filters/filterSeenItems";
 import useRedditDataState from "../utils/useRedditDataState";
+import useMediaSharing from "../utils/useMediaSharing";
 import { NativeWidgetData } from "../utils/nativeWidgetData";
 import RedditURL, { PageType } from "../utils/RedditURL";
 import { incrementSubredditVisitCount } from "../db/functions/Stats";
@@ -84,6 +91,53 @@ export default function PostsPage({
     limitRampUp: [10, 20, 40, 70, 100],
     refreshDependencies: [searchText, sort, sortTime, currentUser?.userName],
   });
+
+  const shareMedia = useMediaSharing();
+  const mediaViewerRef = useRef<MediaViewerRef>(null);
+
+  // Build media collection for the shared fullscreen MediaViewer
+  const { viewerMedia, mediaPostIndices } = useMemo(() => {
+    const media: MediaItemCollection = [];
+    const indices: number[] = [];
+    posts.forEach((post, i) => {
+      if (post.images.length > 0) {
+        media.push(
+          post.images.map((image) => ({
+            type: "image" as const,
+            uri: image,
+          })),
+        );
+        indices.push(i);
+      } else if (post.video !== undefined) {
+        media.push([{ type: "video" as const, uri: post.video }]);
+        indices.push(i);
+      }
+    });
+    return { viewerMedia: media, mediaPostIndices: indices };
+  }, [posts]);
+
+  const postsRef = useRef(posts);
+  postsRef.current = posts;
+  const viewerMediaRef = useRef(viewerMedia);
+  viewerMediaRef.current = viewerMedia;
+  const mediaPostIndicesRef = useRef(mediaPostIndices);
+  mediaPostIndicesRef.current = mediaPostIndices;
+
+  const onOpenMediaViewer = useCallback(
+    (postId: string, itemIndex?: number) => {
+      const postIndex = postsRef.current.findIndex((p) => p.id === postId);
+      if (postIndex === -1) return;
+      const mediaIndex = mediaPostIndicesRef.current.indexOf(postIndex);
+      if (mediaIndex === -1) return;
+      let flatIndex = 0;
+      for (let i = 0; i < mediaIndex; i++) {
+        flatIndex += viewerMediaRef.current[i]?.length ?? 0;
+      }
+      flatIndex += itemIndex ?? 0;
+      mediaViewerRef.current?.open(flatIndex);
+    },
+    [],
+  );
 
   useOfferGalleryMode({ url, posts });
 
@@ -228,6 +282,7 @@ export default function PostsPage({
         accessFailure={accessFailure}
         contentName={subreddit}
       >
+        <FeedMediaViewerProvider onOpenMediaViewer={onOpenMediaViewer}>
         <RedditDataScroller<Post>
           persistScrollKey={url}
           ListHeaderComponent={
@@ -237,7 +292,7 @@ export default function PostsPage({
               placeholder={
                 subreddit && !isCombinedSubredditFeed
                   ? `Search r/${subreddit}`
-                  : "Search Reddit"
+                  : "Search subscriptions"
               }
               onSearch={(text) => {
                 if (!text) return;
@@ -249,11 +304,35 @@ export default function PostsPage({
                   newURL.changeQueryParam("restrict_sr", "true");
                   navigation.pushURL(newURL.toString());
                 } else {
-                  const newURL = new RedditURL(
-                    `https://www.reddit.com/search/`,
-                  );
-                  newURL.changeQueryParam("q", text);
-                  navigation.pushURL(newURL.toString());
+                  // Search subscribed subreddits by name
+                  const query = text.toLowerCase();
+                  const allSubs = [
+                    ...subreddits.favorites,
+                    ...subreddits.subscriber,
+                  ];
+                  // Deduplicate (favorites are also in subscriber)
+                  const seen = new Set<string>();
+                  const uniqueSubs = allSubs.filter((sub) => {
+                    if (seen.has(sub.name)) return false;
+                    seen.add(sub.name);
+                    return true;
+                  });
+                  // Try exact match first, then prefix, then substring
+                  const match =
+                    uniqueSubs.find(
+                      (sub) => sub.name.toLowerCase() === query,
+                    ) ??
+                    uniqueSubs.find((sub) =>
+                      sub.name.toLowerCase().startsWith(query),
+                    ) ??
+                    uniqueSubs.find((sub) =>
+                      sub.name.toLowerCase().includes(query),
+                    );
+                  if (match) {
+                    navigation.pushURL(
+                      `https://www.reddit.com/r/${match.name}`,
+                    );
+                  }
                 }
               }}
             />
@@ -266,6 +345,19 @@ export default function PostsPage({
           extraData={rerenderCount} // This triggers a rerender of the visible list items
           renderItem={renderItem}
           onViewableItemsChanged={onViewableItemsChanged}
+        />
+        </FeedMediaViewerProvider>
+        <MediaViewer
+          ref={mediaViewerRef}
+          media={viewerMedia}
+          overlayComponent={(index, rowIndex) => (
+            <PostOverlay
+              post={posts[mediaPostIndices[index]]}
+              closeViewer={() => mediaViewerRef.current?.close()}
+              rowIndex={rowIndex}
+              shareMedia={shareMedia}
+            />
+          )}
         />
         {postDetailsURL && showSplitView && (
           <>

@@ -446,7 +446,19 @@ export default React.memo(function PostComponent({
               {post.title.trim()}
             </Text>
             {showPostFlair && post.postFlair && (
-              <View
+              <TouchableOpacity
+                activeOpacity={0.5}
+                onPress={() => {
+                  const searchURL = new RedditURL(
+                    `https://www.reddit.com/r/${post.subreddit}/search/`,
+                  );
+                  searchURL.changeQueryParam(
+                    "q",
+                    `flair_name:"${post.postFlair!.text}"`,
+                  );
+                  searchURL.changeQueryParam("restrict_sr", "true");
+                  pushURL(searchURL.toString());
+                }}
                 style={[
                   styles.postFlairContainer,
                   {
@@ -466,7 +478,7 @@ export default React.memo(function PostComponent({
                 >
                   {post.postFlair.text}
                 </Text>
-              </View>
+              </TouchableOpacity>
             )}
             <View
               style={[

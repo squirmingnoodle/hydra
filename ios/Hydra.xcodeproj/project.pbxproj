@@ -39,6 +39,8 @@
 		1342999C3430024001172EE3 /* HydraSpotlight.m in Sources */ = {isa = PBXBuildFile; fileRef = DC2C5669FCD8738E62E2BC49 /* HydraSpotlight.m */; };
 		87730310EB4154D997316F39 /* HydraShareData.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA3A68E4F62C82F7B67B3BDB /* HydraShareData.swift */; };
 		5C8DAAE7A1718B53C7CFAB87 /* HydraShareData.m in Sources */ = {isa = PBXBuildFile; fileRef = E472E69974E5A533958CF498 /* HydraShareData.m */; };
+		A1C2D3E4F5A6B7C8D9E0F1A2 /* HydraSummarization.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2D3E4F5A6B7C8D9E0F1A2B3 /* HydraSummarization.swift */; };
+		C3D4E5F6A7B8C9D0E1F2A3B4 /* HydraSummarization.m in Sources */ = {isa = PBXBuildFile; fileRef = D4E5F6A7B8C9D0E1F2A3B4C5 /* HydraSummarization.m */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -105,6 +107,8 @@
 		DC2C5669FCD8738E62E2BC49 /* HydraSpotlight.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = HydraSpotlight.m; sourceTree = "<group>"; };
 		BA3A68E4F62C82F7B67B3BDB /* HydraShareData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HydraShareData.swift; sourceTree = "<group>"; };
 		E472E69974E5A533958CF498 /* HydraShareData.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = HydraShareData.m; sourceTree = "<group>"; };
+		B2D3E4F5A6B7C8D9E0F1A2B3 /* HydraSummarization.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HydraSummarization.swift; sourceTree = "<group>"; };
+		D4E5F6A7B8C9D0E1F2A3B4C5 /* HydraSummarization.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = HydraSummarization.m; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -173,6 +177,8 @@
 				DC2C5669FCD8738E62E2BC49 /* HydraSpotlight.m */,
 				BA3A68E4F62C82F7B67B3BDB /* HydraShareData.swift */,
 				E472E69974E5A533958CF498 /* HydraShareData.m */,
+				B2D3E4F5A6B7C8D9E0F1A2B3 /* HydraSummarization.swift */,
+				D4E5F6A7B8C9D0E1F2A3B4C5 /* HydraSummarization.m */,
 				FAA0777A2F55216A001C9D3A /* HydraICloudKV.m */,
 			);
 			name = Hydra;
@@ -544,6 +550,8 @@
 				1342999C3430024001172EE3 /* HydraSpotlight.m in Sources */,
 				87730310EB4154D997316F39 /* HydraShareData.swift in Sources */,
 				5C8DAAE7A1718B53C7CFAB87 /* HydraShareData.m in Sources */,
+				A1C2D3E4F5A6B7C8D9E0F1A2 /* HydraSummarization.swift in Sources */,
+				C3D4E5F6A7B8C9D0E1F2A3B4 /* HydraSummarization.m in Sources */,
 				F2A1B7C22EAB100100A1B2C3 /* HydraFolderBookmarks.m in Sources */,
 				A2E9072DD1F91456E4A6855D /* ExpoModulesProvider.swift in Sources */,
 			);

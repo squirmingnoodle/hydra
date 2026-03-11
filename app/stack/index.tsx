@@ -30,6 +30,8 @@ import { TAB_BAR_REMOVED_PADDING_BOTTOM } from "../../constants/TabBarPadding";
 import GalleryScreen from "./GalleryScreen";
 import { TabSettingsContext } from "../../contexts/SettingsContexts/TabSettingsContext";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import ErrorBoundary from "../../components/UI/ErrorBoundary";
+import OfflineBanner from "../../components/UI/OfflineBanner";
 
 const FULLY_TRANSPARENT_COLOR = "#00000000";
 
@@ -227,7 +229,10 @@ export default function Stack() {
         }}
         screenLayout={({ children }) => (
           <StackFutureProvider futureRoutes={futureRoutes}>
-            {children}
+            <ErrorBoundary>
+              <OfflineBanner />
+              {children}
+            </ErrorBoundary>
           </StackFutureProvider>
         )}
       >
