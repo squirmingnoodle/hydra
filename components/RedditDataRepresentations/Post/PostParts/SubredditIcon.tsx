@@ -28,6 +28,7 @@ export default function SubredditIcon({
           source={{ uri: subredditIcon }}
           style={styles.image}
           recyclingKey={subredditIcon}
+          cachePolicy="memory-disk"
         />
       ) : (
         <FontAwesome name="reddit" size={20} color={theme.text} />

@@ -1,4 +1,10 @@
-import { AntDesign, Feather, FontAwesome, Octicons } from "@expo/vector-icons";
+import {
+  AntDesign,
+  Feather,
+  FontAwesome,
+  Ionicons,
+  Octicons,
+} from "@expo/vector-icons";
 import React, {
   Dispatch,
   SetStateAction,
@@ -8,6 +14,7 @@ import React, {
   useState,
 } from "react";
 import {
+  ActivityIndicator,
   TouchableOpacity,
   View,
   Text,
@@ -21,6 +28,7 @@ import * as Clipboard from "expo-clipboard";
 import PostMedia from "./PostParts/PostMedia";
 import SubredditIcon from "./PostParts/SubredditIcon";
 import { summarizePostDetails, summarizePostComments } from "../../../api/AI";
+import { NativeSummarization } from "../../../utils/nativeSummarization";
 import { PostDetail, vote } from "../../../api/PostDetail";
 import { VoteOption } from "../../../api/Posts";
 import { saveItem } from "../../../api/Save";
@@ -52,6 +60,11 @@ type SummaryUnavailable = {
   comments: boolean;
 };
 
+type SummarySource = {
+  post: "apple" | "server" | null;
+  comments: "apple" | "server" | null;
+};
+
 type PostDetailsComponentProps = {
   postDetail: PostDetail;
   loadPostDetails: () => Promise<void>;
@@ -78,12 +91,24 @@ export default function PostDetailsComponent({
   const [mediaCollapsed, setMediaCollapsed] = useState(false);
   const [commentSummaryCollapsed, setCommentSummaryCollapsed] = useState(false);
   const [summary, setSummary] = useState<Summary | null>(null);
+  const [summaryLoading, setSummaryLoading] = useState(false);
   const [summaryUnavailable, setSummaryUnavailable] =
     useState<SummaryUnavailable>({
       post: false,
       comments: false,
     });
+  const [summarySource, setSummarySource] = useState<SummarySource>({
+    post: null,
+    comments: null,
+  });
   const bookmarkLongPressTriggered = useRef(false);
+  const contentSentTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
+
+  useEffect(() => {
+    return () => {
+      clearTimeout(contentSentTimer.current);
+    };
+  }, []);
 
   const contextDepth = Number(new RedditURL(url).getQueryParam("context") ?? 0);
 
@@ -147,12 +172,7 @@ export default function PostDetailsComponent({
     });
   };
 
-  const getSummary = async () => {
-    if (!isPro || !customerId) {
-      setSummary(null);
-      setSummaryUnavailable({ post: false, comments: false });
-      return;
-    }
+  const getSummary = async (cancelled: { current: boolean }) => {
     const canSummarizePost = showPostSummary && postDetail.text.length > 850;
     const canSummarizeComments =
       showCommentSummary &&
@@ -161,45 +181,117 @@ export default function PostDetailsComponent({
         0,
       ) > 1_000;
 
-    let postSummary = null;
-    let commentsSummary = null;
+    if (!canSummarizePost && !canSummarizeComments) {
+      setSummary(null);
+      setSummaryLoading(false);
+      setSummaryUnavailable({ post: false, comments: false });
+      return;
+    }
+
+    setSummaryLoading(true);
+
+    let postSummary: string | null = null;
+    let commentsSummary: string | null = null;
     let postSummaryUnavailable = false;
     let commentsSummaryUnavailable = false;
+    let postSource: "apple" | "server" | null = null;
+    let commentsSource: "apple" | "server" | null = null;
 
     if (canSummarizePost) {
-      try {
-        postSummary = await summarizePostDetails(customerId, postDetail);
-        postSummaryUnavailable = !postSummary;
-      } catch (_e) {
-        postSummaryUnavailable = true;
+      // Try on-device AI first (free for all users on iOS 26+)
+      postSummary = await NativeSummarization.summarizePost(
+        postDetail.title,
+        postDetail.subreddit,
+        postDetail.author,
+        postDetail.text,
+      );
+
+      if (cancelled.current) return;
+
+      if (postSummary) {
+        postSource = "apple";
       }
+
+      // Fall back to server for Pro users
+      if (!postSummary && isPro && customerId) {
+        try {
+          postSummary = await summarizePostDetails(customerId, postDetail);
+          if (cancelled.current) return;
+          if (postSummary) {
+            postSource = "server";
+          }
+        } catch (_e) {
+          // Server fallback failed
+        }
+      }
+
+      postSummaryUnavailable = !postSummary;
     }
 
+    if (cancelled.current) return;
+
     if (canSummarizeComments) {
-      try {
-        commentsSummary = await summarizePostComments(
-          customerId,
-          postDetail,
-          postSummary ?? postDetail.text,
-        );
-        commentsSummaryUnavailable = !commentsSummary;
-      } catch (_e) {
-        commentsSummaryUnavailable = true;
+      const topComments = postDetail.comments
+        .slice(0, 5)
+        .map((c) => c.text.slice(0, 2_000));
+
+      // Try on-device AI first
+      commentsSummary = await NativeSummarization.summarizeComments(
+        postDetail.title,
+        postDetail.author,
+        postSummary ?? postDetail.text,
+        topComments,
+      );
+
+      if (cancelled.current) return;
+
+      if (commentsSummary) {
+        commentsSource = "apple";
       }
+
+      // Fall back to server for Pro users
+      if (!commentsSummary && isPro && customerId) {
+        try {
+          commentsSummary = await summarizePostComments(
+            customerId,
+            postDetail,
+            postSummary ?? postDetail.text,
+          );
+          if (cancelled.current) return;
+          if (commentsSummary) {
+            commentsSource = "server";
+          }
+        } catch (_e) {
+          // Server fallback failed
+        }
+      }
+
+      commentsSummaryUnavailable = !commentsSummary;
     }
+
+    if (cancelled.current) return;
 
     setSummary({
       post: postSummary,
       comments: commentsSummary,
     });
+    setSummarySource({
+      post: postSource,
+      comments: commentsSource,
+    });
     setSummaryUnavailable({
       post: canSummarizePost && postSummaryUnavailable,
       comments: canSummarizeComments && commentsSummaryUnavailable,
     });
+    setSummaryLoading(false);
   };
 
   useEffect(() => {
-    getSummary();
+    const cancelled = { current: false };
+    getSummary(cancelled);
+    return () => {
+      cancelled.current = true;
+    };
   }, [
     isPro,
     customerId,
@@ -229,6 +321,35 @@ export default function PostDetailsComponent({
           >
             {postDetail.title}
           </Text>
+          {!mediaCollapsed &&
+            summaryLoading &&
+            !summary?.post &&
+            postDetail.text.length > 850 && (
+              <View
+                style={[
+                  styles.postSummaryContainer,
+                  {
+                    borderColor: theme.divider,
+                  },
+                ]}
+              >
+                <Text
+                  style={[
+                    styles.postSummaryTitle,
+                    {
+                      color: theme.text,
+                    },
+                  ]}
+                >
+                  Summary
+                </Text>
+                <ActivityIndicator
+                  size="small"
+                  color={theme.subtleText}
+                  style={{ marginTop: 4 }}
+                />
+              </View>
+            )}
           {!mediaCollapsed && summary?.post && postDetail.text.length > 850 && (
             <View
               style={[
@@ -238,16 +359,29 @@ export default function PostDetailsComponent({
                 },
               ]}
             >
-              <Text
-                style={[
-                  styles.postSummaryTitle,
-                  {
-                    color: theme.text,
-                  },
-                ]}
+              <View
+                style={[styles.summaryTitleRow, { justifyContent: "center" }]}
               >
-                Summary
-              </Text>
+                <Text
+                  style={[
+                    styles.postSummaryTitle,
+                    {
+                      color: theme.text,
+                    },
+                  ]}
+                >
+                  Summary
+                </Text>
+                {summarySource.post === "apple" ? (
+                  <Ionicons
+                    name="sparkles"
+                    size={14}
+                    color={theme.subtleText}
+                  />
+                ) : summarySource.post === "server" ? (
+                  <FontAwesome name="star" size={12} color={theme.subtleText} />
+                ) : null}
+              </View>
               <Text
                 style={[
                   styles.postSummaryText,
@@ -420,6 +554,8 @@ export default function PostDetailsComponent({
             },
           ]}
           onPress={() => voteOnPost(VoteOption.UpVote)}
+          accessibilityLabel="Upvote"
+          accessibilityRole="button"
         >
           <Feather
             name="arrow-up"
@@ -442,6 +578,8 @@ export default function PostDetailsComponent({
             },
           ]}
           onPress={() => voteOnPost(VoteOption.DownVote)}
+          accessibilityLabel="Downvote"
+          accessibilityRole="button"
         >
           <Feather
             name="arrow-down"
@@ -461,6 +599,8 @@ export default function PostDetailsComponent({
             },
           ]}
           onPress={toggleSavedPost}
+          accessibilityLabel={postDetail.saved ? "Remove bookmark" : "Bookmark"}
+          accessibilityRole="button"
           onLongPress={async () => {
             if (!postDetail.saved) return;
             bookmarkLongPressTriggered.current = true;
@@ -482,10 +622,17 @@ export default function PostDetailsComponent({
             setModal(
               <NewComment
                 parent={postDetail}
-                contentSent={() => setTimeout(() => loadPostDetails(), 5_000)}
+                contentSent={() => {
+                  contentSentTimer.current = setTimeout(
+                    () => loadPostDetails(),
+                    5_000,
+                  );
+                }}
               />,
             )
           }
+          accessibilityLabel="Reply"
+          accessibilityRole="button"
         >
           <Octicons name="reply" size={28} color={theme.iconPrimary} />
         </TouchableOpacity>
@@ -494,6 +641,8 @@ export default function PostDetailsComponent({
           onPress={() => {
             Share.share({ url: new RedditURL(url).toString() });
           }}
+          accessibilityLabel="Share"
+          accessibilityRole="button"
         >
           <Feather name="share" size={28} color={theme.iconPrimary} />
         </TouchableOpacity>
@@ -540,16 +689,23 @@ export default function PostDetailsComponent({
           ]}
         >
           <View>
-            <Text
-              style={[
-                styles.commentsSummaryTitle,
-                {
-                  color: theme.text,
-                },
-              ]}
-            >
-              Comments Summary
-            </Text>
+            <View style={styles.summaryTitleRow}>
+              <Text
+                style={[
+                  styles.commentsSummaryTitle,
+                  {
+                    color: theme.text,
+                  },
+                ]}
+              >
+                Comments Summary
+              </Text>
+              {summarySource.comments === "apple" ? (
+                <Ionicons name="sparkles" size={12} color={theme.subtleText} />
+              ) : summarySource.comments === "server" ? (
+                <FontAwesome name="star" size={10} color={theme.subtleText} />
+              ) : null}
+            </View>
             {!commentSummaryCollapsed && (
               <Text
                 style={[
@@ -678,6 +834,11 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     borderRadius: 5,
     borderWidth: 3,
+  },
+  summaryTitleRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
   },
   postSummaryText: {
     fontSize: 15,

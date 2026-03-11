@@ -78,6 +78,8 @@ function RedditDataScroller<T extends RedditDataObject>(
     ? `scrollPos:${props.persistScrollKey}`
     : null;
   const scrollPersistTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
+  const scrollRestoreTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
+  const tintColorTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
   const hasRestoredScroll = useRef(false);
   const listRef = useRef<any>(null);
 
@@ -92,6 +94,8 @@ function RedditDataScroller<T extends RedditDataObject>(
     return () => {
       clearTimeout(flushTimer.current);
       clearTimeout(scrollPersistTimer.current);
+      clearTimeout(scrollRestoreTimer.current);
+      clearTimeout(tintColorTimer.current);
       flushScrollStat();
     };
   }, []);
@@ -107,7 +111,7 @@ function RedditDataScroller<T extends RedditDataObject>(
       const savedOffset = KeyStore.getNumber(scrollPersistKey);
       if (savedOffset && savedOffset > 0) {
         // Small delay to let FlashList finish layout
-        setTimeout(() => {
+        scrollRestoreTimer.current = setTimeout(() => {
           listRef.current?.scrollToOffset({
             offset: savedOffset,
             animated: false,
@@ -142,7 +146,7 @@ function RedditDataScroller<T extends RedditDataObject>(
    */
   const [refreshControlColor, setRefreshControlColor] = useState<ColorValue>();
   useEffect(() => {
-    setTimeout(() => {
+    tintColorTimer.current = setTimeout(() => {
       setRefreshControlColor(theme.text);
     }, 500);
   }, []);
@@ -206,40 +210,53 @@ function RedditDataScroller<T extends RedditDataObject>(
         return `${keyType ?? "unknown"}-${keyId ?? index}`;
       }}
       ListFooterComponent={
-        <View style={styles.endOfListContainer}>
-          {isLoadingMore && (
-            props.data.length === 0 ? (
-              <PostSkeletonList count={3} />
-            ) : (
-              <ActivityIndicator size="small" />
-            )
-          )}
-          {!isLoadingMore && props.fullyLoaded && !!props.data.length && (
-            <Text
-              style={[
-                styles.endOfListText,
-                {
-                  color: theme.text,
-                },
-              ]}
-            >
-              {`Wow. You've reached the bottom.`}
-            </Text>
-          )}
-          {!isLoadingMore && props.hitFilterLimit && (
-            <Text
-              style={[
-                styles.endOfListText,
-                {
-                  color: theme.text,
-                },
-              ]}
-            >
-              The filter limit has been reached. Your filters may be too strict
-              to show anything.
-            </Text>
-          )}
-        </View>
+        isLoadingMore && props.data.length === 0 ? (
+          <PostSkeletonList count={6} />
+        ) : (
+          <View style={styles.endOfListContainer}>
+            {isLoadingMore && <ActivityIndicator size="small" />}
+            {!isLoadingMore && props.fullyLoaded && !!props.data.length && (
+              <Text
+                style={[
+                  styles.endOfListText,
+                  {
+                    color: theme.subtleText,
+                  },
+                ]}
+              >
+                {`You've reached the end`}
+              </Text>
+            )}
+            {!isLoadingMore &&
+              props.fullyLoaded &&
+              props.data.length === 0 &&
+              !props.hitFilterLimit && (
+                <Text
+                  style={[
+                    styles.endOfListText,
+                    {
+                      color: theme.subtleText,
+                    },
+                  ]}
+                >
+                  Nothing to show here
+                </Text>
+              )}
+            {!isLoadingMore && props.hitFilterLimit && (
+              <Text
+                style={[
+                  styles.endOfListText,
+                  {
+                    color: theme.subtleText,
+                  },
+                ]}
+              >
+                Filter limit reached. Try adjusting your filters in Settings to
+                see more content.
+              </Text>
+            )}
+          </View>
+        )
       }
     />
   );

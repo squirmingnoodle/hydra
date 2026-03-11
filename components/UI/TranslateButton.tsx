@@ -24,6 +24,7 @@ export default function TranslateButton({
 }: TranslateButtonProps) {
   const { theme } = useContext(ThemeContext);
   const [available, setAvailable] = useState(false);
+  const [isDeviceLanguage, setIsDeviceLanguage] = useState(false);
   const [isTranslated, setIsTranslated] = useState(false);
   const [loading, setLoading] = useState(false);
 
@@ -37,8 +38,22 @@ export default function TranslateButton({
     };
   }, []);
 
-  // Only show for substantial text
-  if (!available || text.length < 20) return null;
+  // Detect language on mount to hide button for device-language text
+  useEffect(() => {
+    if (!available || text.length < 20) return;
+    let cancelled = false;
+    NativeTranslation.detectLanguage(text).then((detection) => {
+      if (!cancelled && detection?.isDeviceLanguage) {
+        setIsDeviceLanguage(true);
+      }
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [available, text]);
+
+  // Only show for substantial text that isn't already in the device language
+  if (!available || text.length < 20 || isDeviceLanguage) return null;
 
   const handleTranslate = async () => {
     if (isTranslated) {
@@ -49,17 +64,7 @@ export default function TranslateButton({
 
     setLoading(true);
 
-    // Detect language first to see if we even need to translate
     const detection = await NativeTranslation.detectLanguage(text);
-    if (detection?.isDeviceLanguage) {
-      setLoading(false);
-      Alert.alert(
-        "Already in Your Language",
-        "This comment appears to already be in your device language.",
-      );
-      return;
-    }
-
     const response = await NativeTranslation.translate(
       text,
       detection?.language ?? null,

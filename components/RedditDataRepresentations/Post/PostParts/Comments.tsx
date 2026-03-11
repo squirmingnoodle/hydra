@@ -9,6 +9,7 @@ import {
 import { Image } from "expo-image";
 import React, {
   useContext,
+  useEffect,
   useState,
   useMemo,
   forwardRef,
@@ -55,6 +56,9 @@ import TranslateButton from "../../../UI/TranslateButton";
 import { GesturesContext } from "../../../../contexts/SettingsContexts/GesturesContext";
 import Time from "../../../../utils/Time";
 
+/** Prevent excessive nesting from blowing up the render tree */
+const MAX_COMMENT_DEPTH = 25;
+
 function countNestedReplies(comment: PostDetail | Comment): number {
   let count = 0;
   for (const child of comment.comments) {
@@ -75,9 +79,7 @@ function commentMatchesSearch(
   ) {
     return true;
   }
-  return comment.comments.some((child) =>
-    commentMatchesSearch(child, filter),
-  );
+  return comment.comments.some((child) => commentMatchesSearch(child, filter));
 }
 
 interface CommentProps {
@@ -136,6 +138,13 @@ export function CommentComponent({
 
   const [loadingMore, setLoadingMore] = useState(false);
   const [translatedHtml, setTranslatedHtml] = useState<string | null>(null);
+  const replyTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
+
+  useEffect(() => {
+    return () => {
+      clearTimeout(replyTimer.current);
+    };
+  }, []);
 
   const toggleCollapse = () => {
     if (comment.type !== "comment") return;
@@ -174,12 +183,12 @@ export function CommentComponent({
     setModal(
       <NewComment
         parent={comment}
-        contentSent={() =>
-          setTimeout(async () => {
+        contentSent={() => {
+          replyTimer.current = setTimeout(async () => {
             const reloadedComment = await reloadComment(comment);
             changeComment?.(reloadedComment);
-          }, 5_000)
-        }
+          }, 5_000);
+        }}
       />,
     );
   };
@@ -262,10 +271,7 @@ export function CommentComponent({
       });
       if (!reason) return;
       try {
-        await reportContent(
-          comment,
-          reason as (typeof REPORT_REASONS)[number],
-        );
+        await reportContent(comment, reason as (typeof REPORT_REASONS)[number]);
         Alert.alert("Reported", "Thank you for your report.");
       } catch (_) {
         Alert.alert("Error", "Failed to submit report.");
@@ -442,6 +448,8 @@ export function CommentComponent({
                     )}
                     <TouchableOpacity
                       onPress={() => pushURL(`/user/${comment.author}`)}
+                      accessibilityLabel={`User ${comment.author}`}
+                      accessibilityRole="link"
                     >
                       <Text
                         style={[
@@ -461,6 +469,8 @@ export function CommentComponent({
                     <TouchableOpacity
                       style={styles.upvoteContainer}
                       onPress={() => voteOnComment(VoteOption.UpVote)}
+                      accessibilityLabel={`${comment.upvotes} points, tap to upvote`}
+                      accessibilityRole="button"
                     >
                       <AntDesign
                         name={
@@ -588,9 +598,7 @@ export function CommentComponent({
                       ]}
                     >
                       {countNestedReplies(comment)}{" "}
-                      {countNestedReplies(comment) === 1
-                        ? "reply"
-                        : "replies"}
+                      {countNestedReplies(comment) === 1 ? "reply" : "replies"}
                     </Text>
                   ) : null}
                   {displayInList && (
@@ -645,6 +653,7 @@ export function CommentComponent({
           {!comment.collapsed ? (
             <>
               {comment.comments.length > 0 &&
+                comment.depth < MAX_COMMENT_DEPTH &&
                 comment.comments.map((childComment, childIndex) => (
                   <CommentComponent
                     key={childComment.id}

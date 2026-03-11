@@ -9,6 +9,7 @@ export type DataMode = "normal" | "lowData";
 
 type DataModeContextType = {
   currentDataMode: DataMode;
+  isConnected: boolean | null;
   dataModeSettings: {
     wifi: DataMode;
     cellular: DataMode;
@@ -21,6 +22,7 @@ type DataModeContextType = {
 
 const initialDataModeContext: DataModeContextType = {
   currentDataMode: "lowData",
+  isConnected: true,
   dataModeSettings: {
     wifi: "normal",
     cellular: "normal",
@@ -34,6 +36,7 @@ export function DataModeProvider({ children }: React.PropsWithChildren) {
   const [connectionType, setConnectionType] = useState<NetInfoState["type"]>(
     NetInfoStateType.wifi,
   );
+  const [isConnected, setIsConnected] = useState<boolean | null>(true);
 
   const [storedDataModeSettings, setDataModeSettings] =
     useAccountScopedMMKVObject<DataModeContextType["dataModeSettings"]>(
@@ -62,6 +65,7 @@ export function DataModeProvider({ children }: React.PropsWithChildren) {
   useEffect(() => {
     const unsubscribe = NetInfo.addEventListener((state) => {
       setConnectionType(state.type);
+      setIsConnected(state.isConnected);
     });
     return () => unsubscribe();
   }, []);
@@ -69,10 +73,11 @@ export function DataModeProvider({ children }: React.PropsWithChildren) {
   const value = useMemo(
     () => ({
       currentDataMode,
+      isConnected,
       dataModeSettings,
       changeDataModeSetting,
     }),
-    [currentDataMode, dataModeSettings],
+    [currentDataMode, isConnected, dataModeSettings],
   );
 
   return (

@@ -24,6 +24,7 @@ import { PostSettingsContext } from "../../../../../contexts/SettingsContexts/Po
 import { TabSettingsContext } from "../../../../../contexts/SettingsContexts/TabSettingsContext";
 import DismountWhenBackgrounded from "../../../../Other/DismountWhenBackgrounded";
 import VideoCache from "../../../../../utils/VideoCache";
+import { FeedMediaViewerContext } from "../../../../../contexts/FeedMediaViewerContext";
 
 type VideoPlayerProps = {
   source: string;
@@ -33,6 +34,7 @@ type VideoPlayerProps = {
   exitedFullScreenCallback?: () => void;
   aspectRatio?: number;
   subreddit?: string;
+  postId?: string;
 };
 
 // Match the image viewer's swipe-to-close thresholds
@@ -260,12 +262,15 @@ function VideoPlayer({
   exitedFullScreenCallback,
   aspectRatio,
   subreddit,
+  postId,
 }: VideoPlayerProps) {
   const { theme } = useContext(ThemeContext);
   const { currentDataMode } = useContext(DataModeContext);
   const { autoPlayVideos } = useContext(PostSettingsContext);
   const { interactedWithPost } = useContext(PostInteractionContext);
   const { liquidGlassEnabled } = useContext(TabSettingsContext);
+  const { openMediaViewer, isAvailable: feedMediaViewerAvailable } =
+    useContext(FeedMediaViewerContext);
   const shareMedia = useMediaSharing();
   const { width, height } = useWindowDimensions();
 
@@ -398,7 +403,9 @@ function VideoPlayer({
           <TouchableWithoutFeedback
             onPress={() => {
               interactedWithPost();
-              if (useModalFullscreen) {
+              if (feedMediaViewerAvailable && postId) {
+                openMediaViewer(postId);
+              } else if (useModalFullscreen) {
                 player.pause();
                 setShowModalFullscreen(true);
               } else {
